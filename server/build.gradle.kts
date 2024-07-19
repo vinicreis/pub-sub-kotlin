@@ -2,10 +2,12 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
 }
 
-group = "io.github.vinicreis"
-version = libs.versions.app.get()
-
 dependencies {
+    implementation(project(":domain"))
+
+    compileOnly(libs.grpc.kotlin.stub)
+    compileOnly(libs.grpc.protobuf)
+
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
 }

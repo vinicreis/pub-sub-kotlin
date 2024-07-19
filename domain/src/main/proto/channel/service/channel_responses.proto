@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+import "common/model/result.proto";
+import "channel/model/channel.proto";
+
+option java_package = "io.github.vinicreis.domain.channel.response";
+option java_multiple_files = true;
+
+message AddResponse {
+  Result result = 1;
+  Channel channel = 2;
+}
+
+message ListResponse {
+  repeated Channel channels = 1;
+}
+
+message RemoveByIdResponse {
+  string id = 1;
+  optional Channel channel = 2;
+}

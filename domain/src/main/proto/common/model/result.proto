@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option java_package = "io.github.vinicreis.domain.model";
+
+message Result {
+  enum Type {
+    SUCCESS = 0;
+    ERROR = 1;
+  }
+
+  Type type = 1;
+}

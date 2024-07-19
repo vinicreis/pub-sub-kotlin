@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+import "channel/model/channel.proto";
+
+option java_package = "io.github.vinicreis.domain.channel.request";
+option java_multiple_files = true;
+
+message AddRequest {
+  Channel channel = 1;
+}
+
+message RemoveByIdRequest {
+  int32 id = 1;
+}
+
+message ListRequest { }

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option java_package = "io.github.vinicreis.domain.channel.model";
+
+message Channel {
+  string id = 1;
+  string name = 2;
+  Channel.Type type = 3;
+  optional int32 pendingMessagesCount = 4;
+
+  enum Type {
+    SIMPLE = 0;
+    MULTIPLE = 1;
+  }
+}

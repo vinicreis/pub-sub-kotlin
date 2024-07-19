@@ -2,12 +2,21 @@
 app = "1.0.0"
 
 kotlin = "2.0.0"
+protobuf-plugin = "0.9.4"
+protobuf-compiler = "4.27.2"
+grpc = "1.4.1"
+grpc-protobuf = "1.65.1"
 
 junit = "5.10.0"
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+google-protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }
 
 [libraries]
+google-protobuf-kotlin = { group = "com.google.protobuf", name = "protobuf-kotlin", version.ref = "protobuf-compiler" }
+grpc-kotlin-stub = { group = "io.grpc", name = "grpc-kotlin-stub", version.ref = "grpc" }
+grpc-protobuf = { group = "io.grpc", name = "grpc-protobuf", version.ref = "grpc-protobuf" }
+
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }

@@ -14,6 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "pub-sub-system"
+rootProject.name = "Pub-Sub Distributed System"
 
+include("domain")
 include("server")

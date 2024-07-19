@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+import "common/model/result.proto";
+import "server/channel/model/channel.proto";
+import "server/channel/model/subscription.proto";
+import "server/channel/model/text_message.proto";
+
+option java_package = "io.github.vinicreis.domain.server.channel.response";
+option java_multiple_files = true;
+
+message AddResponse {
+  Result result = 1;
+  Channel channel = 2;
+  optional string message = 3;
+}
+
+message ListResponse {
+  Result result = 1;
+  repeated Channel channels = 2;
+  optional string message = 3;
+}
+
+message RemoveByIdResponse {
+  Result result = 1;
+  string id = 2;
+  optional Channel channel = 3;
+  optional string message = 4;
+}
+
+message PublishResponse {
+  Result result = 1;
+  TextMessage content = 2;
+  optional Channel channel = 3;
+  optional string message = 4;
+}
+
+message SubscribeResponse {
+  SubscriptionStatus status = 1;
+  optional Channel channel = 2;
+  TextMessage content = 3;
+  optional string message = 4;
+}

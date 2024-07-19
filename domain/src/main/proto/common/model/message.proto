@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option java_package = "io.github.vinicreis.domain.model";
 
-enum Result {
-  SUCCESS = 0;
-  ERROR = 1;
+message Message {
+  int32 order = 1;
+  string content = 2;
 }

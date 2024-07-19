@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+import "server/channel/model/channel.proto";
+import "server/channel/model/text_message.proto";
+
+option java_package = "io.github.vinicreis.domain.server.channel.request";
+option java_multiple_files = true;
+
+message AddRequest {
+  string id = 1;
+  optional string name = 2;
+  Channel.Type type = 3;
+}
+
+message RemoveByIdRequest {
+  string id = 1;
+}
+
+message ListRequest { }
+
+message PublishRequest {
+  string channelId = 1;
+  repeated TextMessage content = 2;
+}
+
+message SubscribeRequest {
+  string channelId = 1;
+}

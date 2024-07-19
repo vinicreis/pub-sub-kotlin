@@ -4,26 +4,29 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dae3157b-bd1a-4df4-bdf5-f5ddf1ed5980" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/domain/build.gradle.kts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/domain/src/main/proto/channel/model/channel.proto" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/domain/src/main/proto/channel/service/channel_requests.proto" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/domain/src/main/proto/channel/service/channel_responses.proto" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/domain/src/main/proto/channel/service/channel_service.proto" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/domain/src/main/proto/common/model/result.proto" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/Main.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/service/ChannelService.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/kotlinc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="dae3157b-bd1a-4df4-bdf5-f5ddf1ed5980" name="Changes" comment="Add domain module, Protobuf and gRPC initial config">
+      <change afterPath="$PROJECT_DIR$/domain/src/main/proto/common/model/message.proto" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/domain/src/main/proto/server/channel/model/subscription.proto" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/domain/src/main/proto/server/channel/model/text_message.proto" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/mapper/ChannelMappers.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/model/Channel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/model/Message.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/model/Subscriber.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/repository/ChannelRepository.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/service/ChannelService.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/infra/repository/ChannelRepositoryLocal.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/infra/service/ChannelServiceGRPC.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/domain/src/main/proto/channel/model/channel.proto" beforeDir="false" afterPath="$PROJECT_DIR$/domain/src/main/proto/server/channel/model/channel.proto" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/domain/src/main/proto/channel/service/channel_requests.proto" beforeDir="false" afterPath="$PROJECT_DIR$/domain/src/main/proto/server/channel/service/channel_requests.proto" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/domain/src/main/proto/channel/service/channel_responses.proto" beforeDir="false" afterPath="$PROJECT_DIR$/domain/src/main/proto/server/channel/service/channel_responses.proto" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/domain/src/main/proto/channel/service/channel_service.proto" beforeDir="false" afterPath="$PROJECT_DIR$/domain/src/main/proto/server/channel/service/channel_service.proto" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/domain/src/main/proto/common/model/result.proto" beforeDir="false" afterPath="$PROJECT_DIR$/domain/src/main/proto/common/model/result.proto" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/server/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/Main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/Main.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/service/ChannelService.kt" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -67,9 +70,10 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Kotlin Interface" />
+        <option value="Kotlin Data Class" />
         <option value="Kotlin File" />
         <option value="Kotlin Class" />
+        <option value="Kotlin Interface" />
       </list>
     </option>
   </component>
@@ -108,7 +112,7 @@
     "project.structure.last.edited": "Project",
     "project.structure.proportion": "0.0",
     "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "settings.editor.selected.configurable": "preferences.sourceCode.Kotlin",
     "vue.rearranger.settings.migration": "true"
   },
   "keyToStringList": {
@@ -125,11 +129,11 @@
       <recent name="$PROJECT_DIR$/domain" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain" />
+      <recent name="$PROJECT_DIR$/domain/src/main/proto/server" />
       <recent name="$PROJECT_DIR$/domain/src/main/proto/channel/service" />
       <recent name="$PROJECT_DIR$/domain/src/main/proto/common/model" />
       <recent name="$PROJECT_DIR$/domain/src/main/proto/channel" />
-      <recent name="$PROJECT_DIR$/domain/src/main/proto/channel/model" />
-      <recent name="$PROJECT_DIR$/domain/src/main/proto/common" />
     </key>
   </component>
   <component name="RunAnythingCache">
@@ -225,8 +229,19 @@
       <workItem from="1721342650137" duration="945000" />
       <workItem from="1721352141526" duration="790000" />
       <workItem from="1721352937033" duration="1307000" />
-      <workItem from="1721354247389" duration="7967000" />
+      <workItem from="1721354247389" duration="8037000" />
+      <workItem from="1721392040584" duration="5118000" />
+      <workItem from="1721410234349" duration="6213000" />
     </task>
+    <task id="LOCAL-00001" summary="Add domain module, Protobuf and gRPC initial config">
+      <option name="closed" value="true" />
+      <created>1721362275922</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1721362275922</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -234,5 +249,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+    <MESSAGE value="Add domain module, Protobuf and gRPC initial config" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add domain module, Protobuf and gRPC initial config" />
   </component>
 </project>

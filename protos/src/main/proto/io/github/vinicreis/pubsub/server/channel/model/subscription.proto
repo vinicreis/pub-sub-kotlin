@@ -2,17 +2,9 @@ syntax = "proto3";
 
 option java_package = "io.github.vinicreis.domain.server.channel.model";
 
-message Subscription {
-  string id = 1;
-  string channelId = 2;
-  string subscriberId = 3;
-  SubscriptionStatus status = 4;
-  string createdAt = 5;
-  string updatedAt = 6;
-}
-
 enum SubscriptionStatus {
   PROCESSING = 0;
   ACTIVE = 1;
-  FINISHED = 2;
+  UPDATE = 2;
+  FINISHED = 3;
 }

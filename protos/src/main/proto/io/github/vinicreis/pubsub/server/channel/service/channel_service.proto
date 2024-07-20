@@ -12,4 +12,5 @@ service ChannelService {
   rpc publishSingle (PublishSingleRequest) returns (PublishResponse) {}
   rpc publishMultiple (PublishMultipleRequest) returns (PublishResponse) {}
   rpc subscribe (SubscribeRequest) returns (stream SubscribeResponse) {}
+  rpc peek (PeekRequest) returns (PeekResponse) {}
 }

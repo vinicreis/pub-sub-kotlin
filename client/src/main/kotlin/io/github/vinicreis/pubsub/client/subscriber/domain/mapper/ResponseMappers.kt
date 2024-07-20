@@ -18,7 +18,8 @@ internal val RemoteResult?.asDomain: SubscriberServiceClient.Response
 internal val ListResponse.asDomain: List<Channel>
     get() = when(result.asDomain) {
         is SubscriberServiceClient.Response.Error,
-        SubscriberServiceClient.Response.Invalid -> error("Failed!")
+        SubscriberServiceClient.Response.Invalid,
+        is SubscriberServiceClient.Response.Subscribed -> error("Failed!")
         SubscriberServiceClient.Response.Success -> channelsList.map(RemoteChannel::asDomain)
     }
 

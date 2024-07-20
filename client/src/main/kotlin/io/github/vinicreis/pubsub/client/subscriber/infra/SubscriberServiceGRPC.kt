@@ -4,6 +4,7 @@ import io.github.vinicreis.domain.server.channel.request.ListRequest
 import io.github.vinicreis.domain.server.channel.request.addRequest
 import io.github.vinicreis.domain.server.channel.request.publishMultipleRequest
 import io.github.vinicreis.domain.server.channel.request.publishSingleRequest
+import io.github.vinicreis.domain.server.channel.request.subscribeRequest
 import io.github.vinicreis.domain.server.channel.service.ChannelServiceGrpcKt
 import io.github.vinicreis.pubsub.client.subscriber.domain.mapper.asDomain
 import io.github.vinicreis.pubsub.client.subscriber.domain.mapper.asRemote
@@ -13,6 +14,7 @@ import io.github.vinicreis.pubsub.client.subscriber.domain.model.Message
 import io.github.vinicreis.pubsub.client.subscriber.domain.model.ServerInfo
 import io.github.vinicreis.pubsub.client.subscriber.domain.service.SubscriberServiceClient
 import io.grpc.ManagedChannelBuilder
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 
@@ -68,7 +70,12 @@ class SubscriberServiceGRPC(
     }
 
     override suspend fun subscribe(channelId: String, type: Channel.Type): SubscriberServiceClient.Response {
-        TODO("Not yet implemented")
+        return server.subscribe(
+            request = subscribeRequest {
+                this.channelId = channelId
+            }
+        ).map { response -> Message(response.content.content.ifEmpty { "${response.status}: ${response.message}" }) }
+            .let { SubscriberServiceClient.Response.Subscribed(it) }
     }
 
     override suspend fun unsubscribe(channelId: String): SubscriberServiceClient.Response {

@@ -3,6 +3,7 @@ package io.github.vinicreis.pubsub.client.subscriber.domain.service
 import io.github.vinicreis.pubsub.client.subscriber.domain.model.Channel
 import io.github.vinicreis.pubsub.client.subscriber.domain.model.Message
 import io.github.vinicreis.pubsub.client.subscriber.domain.model.ServerInfo
+import kotlinx.coroutines.flow.Flow
 
 interface SubscriberServiceClient {
     val serverInfo: ServerInfo
@@ -11,6 +12,7 @@ interface SubscriberServiceClient {
         data object Invalid : Response
         data class Error(val message: String) : Response
         data object Success : Response
+        data class Subscribed(val messages: Flow<Message>) : Response
     }
 
     suspend fun list(): Response

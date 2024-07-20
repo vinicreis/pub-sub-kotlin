@@ -30,4 +30,10 @@ message PublishMultipleRequest {
 
 message SubscribeRequest {
   string channelId = 1;
+  optional int32 timeoutSeconds = 2;
+}
+
+message PeekRequest {
+  string channelId = 1;
+  optional int64 timeoutSeconds = 2;
 }

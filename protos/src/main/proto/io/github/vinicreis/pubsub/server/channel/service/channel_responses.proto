@@ -36,6 +36,13 @@ message PublishResponse {
 message SubscribeResponse {
   SubscriptionStatus status = 1;
   optional Channel channel = 2;
-  TextMessage content = 3;
+  optional TextMessage content = 3;
+  optional string message = 4;
+}
+
+message PeekResponse {
+  Result result = 1;
+  optional Channel channel = 2;
+  optional TextMessage content = 3;
   optional string message = 4;
 }

@@ -1,5 +1,11 @@
 plugins {
+    id("application")
     alias(libs.plugins.kotlin.jvm)
+}
+
+application {
+    applicationName = "Pub Sub Client"
+    mainClass = "io.github.vinicreis.pubsub.client.MainKt"
 }
 
 dependencies {

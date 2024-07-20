@@ -235,8 +235,20 @@ class ChannelServiceGRPC(
                         message = result.message
                     }.also { send(it); close() }
 
-                    is ChannelRepository.Result.GetById.Success -> when(result.queue) {
-                        is Queue.Simple -> TODO("Not implemented")
+                    is ChannelRepository.Result.GetById.Success -> when (result.queue) {
+                        is Queue.Simple -> {
+                            result.queue.subscribe().let { (id, flow) ->
+                                flow.last().also { message ->
+                                    subscribeResponse {
+                                        status = Subscription.SubscriptionStatus.UPDATE
+                                        channel = result.queue.asRemote
+                                        content = message.asRemote
+                                    }.also { send(it) }
+
+                                    result.queue.unsubscribe(id)
+                                }
+                            }
+                        }
 
                         is Queue.Multiple -> {
                             result.queue.messages
@@ -277,7 +289,7 @@ class ChannelServiceGRPC(
                     message = result.message
                 }
 
-                is ChannelRepository.Result.GetById.Success -> when(result.queue) {
+                is ChannelRepository.Result.GetById.Success -> when (result.queue) {
                     is Queue.Simple -> TODO("Not implemented")
 
                     is Queue.Multiple -> {

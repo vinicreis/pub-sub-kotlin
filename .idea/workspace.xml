@@ -4,25 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dae3157b-bd1a-4df4-bdf5-f5ddf1ed5980" name="Changes" comment="Refactoring .proto packages and testing clients">
-      <change afterPath="$PROJECT_DIR$/.kotlin/sessions/kotlin-compiler-999143481482919151.salive" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/mapper/MessageMappers.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/model/Queue.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/repository/MessageRepository.kt" afterDir="false" />
+    <list default="true" id="dae3157b-bd1a-4df4-bdf5-f5ddf1ed5980" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/client/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/main/kotlin/io/github/vinicreis/pubsub/client/Main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/main/kotlin/io/github/vinicreis/pubsub/client/Main.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/main/kotlin/io/github/vinicreis/pubsub/client/subscriber/domain/mapper/ResponseMappers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/main/kotlin/io/github/vinicreis/pubsub/client/subscriber/domain/mapper/ResponseMappers.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/main/kotlin/io/github/vinicreis/pubsub/client/subscriber/domain/service/SubscriberServiceClient.kt" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/main/kotlin/io/github/vinicreis/pubsub/client/subscriber/domain/service/SubscriberServiceClient.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/main/kotlin/io/github/vinicreis/pubsub/client/subscriber/infra/SubscriberServiceGRPC.kt" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/main/kotlin/io/github/vinicreis/pubsub/client/subscriber/infra/SubscriberServiceGRPC.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/protos/src/main/proto/io/github/vinicreis/pubsub/server/channel/model/subscription.proto" beforeDir="false" afterPath="$PROJECT_DIR$/protos/src/main/proto/io/github/vinicreis/pubsub/server/channel/model/subscription.proto" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/protos/src/main/proto/io/github/vinicreis/pubsub/server/channel/service/channel_requests.proto" beforeDir="false" afterPath="$PROJECT_DIR$/protos/src/main/proto/io/github/vinicreis/pubsub/server/channel/service/channel_requests.proto" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/protos/src/main/proto/io/github/vinicreis/pubsub/server/channel/service/channel_responses.proto" beforeDir="false" afterPath="$PROJECT_DIR$/protos/src/main/proto/io/github/vinicreis/pubsub/server/channel/service/channel_responses.proto" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/protos/src/main/proto/io/github/vinicreis/pubsub/server/channel/service/channel_service.proto" beforeDir="false" afterPath="$PROJECT_DIR$/protos/src/main/proto/io/github/vinicreis/pubsub/server/channel/service/channel_service.proto" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/mapper/ChannelMappers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/mapper/ChannelMappers.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/model/Channel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/repository/ChannelRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/repository/ChannelRepository.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/infra/repository/ChannelRepositoryLocal.kt" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/infra/repository/ChannelRepositoryLocal.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/model/Queue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/model/Queue.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/infra/service/ChannelServiceGRPC.kt" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/infra/service/ChannelServiceGRPC.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -90,6 +74,7 @@
 }</component>
   <component name="ProjectId" id="2jRGnzdMSE31VEi5fn2vEiIXqwf" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <OptionsSetting value="false" id="Update" />
     <ConfirmationsSetting value="2" id="Add" />
   </component>
   <component name="ProjectViewState">
@@ -106,6 +91,7 @@
     "Gradle.pub-sub-kotlin [server:assemble].executor": "Run",
     "Gradle.pub-sub-kotlin [server:runServer].executor": "Run",
     "Gradle.pub-sub-kotlin:domain [generateProto].executor": "Run",
+    "Gradle.pub-sub-system [generateProto].executor": "Run",
     "HTTP Request.generated-requests | #1.executor": "Run",
     "HTTP Request.grpc-requests | Request with body.executor": "Run",
     "HTTP Request.grpc-requests | Server streaming.executor": "Run",
@@ -125,7 +111,7 @@
     "project.structure.last.edited": "Project",
     "project.structure.proportion": "0.0",
     "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "preferences.sourceCode.Kotlin",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
     "vue.rearranger.settings.migration": "true"
   },
   "keyToStringList": {
@@ -157,7 +143,7 @@
       <command value="gradle generateProto" />
     </option>
   </component>
-  <component name="RunManager" selected="Kotlin.MainKt (1)">
+  <component name="RunManager" selected="Gradle.pub-sub-system [generateProto]">
     <configuration name="pub-sub-kotlin [domain:generateProto]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -202,7 +188,7 @@
       <RunAsTest>false</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="pub-sub-kotlin [server:runServer]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="pub-sub-system [generateProto]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -213,7 +199,7 @@
         </option>
         <option name="taskNames">
           <list>
-            <option value="server:runServer" />
+            <option value="generateProto" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -252,19 +238,19 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Gradle.pub-sub-system [generateProto]" />
       <item itemvalue="Gradle.pub-sub-kotlin [domain:generateProto]" />
       <item itemvalue="Gradle.pub-sub-kotlin [generateProto]" />
-      <item itemvalue="Gradle.pub-sub-kotlin [server:runServer]" />
       <item itemvalue="Kotlin.MainKt (1)" />
       <item itemvalue="Kotlin.MainKt" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.pub-sub-system [generateProto]" />
         <item itemvalue="Kotlin.MainKt (1)" />
         <item itemvalue="Kotlin.MainKt" />
         <item itemvalue="Gradle.pub-sub-kotlin [generateProto]" />
         <item itemvalue="Gradle.pub-sub-kotlin [domain:generateProto]" />
-        <item itemvalue="Gradle.pub-sub-kotlin [server:runServer]" />
       </list>
     </recent_temporary>
   </component>
@@ -294,6 +280,7 @@
       <workItem from="1721487066429" duration="5253000" />
       <workItem from="1721494061888" duration="832000" />
       <workItem from="1721506414141" duration="6276000" />
+      <workItem from="1721513097540" duration="953000" />
     </task>
     <task id="LOCAL-00001" summary="Add domain module, Protobuf and gRPC initial config">
       <option name="closed" value="true" />

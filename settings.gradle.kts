@@ -16,5 +16,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "Pub-Sub Distributed System"
 
-include("domain")
+include("protos")
 include("server")
+include("client")

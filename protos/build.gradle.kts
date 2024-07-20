@@ -18,10 +18,10 @@ protobuf {
 
     plugins {
         create("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:${libs.versions.grpc.protobuf.get()}"
+            artifact = "io.grpc:protoc-gen-grpc-java:${libs.versions.grpc.core.get()}"
         }
         create("grpckt") {
-            artifact = "io.grpc:protoc-gen-grpc-kotlin:${libs.versions.grpc.asProvider().get()}:jdk8@jar"
+            artifact = "io.grpc:protoc-gen-grpc-kotlin:${libs.versions.grpc.kotlin.get()}:jdk8@jar"
         }
     }
 
@@ -39,7 +39,15 @@ protobuf {
     }
 }
 
+tasks.withType<Copy> {
+    filesMatching("**/*.proto") {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
+}
+
 dependencies {
+    implementation(libs.kotlinx.coroutines.core)
+
     implementation(libs.google.protobuf.kotlin)
     implementation(libs.grpc.protobuf)
     implementation(libs.grpc.kotlin.stub)

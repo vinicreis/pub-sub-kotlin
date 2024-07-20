@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-import "server/channel/service/channel_requests.proto";
-import "server/channel/service/channel_responses.proto";
+import "io/github/vinicreis/pubsub/server/channel/service/channel_requests.proto";
+import "io/github/vinicreis/pubsub/server/channel/service/channel_responses.proto";
 
 option java_package = "io.github.vinicreis.domain.server.channel.service";
 
@@ -9,6 +9,7 @@ service ChannelService {
   rpc add (AddRequest) returns (AddResponse) {}
   rpc list (ListRequest) returns (ListResponse) {}
   rpc removeById (RemoveByIdRequest) returns (RemoveByIdResponse) {}
-  rpc publish (PublishRequest) returns (PublishResponse) {}
+  rpc publishSingle (PublishSingleRequest) returns (PublishResponse) {}
+  rpc publishMultiple (PublishMultipleRequest) returns (PublishResponse) {}
   rpc subscribe (SubscribeRequest) returns (stream SubscribeResponse) {}
 }

@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-option java_package = "io.github.vinicreis.domain.model";
-
-message Message {
-  int32 order = 1;
-  string content = 2;
-}

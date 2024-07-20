@@ -5,8 +5,8 @@ kotlin = "2.0.0"
 kotlinx-coroutines = "1.9.0-RC"
 protobuf-plugin = "0.9.4"
 protobuf-compiler = "4.27.2"
-grpc = "1.4.1"
-grpc-protobuf = "1.65.1"
+grpc-core = "1.65.1"
+grpc-kotlin = "1.4.1"
 
 junit = "5.10.0"
 
@@ -17,8 +17,10 @@ google-protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin" 
 [libraries]
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 google-protobuf-kotlin = { group = "com.google.protobuf", name = "protobuf-kotlin", version.ref = "protobuf-compiler" }
-grpc-kotlin-stub = { group = "io.grpc", name = "grpc-kotlin-stub", version.ref = "grpc" }
-grpc-protobuf = { group = "io.grpc", name = "grpc-protobuf", version.ref = "grpc-protobuf" }
+grpc-netty = { group = "io.grpc", name = "grpc-netty", version.ref = "grpc-core" }
+grpc-okhttp = { group = "io.grpc", name = "grpc-okhttp", version.ref = "grpc-core" }
+grpc-protobuf = { group = "io.grpc", name = "grpc-protobuf", version.ref = "grpc-core" }
+grpc-kotlin-stub = { group = "io.grpc", name = "grpc-kotlin-stub", version.ref = "grpc-kotlin" }
 
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }

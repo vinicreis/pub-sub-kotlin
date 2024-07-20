@@ -3,7 +3,8 @@ package io.github.vinicreis.pubsub.server.channel.infra.service
 import io.github.vinicreis.domain.model.ResultOuterClass
 import io.github.vinicreis.domain.server.channel.request.AddRequest
 import io.github.vinicreis.domain.server.channel.request.ListRequest
-import io.github.vinicreis.domain.server.channel.request.PublishRequest
+import io.github.vinicreis.domain.server.channel.request.PublishMultipleRequest
+import io.github.vinicreis.domain.server.channel.request.PublishSingleRequest
 import io.github.vinicreis.domain.server.channel.request.RemoveByIdRequest
 import io.github.vinicreis.domain.server.channel.request.SubscribeRequest
 import io.github.vinicreis.domain.server.channel.response.AddResponse
@@ -20,19 +21,37 @@ import io.github.vinicreis.pubsub.server.channel.domain.mapper.asRemote
 import io.github.vinicreis.pubsub.server.channel.domain.model.Channel
 import io.github.vinicreis.pubsub.server.channel.domain.repository.ChannelRepository
 import io.github.vinicreis.pubsub.server.channel.domain.service.ChannelService
-import io.grpc.BindableService
-import io.grpc.kotlin.ClientCalls
-import io.grpc.stub.ClientCallStreamObserver
+import io.grpc.Grpc
+import io.grpc.InsecureServerCredentials
+import io.grpc.Metadata
+import io.grpc.ServerCall
+import io.grpc.ServerCallHandler
+import io.grpc.ServerInterceptor
 import kotlinx.coroutines.flow.Flow
 import java.util.logging.Logger
 import kotlin.coroutines.CoroutineContext
 
 class ChannelServiceGRPC(
+    private val port: Int,
     coroutineContext: CoroutineContext,
-    private val channelRepository: ChannelRepository,
     private val logger: Logger = Logger.getLogger("ChannelService"),
+    private val channelRepository: ChannelRepository,
 ) : ChannelService, ChannelServiceGrpcKt.ChannelServiceCoroutineImplBase(coroutineContext) {
+    private val credentials = InsecureServerCredentials.create()
+    private val server = Grpc.newServerBuilderForPort(port, credentials)
+        .addService(this)
+        .intercept(interceptor)
+        .build()
 
+    override fun start() {
+        logger.info("Starting server...")
+        server.start()
+    }
+
+    override fun blockUntilShutdown() {
+        logger.info("Listening on port $port...")
+        server.awaitTermination()
+    }
 
     override suspend fun add(request: AddRequest): AddResponse {
         return try {
@@ -120,11 +139,31 @@ class ChannelServiceGRPC(
         }
     }
 
-    override suspend fun publish(request: PublishRequest): PublishResponse {
-        TODO("Not yet implemented")
+    override suspend fun publishSingle(request: PublishSingleRequest): PublishResponse {
+        return super.publishSingle(request)
+    }
+
+    override suspend fun publishMultiple(request: PublishMultipleRequest): PublishResponse {
+        return super.publishMultiple(request)
     }
 
     override fun subscribe(request: SubscribeRequest): Flow<SubscribeResponse> {
-        TODO("Not yet implemented")
+        return super.subscribe(request)
+    }
+
+    companion object {
+        private val interceptor = object : ServerInterceptor {
+            override fun <ReqT : Any?, RespT : Any?> interceptCall(
+                call: ServerCall<ReqT, RespT>,
+                headers: Metadata?,
+                next: ServerCallHandler<ReqT, RespT>
+            ): ServerCall.Listener<ReqT> {
+                (call.attributes.get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR) ?: "No call found").also {
+                    println("Client address: $it")
+                }
+
+                return next.startCall(call, headers)
+            }
+        }
     }
 }

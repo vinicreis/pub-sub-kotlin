@@ -172,16 +172,12 @@ class ChannelServiceGRPC(
                     message = result.message
                 }
 
-                is ChannelRepository.Result.GetById.Success -> when (result.queue) {
-                    is Queue.Simple -> TODO("Not implemented")
+                is ChannelRepository.Result.GetById.Success -> {
+                    result.queue.post(request.content.asDomain)
 
-                    is Queue.Multiple -> {
-                        result.queue.post(request.content.asDomain)
-
-                        publishResponse {
-                            this.result = ResultOuterClass.Result.SUCCESS
-                            channel = result.queue.asRemote
-                        }
+                    publishResponse {
+                        this.result = ResultOuterClass.Result.SUCCESS
+                        channel = result.queue.asRemote
                     }
                 }
             }
@@ -201,16 +197,12 @@ class ChannelServiceGRPC(
                     message = result.message
                 }
 
-                is ChannelRepository.Result.GetById.Success -> when (result.queue) {
-                    is Queue.Simple -> TODO("Not implemented")
+                is ChannelRepository.Result.GetById.Success -> {
+                    request.contentList.map(TextMessage::asDomain).forEach { result.queue.post(it) }
 
-                    is Queue.Multiple -> {
-                        request.contentList.map(TextMessage::asDomain).forEach { result.queue.post(it) }
-
-                        publishResponse {
-                            this.result = ResultOuterClass.Result.SUCCESS
-                            channel = result.queue.asRemote
-                        }
+                    publishResponse {
+                        this.result = ResultOuterClass.Result.SUCCESS
+                        channel = result.queue.asRemote
                     }
                 }
             }
@@ -290,7 +282,31 @@ class ChannelServiceGRPC(
                 }
 
                 is ChannelRepository.Result.GetById.Success -> when (result.queue) {
-                    is Queue.Simple -> TODO("Not implemented")
+                    is Queue.Simple -> {
+                        val timeout = request.timeoutSeconds.takeIf { it > 0 } ?: Long.MAX_VALUE
+
+                        try {
+                            withTimeout(timeout.seconds) {
+                                result.queue.subscribe().let { (id, flow) ->
+                                    flow.last().let { message ->
+                                        result.queue.unsubscribe(id)
+
+                                        peekResponse {
+                                            this.result = ResultOuterClass.Result.SUCCESS
+                                            channel = result.queue.asRemote
+                                            this.content = message.asRemote
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (e: TimeoutCancellationException) {
+                            peekResponse {
+                                this.result = ResultOuterClass.Result.ERROR
+                                channel = result.queue.asRemote
+                                this.message = "Peek last message timeout"
+                            }
+                        }
+                    }
 
                     is Queue.Multiple -> {
                         val timeout = request.timeoutSeconds.takeIf { it > 0 } ?: Long.MAX_VALUE

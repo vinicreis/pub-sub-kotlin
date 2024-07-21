@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dae3157b-bd1a-4df4-bdf5-f5ddf1ed5980" name="Changes" comment="">
+    <list default="true" id="dae3157b-bd1a-4df4-bdf5-f5ddf1ed5980" name="Changes" comment="Add simple queue implementation">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/model/Queue.kt" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/domain/model/Queue.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/infra/service/ChannelServiceGRPC.kt" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/kotlin/io/github/vinicreis/pubsub/server/channel/infra/service/ChannelServiceGRPC.kt" afterDir="false" />
@@ -81,45 +81,45 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "Gradle.Build pub-sub-kotlin.executor": "Run",
-    "Gradle.Build pub-sub-system.executor": "Run",
-    "Gradle.pub-sub-kotlin [domain:generateProto].executor": "Run",
-    "Gradle.pub-sub-kotlin [generateProto].executor": "Run",
-    "Gradle.pub-sub-kotlin [server:assemble].executor": "Run",
-    "Gradle.pub-sub-kotlin [server:runServer].executor": "Run",
-    "Gradle.pub-sub-kotlin:domain [generateProto].executor": "Run",
-    "Gradle.pub-sub-system [generateProto].executor": "Run",
-    "HTTP Request.generated-requests | #1.executor": "Run",
-    "HTTP Request.grpc-requests | Request with body.executor": "Run",
-    "HTTP Request.grpc-requests | Server streaming.executor": "Run",
-    "Kotlin script (Beta).build.gradle.kts.executor": "Run",
-    "Kotlin.MainKt (1).executor": "Run",
-    "Kotlin.MainKt.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "main",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/home/vreis/Projects/ufabc/pub-sub-kotlin/client/src/main/kotlin/io/github/vinicreis/pubsub/client/subscriber",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;Gradle.Build pub-sub-kotlin.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Build pub-sub-system.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.pub-sub-kotlin [domain:generateProto].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.pub-sub-kotlin [generateProto].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.pub-sub-kotlin [server:assemble].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.pub-sub-kotlin [server:runServer].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.pub-sub-kotlin:domain [generateProto].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.pub-sub-system [generateProto].executor&quot;: &quot;Run&quot;,
+    &quot;HTTP Request.generated-requests | #1.executor&quot;: &quot;Run&quot;,
+    &quot;HTTP Request.grpc-requests | Request with body.executor&quot;: &quot;Run&quot;,
+    &quot;HTTP Request.grpc-requests | Server streaming.executor&quot;: &quot;Run&quot;,
+    &quot;Kotlin script (Beta).build.gradle.kts.executor&quot;: &quot;Run&quot;,
+    &quot;Kotlin.MainKt (1).executor&quot;: &quot;Run&quot;,
+    &quot;Kotlin.MainKt.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/vreis/Projects/ufabc/pub-sub-kotlin/client/src/main/kotlin/io/github/vinicreis/pubsub/client/subscriber&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "kotlin-gradle-user-dirs": [
-      "/home/vreis/.gradle"
+  &quot;keyToStringList&quot;: {
+    &quot;kotlin-gradle-user-dirs&quot;: [
+      &quot;/home/vreis/.gradle&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/domain/src/main/proto/channel/request" />
@@ -280,7 +280,8 @@
       <workItem from="1721487066429" duration="5253000" />
       <workItem from="1721494061888" duration="832000" />
       <workItem from="1721506414141" duration="6276000" />
-      <workItem from="1721513097540" duration="953000" />
+      <workItem from="1721513097540" duration="997000" />
+      <workItem from="1721520566693" duration="957000" />
     </task>
     <task id="LOCAL-00001" summary="Add domain module, Protobuf and gRPC initial config">
       <option name="closed" value="true" />
@@ -306,7 +307,15 @@
       <option name="project" value="LOCAL" />
       <updated>1721495260059</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Add simple queue implementation">
+      <option name="closed" value="true" />
+      <created>1721514090666</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1721514090666</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -328,7 +337,8 @@
     <MESSAGE value="Add domain module, Protobuf and gRPC initial config" />
     <MESSAGE value="Add repository, service and clean arch concepts" />
     <MESSAGE value="Refactoring .proto packages and testing clients" />
-    <option name="LAST_COMMIT_MESSAGE" value="Refactoring .proto packages and testing clients" />
+    <MESSAGE value="Add simple queue implementation" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add simple queue implementation" />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
 </project>

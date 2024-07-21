@@ -24,7 +24,7 @@ fun main() {
 
     runBlocking {
         SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
-            publish(Channel("channel-1", "Channel 1", Channel.Type.MULTIPLE)).print()
+            publish(Channel("channel-1", "Channel 1", Channel.Type.SIMPLE)).print()
             list()
 
             val postJob = coroutineScope.launch {

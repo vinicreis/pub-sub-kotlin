@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import java.util.*
+import kotlin.random.Random
 
 sealed class Queue(
     val id: String,
@@ -19,17 +20,17 @@ sealed class Queue(
         fun subscribe(): Pair<String, Flow<Message>> {
             val subscriptionId = UUID.randomUUID().toString()
 
-            return subscribers.getOrPut(subscriptionId) {
-                Channel(Channel.UNLIMITED)
-            }.receiveAsFlow().let { flow -> Pair(subscriptionId, flow) }
+            return subscribers
+                .getOrPut(subscriptionId) { Channel(Channel.UNLIMITED) }
+                .receiveAsFlow().let { flow -> Pair(subscriptionId, flow) }
         }
 
-        fun unsubscribe(subscriberId: String): Boolean {
-            return subscribers.remove(subscriberId)?.close() ?: false
-        }
+        fun unsubscribe(subscriberId: String): Boolean = subscribers.remove(subscriberId)?.close() ?: false
+
+        private fun <K, V> Map<K, V>.random(): Map.Entry<K, V> = entries.elementAt(Random.nextInt(size))
 
         override suspend fun post(vararg message: Message) {
-
+            message.forEach { subscribers.random().value.send(it) }
         }
 
         override fun close(): Boolean {

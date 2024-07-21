@@ -2,6 +2,7 @@ package io.github.vinicreis.pubsub.client.subscriber.infra
 
 import io.github.vinicreis.domain.server.channel.request.ListRequest
 import io.github.vinicreis.domain.server.channel.request.addRequest
+import io.github.vinicreis.domain.server.channel.request.peekRequest
 import io.github.vinicreis.domain.server.channel.request.publishMultipleRequest
 import io.github.vinicreis.domain.server.channel.request.publishSingleRequest
 import io.github.vinicreis.domain.server.channel.request.subscribeRequest
@@ -76,6 +77,14 @@ class SubscriberServiceGRPC(
             }
         ).map { response -> Message(response.content.content.ifEmpty { "${response.status}: ${response.message}" }) }
             .let { SubscriberServiceClient.Response.Subscribed(it) }
+    }
+
+    suspend fun peek(channelId: String): String {
+        return server.peek(
+            request = peekRequest {
+                this.channelId = channelId
+            }
+        ).let { response -> response.content.content.ifEmpty { "${response.result}: ${response.message}" } }
     }
 
     override suspend fun unsubscribe(channelId: String): SubscriberServiceClient.Response {

@@ -2,7 +2,6 @@ package io.github.vinicreis.pubsub.server.channel.domain.model
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import java.util.*
@@ -16,18 +15,18 @@ sealed class Queue(
         id: String,
         name: String = id,
     ) : Queue(id, name) {
-        private val subscribers = mutableMapOf<String, MutableSharedFlow<Message>>()
+        private val subscribers = mutableMapOf<String, Channel<Message>>()
 
         fun subscribe(): Pair<String, Flow<Message>> {
             val subscriptionId = UUID.randomUUID().toString()
 
             return subscribers
-                .getOrPut(subscriptionId) { MutableSharedFlow() }
-                .let { flow -> Pair(subscriptionId, flow) }
+                .getOrPut(subscriptionId) { Channel(Channel.UNLIMITED) }
+                .receiveAsFlow().let { flow -> Pair(subscriptionId, flow) }
         }
 
         fun unsubscribe(subscriberId: String) {
-            subscribers.remove(subscriberId)
+            subscribers.remove(subscriberId)?.close()
         }
 
         private fun <K, V> Map<K, V>.random(): Map.Entry<K, V> = entries.elementAt(Random.nextInt(size))
@@ -37,12 +36,13 @@ sealed class Queue(
                 subscribers.random().also { (id, channel) ->
                     println("Posting message to subscription $id")
 
-                    channel.emit(it)
+                    channel.send(it)
                 }
             }
         }
 
         override fun close() {
+            subscribers.forEach { (_, channel) -> channel.close() }
             subscribers.clear()
         }
     }

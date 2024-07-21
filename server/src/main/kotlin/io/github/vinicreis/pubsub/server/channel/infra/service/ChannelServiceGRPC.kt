@@ -35,7 +35,6 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withTimeout
@@ -230,7 +229,7 @@ class ChannelServiceGRPC(
 
                     is ChannelRepository.Result.GetById.Success -> when (result.queue) {
                         is Queue.Simple -> {
-                            result.queue.subscribe().let { (id, flow) ->
+                            result.queue.subscribe().let { (_, flow) ->
                                 flow.onStart {
                                     subscribeResponse {
                                         status = Subscription.SubscriptionStatus.ACTIVE
@@ -241,14 +240,12 @@ class ChannelServiceGRPC(
                                         status = Subscription.SubscriptionStatus.FINISHED
                                         channel = result.queue.asRemote
                                     }.also { send(it); close() }
-                                }.last().also { message ->
+                                }.collect { message ->
                                     subscribeResponse {
                                         status = Subscription.SubscriptionStatus.UPDATE
                                         channel = result.queue.asRemote
                                         content = message.asRemote
                                     }.also { send(it) }
-
-                                    result.queue.unsubscribe(id)
                                 }
                             }
                         }
@@ -324,7 +321,7 @@ class ChannelServiceGRPC(
 
                         try {
                             withTimeout(timeout.seconds) {
-                                result.queue. nextMessage.last().let { message ->
+                                result.queue.nextMessage.first().let { message ->
                                     peekResponse {
                                         this.result = ResultOuterClass.Result.SUCCESS
                                         channel = result.queue.asRemote

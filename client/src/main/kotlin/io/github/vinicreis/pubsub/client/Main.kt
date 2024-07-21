@@ -10,7 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import kotlin.time.Duration.Companion.seconds
 
 private fun SubscriberServiceClient.Response.print() {
@@ -22,31 +21,58 @@ private val String.asMessage get()  = Message(this)
 fun main() {
     val coroutineScope = CoroutineScope(Dispatchers.IO)
 
-    runBlocking {
+    val job1 = coroutineScope.launch {
         SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
             publish(Channel("channel-1", "Channel 1", Channel.Type.SIMPLE)).print()
             list()
 
             val postJob = coroutineScope.launch {
-                delay(5.seconds)
-                post("channel-1", "Message 1".asMessage).print()
-                delay(3.seconds)
-                post("channel-1", "Message 2".asMessage).print()
-            }
+                var i = 0
 
-            val collectJob = coroutineScope.launch {
-                withTimeout(10.seconds) {
-                    (subscribe("channel-1", Channel.Type.MULTIPLE) as SubscriberServiceClient.Response.Subscribed)
-                        .messages.collect {
-                            println("Received message: $it")
-                        }
+                while(true) {
+                    delay(2.seconds)
+                    post("channel-1", "Message ${++i}".asMessage).print()
                 }
             }
 
             postJob.join()
-            collectJob.join()
-
-            println("Finished!")
         }
+    }
+
+    val job2 = coroutineScope.launch {
+        SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
+            (subscribe("channel-1", Channel.Type.SIMPLE) as SubscriberServiceClient.Response.Subscribed).also { result ->
+                result.messages.collect {
+                    println("Received message on 1: ${it.content}")
+                }
+            }
+        }
+    }
+
+    val job3 = coroutineScope.launch {
+        SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
+            (subscribe("channel-1", Channel.Type.SIMPLE) as SubscriberServiceClient.Response.Subscribed).also { result ->
+                result.messages.collect {
+                    println("Received message on 2: ${it.content}")
+                }
+            }
+        }
+    }
+
+    val job4 = coroutineScope.launch {
+        SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
+            (subscribe("channel-1", Channel.Type.SIMPLE) as SubscriberServiceClient.Response.Subscribed).also { result ->
+                result.messages.collect {
+                    println("Received message on 3: ${it.content}")
+                }
+            }
+        }
+    }
+
+    runBlocking {
+        job1.join()
+        job2.join()
+        job3.join()
+        job4.join()
     }
 }

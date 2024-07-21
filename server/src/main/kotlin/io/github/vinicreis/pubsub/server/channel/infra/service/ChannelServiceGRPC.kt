@@ -34,6 +34,7 @@ import io.grpc.InsecureServerCredentials
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
@@ -230,7 +231,17 @@ class ChannelServiceGRPC(
                     is ChannelRepository.Result.GetById.Success -> when (result.queue) {
                         is Queue.Simple -> {
                             result.queue.subscribe().let { (id, flow) ->
-                                flow.last().also { message ->
+                                flow.onStart {
+                                    subscribeResponse {
+                                        status = Subscription.SubscriptionStatus.ACTIVE
+                                        channel = result.queue.asRemote
+                                    }.also { send(it) }
+                                }.onCompletion {
+                                    subscribeResponse {
+                                        status = Subscription.SubscriptionStatus.FINISHED
+                                        channel = result.queue.asRemote
+                                    }.also { send(it); close() }
+                                }.last().also { message ->
                                     subscribeResponse {
                                         status = Subscription.SubscriptionStatus.UPDATE
                                         channel = result.queue.asRemote
@@ -288,7 +299,7 @@ class ChannelServiceGRPC(
                         try {
                             withTimeout(timeout.seconds) {
                                 result.queue.subscribe().let { (id, flow) ->
-                                    flow.last().let { message ->
+                                    flow.first().let { message ->
                                         result.queue.unsubscribe(id)
 
                                         peekResponse {
@@ -313,7 +324,7 @@ class ChannelServiceGRPC(
 
                         try {
                             withTimeout(timeout.seconds) {
-                                result.queue.nextMessage.last().let { message ->
+                                result.queue. nextMessage.last().let { message ->
                                     peekResponse {
                                         this.result = ResultOuterClass.Result.SUCCESS
                                         channel = result.queue.asRemote

@@ -1,30 +1,55 @@
 package io.github.vinicreis.pubsub.server.channel.infra.repository
 
-import io.github.vinicreis.pubsub.server.channel.domain.model.Queue
+import io.github.vinicreis.pubsub.server.channel.domain.model.Channel
 import io.github.vinicreis.pubsub.server.channel.domain.repository.ChannelRepository
+import io.github.vinicreis.pubsub.server.channel.domain.repository.MessageFlowRepository
+import java.util.logging.Logger
 
-class ChannelRepositoryLocal : ChannelRepository {
-    private val channels = mutableMapOf<String, Queue>()
+class ChannelRepositoryLocal(
+    private val messageFlowRepository: MessageFlowRepository,
+    private val logger: Logger = Logger.getLogger(ChannelRepositoryLocal::class.qualifiedName),
+) : ChannelRepository {
+    private val channels = mutableMapOf<String, Channel>()
 
-    override suspend fun add(queue: Queue): ChannelRepository.Result.Add =
-        channels[queue.id]?.let { conflictingChannel ->
-            ChannelRepository.Result.Add.AlreadyFound(conflictingChannel)
-        } ?: run {
-            channels[queue.id] = queue
-            ChannelRepository.Result.Add.Success(queue)
+    override suspend fun exists(channelId: String): Boolean = channels.containsKey(channelId)
+
+    override suspend fun add(id: String, name: String, type: Channel.Type): ChannelRepository.Result.Add {
+        if(exists(id)) return ChannelRepository.Result.Add.AlreadyFound
+
+        return messageFlowRepository.getOrPut(id, type).let {
+            when(it) {
+                is MessageFlowRepository.Result.GetOrPut.Error -> ChannelRepository.Result.Add.Error(it.e)
+                is MessageFlowRepository.Result.GetOrPut.Success -> Channel(
+                    id = id,
+                    name = name,
+                    type = type,
+                    messageFlow = it.messageFlow
+                ).let { channel ->
+                    channels[id] = channel
+
+                    ChannelRepository.Result.Add.Success(channel)
+                }
+            }
         }
+    }
+
+    private suspend fun Channel.close() {
+        messageFlowRepository.getOrPut(id, type).let { result ->
+            when(result) {
+                is MessageFlowRepository.Result.GetOrPut.Error ->
+                    logger.warning("Failed to close on channel $id: ${result.e}")
+                is MessageFlowRepository.Result.GetOrPut.Success -> result.messageFlow.close()
+            }
+        }
+    }
 
     override suspend fun removeById(id: String): ChannelRepository.Result.Remove =
         channels.remove(id)?.let { removedChannel ->
-            when(removedChannel) {
-                is Queue.Simple -> removedChannel.close()
-                is Queue.Multiple -> removedChannel.close()
-            }
-
+            removedChannel.close()
             ChannelRepository.Result.Remove.Success(removedChannel)
         } ?: ChannelRepository.Result.Remove.NotFound
 
-    override suspend fun remove(queue: Queue): ChannelRepository.Result.Remove = removeById(queue.id)
+    override suspend fun remove(channel: Channel): ChannelRepository.Result.Remove = removeById(channel.id)
 
     override suspend fun getAll(): ChannelRepository.Result.GetAll =
         ChannelRepository.Result.GetAll.Success(channels.values.toList())

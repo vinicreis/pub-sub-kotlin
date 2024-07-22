@@ -1,7 +1,6 @@
 package io.github.vinicreis.pubsub.server.channel.infra.service
 
 import io.github.vinicreis.domain.model.ResultOuterClass
-import io.github.vinicreis.domain.server.channel.model.ChannelOuterClass
 import io.github.vinicreis.domain.server.channel.model.Subscription
 import io.github.vinicreis.domain.server.channel.model.TextMessageOuterClass.TextMessage
 import io.github.vinicreis.domain.server.channel.request.AddRequest
@@ -26,7 +25,6 @@ import io.github.vinicreis.domain.server.channel.response.subscribeResponse
 import io.github.vinicreis.domain.server.channel.service.ChannelServiceGrpcKt
 import io.github.vinicreis.pubsub.server.channel.domain.mapper.asDomain
 import io.github.vinicreis.pubsub.server.channel.domain.mapper.asRemote
-import io.github.vinicreis.pubsub.server.channel.domain.model.Queue
 import io.github.vinicreis.pubsub.server.channel.domain.repository.ChannelRepository
 import io.github.vinicreis.pubsub.server.channel.domain.service.ChannelService
 import io.grpc.Grpc
@@ -44,7 +42,7 @@ import kotlin.time.Duration.Companion.seconds
 class ChannelServiceGRPC(
     private val port: Int,
     coroutineContext: CoroutineContext,
-    private val logger: Logger = Logger.getLogger("ChannelService"),
+    private val logger: Logger = Logger.getLogger(ChannelServiceGRPC::class.java.name),
     private val channelRepository: ChannelRepository,
 ) : ChannelService, ChannelServiceGrpcKt.ChannelServiceCoroutineImplBase(coroutineContext) {
     private val credentials = InsecureServerCredentials.create()
@@ -64,34 +62,21 @@ class ChannelServiceGRPC(
 
     override suspend fun add(request: AddRequest): AddResponse {
         return try {
-            when (request.type) {
-                ChannelOuterClass.Channel.Type.UNRECOGNIZED, null -> error("Unknown channel type")
-
-                ChannelOuterClass.Channel.Type.SIMPLE -> Queue.Simple(
-                    id = request.id,
-                    name = request.name ?: request.id,
-                )
-
-                ChannelOuterClass.Channel.Type.MULTIPLE -> Queue.Multiple(
-                    id = request.id,
-                    name = request.name ?: request.id,
-                )
-            }.let { channel ->
-                when (val result = channelRepository.add(channel)) {
+            channelRepository.add(request.id, request.name, request.type.asDomain).let { result ->
+                when (result) {
                     is ChannelRepository.Result.Add.Error -> addResponse {
                         this.result = ResultOuterClass.Result.ERROR
-                        message = result.message
+                        message = result.e.message ?: "Something went wrong..."
                     }
 
                     is ChannelRepository.Result.Add.AlreadyFound -> addResponse {
                         this.result = ResultOuterClass.Result.ERROR
                         message = "Channel ${request.id} already exists"
-                        this.channel = result.queue.asRemote
                     }
 
                     is ChannelRepository.Result.Add.Success -> addResponse {
                         this.result = ResultOuterClass.Result.SUCCESS
-                        this.channel = result.queue.asRemote
+                        this.channel = result.channel.asRemote
                     }
                 }
             }
@@ -110,12 +95,12 @@ class ChannelServiceGRPC(
                 when (result) {
                     is ChannelRepository.Result.GetAll.Success -> listResponse {
                         this.result = ResultOuterClass.Result.SUCCESS
-                        result.queues.forEach { channel -> channels.add(channel.asRemote) }
+                        result.channels.forEach { channel -> channels.add(channel.asRemote) }
                     }
 
                     is ChannelRepository.Result.GetAll.Error -> listResponse {
                         this.result = ResultOuterClass.Result.ERROR
-                        this.message = result.message
+                        this.message = result.e.message ?: "Something went wrong"
                     }
                 }
             }
@@ -139,13 +124,13 @@ class ChannelServiceGRPC(
 
                     is ChannelRepository.Result.Remove.Error -> removeByIdResponse {
                         this.result = ResultOuterClass.Result.ERROR
-                        message = result.message
+                        message = result.e.message ?: "Something went wrong..."
                     }
 
                     is ChannelRepository.Result.Remove.Success -> removeByIdResponse {
                         this.result = ResultOuterClass.Result.SUCCESS
                         id = request.id
-                        this.channel = result.queue.asRemote
+                        this.channel = result.channel.asRemote
                     }
                 }
             }
@@ -169,15 +154,15 @@ class ChannelServiceGRPC(
 
                     is ChannelRepository.Result.GetById.Error -> publishResponse {
                         this.result = ResultOuterClass.Result.ERROR
-                        message = result.message
+                        message = result.e.message ?: "Something went wrong..."
                     }
 
                     is ChannelRepository.Result.GetById.Success -> {
-                        result.queue.post(request.content.asDomain)
+                        result.channel.messageFlow.post(request.content.asDomain)
 
                         publishResponse {
                             this.result = ResultOuterClass.Result.SUCCESS
-                            channel = result.queue.asRemote
+                            channel = result.channel.asRemote
                         }
                     }
                 }
@@ -200,15 +185,15 @@ class ChannelServiceGRPC(
 
                 is ChannelRepository.Result.GetById.Error -> publishResponse {
                     this.result = ResultOuterClass.Result.ERROR
-                    message = result.message
+                    message = result.e.message ?: "Something went wrong..."
                 }
 
                 is ChannelRepository.Result.GetById.Success -> {
-                    request.contentList.map(TextMessage::asDomain).forEach { result.queue.post(it) }
+                    request.contentList.map(TextMessage::asDomain).forEach { result.channel.messageFlow.post(it) }
 
                     publishResponse {
                         this.result = ResultOuterClass.Result.SUCCESS
-                        channel = result.queue.asRemote
+                        channel = result.channel.asRemote
                     }
                 }
             }
@@ -230,24 +215,24 @@ class ChannelServiceGRPC(
 
                     is ChannelRepository.Result.GetById.Error -> subscribeResponse {
                         status = Subscription.SubscriptionStatus.FINISHED
-                        message = result.message
+                        message = result.e.message ?: "Something went wrong..."
                     }.also { send(it); close() }
 
-                    is ChannelRepository.Result.GetById.Success -> result.queue.messages
+                    is ChannelRepository.Result.GetById.Success -> result.channel.messageFlow.messages
                         .onStart {
                             subscribeResponse {
                                 status = Subscription.SubscriptionStatus.ACTIVE
-                                channel = result.queue.asRemote
+                                channel = result.channel.asRemote
                             }.also { send(it) }
                         }.onCompletion {
                             subscribeResponse {
                                 status = Subscription.SubscriptionStatus.FINISHED
-                                channel = result.queue.asRemote
+                                channel = result.channel.asRemote
                             }.also { send(it); close() }
                         }.collect { message ->
                             subscribeResponse {
                                 status = Subscription.SubscriptionStatus.UPDATE
-                                channel = result.queue.asRemote
+                                channel = result.channel.asRemote
                                 content = message.asRemote
                             }.also { send(it) }
                         }
@@ -266,7 +251,7 @@ class ChannelServiceGRPC(
 
                 is ChannelRepository.Result.GetById.Error -> peekResponse {
                     this.result = ResultOuterClass.Result.ERROR
-                    message = result.message
+                    message = result.e.message ?: "Something went wrong..."
                 }
 
                 is ChannelRepository.Result.GetById.Success -> {
@@ -274,10 +259,10 @@ class ChannelServiceGRPC(
 
                     try {
                         withTimeout(timeout.seconds) {
-                            result.queue.nextMessage().let { message ->
+                            result.channel.messageFlow.peek().let { message ->
                                 peekResponse {
                                     this.result = ResultOuterClass.Result.SUCCESS
-                                    channel = result.queue.asRemote
+                                    channel = result.channel.asRemote
                                     this.content = message.asRemote
                                 }
                             }
@@ -285,7 +270,7 @@ class ChannelServiceGRPC(
                     } catch (e: TimeoutCancellationException) {
                         peekResponse {
                             this.result = ResultOuterClass.Result.ERROR
-                            channel = result.queue.asRemote
+                            channel = result.channel.asRemote
                             this.message = "Peek last message timeout"
                         }
                     }

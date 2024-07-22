@@ -1,6 +1,7 @@
 package io.github.vinicreis.pubsub.server
 
 import io.github.vinicreis.pubsub.server.channel.infra.repository.ChannelRepositoryLocal
+import io.github.vinicreis.pubsub.server.channel.infra.repository.MessageFlowRepositoryLocal
 import io.github.vinicreis.pubsub.server.channel.infra.service.ChannelServiceGRPC
 import kotlinx.coroutines.Dispatchers
 
@@ -11,10 +12,11 @@ fun main(args: Array<String>) {
     }
 
     val port = args.firstOrNull()?.toIntOrNull() ?: run { onError(); return }
+    val messageFlowRepository = MessageFlowRepositoryLocal()
     val service = ChannelServiceGRPC(
         port = port,
         coroutineContext = Dispatchers.IO,
-        channelRepository = ChannelRepositoryLocal()
+        channelRepository = ChannelRepositoryLocal(messageFlowRepository)
     )
 
     service.start()

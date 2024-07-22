@@ -54,11 +54,31 @@ fun main() {
     val job3 = coroutineScope.launch {
         delay(2.seconds)
         SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
-            peek("channel-1").also {
-                println("Peeked message on 2: $it")
+            (subscribe("channel-1") as SubscriberServiceClient.Response.Subscribed).also { flow ->
+                flow.messages.collect {
+                    println("Received message on 2: $it")
+                }
             }
         }
     }
+
+//    val job2 = coroutineScope.launch {
+//        delay(2.seconds)
+//        SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
+//            peek("channel-1").also {
+//                println("Peeked message on 1: $it")
+//            }
+//        }
+//    }
+//
+//    val job3 = coroutineScope.launch {
+//        delay(2.seconds)
+//        SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
+//            peek("channel-1").also {
+//                println("Peeked message on 2: $it")
+//            }
+//        }
+//    }
 
     val job4 = coroutineScope.launch {
         delay(2.seconds)

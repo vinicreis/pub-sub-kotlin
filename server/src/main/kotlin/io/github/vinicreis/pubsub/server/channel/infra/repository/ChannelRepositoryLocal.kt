@@ -23,7 +23,6 @@ class ChannelRepositoryLocal(
                     id = id,
                     name = name,
                     type = type,
-                    messageFlow = it.messageFlow
                 ).let { channel ->
                     channels[id] = channel
 

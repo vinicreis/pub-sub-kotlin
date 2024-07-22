@@ -26,12 +26,14 @@ import io.github.vinicreis.domain.server.channel.service.ChannelServiceGrpcKt
 import io.github.vinicreis.pubsub.server.channel.domain.mapper.asDomain
 import io.github.vinicreis.pubsub.server.channel.domain.mapper.asRemote
 import io.github.vinicreis.pubsub.server.channel.domain.repository.ChannelRepository
+import io.github.vinicreis.pubsub.server.channel.domain.repository.MessageRepository
 import io.github.vinicreis.pubsub.server.channel.domain.service.ChannelService
 import io.grpc.Grpc
 import io.grpc.InsecureServerCredentials
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withTimeout
@@ -44,6 +46,7 @@ class ChannelServiceGRPC(
     coroutineContext: CoroutineContext,
     private val logger: Logger = Logger.getLogger(ChannelServiceGRPC::class.java.name),
     private val channelRepository: ChannelRepository,
+    private val messageRepository: MessageRepository,
 ) : ChannelService, ChannelServiceGrpcKt.ChannelServiceCoroutineImplBase(coroutineContext) {
     private val credentials = InsecureServerCredentials.create()
     private val server = Grpc.newServerBuilderForPort(port, credentials)
@@ -158,7 +161,7 @@ class ChannelServiceGRPC(
                     }
 
                     is ChannelRepository.Result.GetById.Success -> {
-                        result.channel.messageFlow.post(request.content.asDomain)
+                        messageRepository.add(result.channel, request.content.asDomain)
 
                         publishResponse {
                             this.result = ResultOuterClass.Result.SUCCESS
@@ -168,10 +171,13 @@ class ChannelServiceGRPC(
                 }
             }
         } catch (e: Throwable) {
-            e.printStackTrace()
             logger.severe("Failed to process publish single request: $e")
+            e.printStackTrace()
 
-            throw e
+            publishResponse {
+                result = ResultOuterClass.Result.ERROR
+                message = e.message ?: "Something went wrong..."
+            }
         }
     }
 
@@ -189,7 +195,7 @@ class ChannelServiceGRPC(
                 }
 
                 is ChannelRepository.Result.GetById.Success -> {
-                    request.contentList.map(TextMessage::asDomain).forEach { result.channel.messageFlow.post(it) }
+                    messageRepository.addAll(result.channel, request.contentList.map(TextMessage::asDomain))
 
                     publishResponse {
                         this.result = ResultOuterClass.Result.SUCCESS
@@ -218,23 +224,36 @@ class ChannelServiceGRPC(
                         message = result.e.message ?: "Something went wrong..."
                     }.also { send(it); close() }
 
-                    is ChannelRepository.Result.GetById.Success -> result.channel.messageFlow.messages
-                        .onStart {
-                            subscribeResponse {
-                                status = Subscription.SubscriptionStatus.ACTIVE
-                                channel = result.channel.asRemote
-                            }.also { send(it) }
-                        }.onCompletion {
-                            subscribeResponse {
+                    is ChannelRepository.Result.GetById.Success ->
+                        when (val pendingMessageResult = messageRepository.subscribe(result.channel)) {
+                            MessageRepository.Result.Subscribe.ChannelNotFound -> subscribeResponse {
                                 status = Subscription.SubscriptionStatus.FINISHED
-                                channel = result.channel.asRemote
+                                message = "Channel ${request.channelId} queue not found"
                             }.also { send(it); close() }
-                        }.collect { message ->
-                            subscribeResponse {
-                                status = Subscription.SubscriptionStatus.UPDATE
-                                channel = result.channel.asRemote
-                                content = message.asRemote
-                            }.also { send(it) }
+
+                            is MessageRepository.Result.Subscribe.Error -> subscribeResponse {
+                                status = Subscription.SubscriptionStatus.FINISHED
+                                message = pendingMessageResult.e.message ?: "Something went wrong..."
+                            }.also { send(it); close() }
+
+                            is MessageRepository.Result.Subscribe.Success ->
+                                pendingMessageResult.messages.onStart {
+                                    subscribeResponse {
+                                        status = Subscription.SubscriptionStatus.ACTIVE
+                                        channel = result.channel.asRemote
+                                    }.also { send(it) }
+                                }.onCompletion {
+                                    subscribeResponse {
+                                        status = Subscription.SubscriptionStatus.FINISHED
+                                        channel = result.channel.asRemote
+                                    }.also { send(it); close() }
+                                }.collect { pendingMessage ->
+                                    subscribeResponse {
+                                        status = Subscription.SubscriptionStatus.UPDATE
+                                        channel = result.channel.asRemote
+                                        content = pendingMessage.asRemote
+                                    }.also { send(it) }
+                                }
                         }
                 }
             }
@@ -254,27 +273,40 @@ class ChannelServiceGRPC(
                     message = result.e.message ?: "Something went wrong..."
                 }
 
-                is ChannelRepository.Result.GetById.Success -> {
-                    val timeout = request.timeoutSeconds.takeIf { it > 0 } ?: Long.MAX_VALUE
+                is ChannelRepository.Result.GetById.Success ->
+                    when (val pendingMessageResult = messageRepository.subscribe(result.channel)) {
+                        MessageRepository.Result.Subscribe.ChannelNotFound -> peekResponse {
+                            this.result = ResultOuterClass.Result.ERROR
+                            message = "Channel ${request.channelId} not found"
+                        }
 
-                    try {
-                        withTimeout(timeout.seconds) {
-                            result.channel.messageFlow.peek().let { message ->
+                        is MessageRepository.Result.Subscribe.Error -> peekResponse {
+                            this.result = ResultOuterClass.Result.ERROR
+                            message = pendingMessageResult.e.message ?: "Something went wrong..."
+                        }
+
+                        is MessageRepository.Result.Subscribe.Success -> {
+                            val timeout = request.timeoutSeconds.takeIf { it > 0 } ?: Long.MAX_VALUE
+
+                            try {
+                                withTimeout(timeout.seconds) {
+                                    pendingMessageResult.messages.first().let { pendingMessage ->
+                                        peekResponse {
+                                            this.result = ResultOuterClass.Result.SUCCESS
+                                            channel = result.channel.asRemote
+                                            this.content = pendingMessage.asRemote
+                                        }
+                                    }
+                                }
+                            } catch (e: TimeoutCancellationException) {
                                 peekResponse {
-                                    this.result = ResultOuterClass.Result.SUCCESS
+                                    this.result = ResultOuterClass.Result.ERROR
                                     channel = result.channel.asRemote
-                                    this.content = message.asRemote
+                                    this.message = "Peek last message timeout"
                                 }
                             }
                         }
-                    } catch (e: TimeoutCancellationException) {
-                        peekResponse {
-                            this.result = ResultOuterClass.Result.ERROR
-                            channel = result.channel.asRemote
-                            this.message = "Peek last message timeout"
-                        }
                     }
-                }
             }
         }
     }

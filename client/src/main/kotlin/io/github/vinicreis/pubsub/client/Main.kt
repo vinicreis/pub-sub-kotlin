@@ -28,7 +28,7 @@ fun main() {
 
     val job1 = coroutineScope.launch {
         SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
-            publish(Channel("channel-1", "Channel 1", Channel.Type.SIMPLE)).print()
+            publish(Channel("channel-1", "Channel 1", Channel.Type.MULTIPLE)).print()
             list()
             var i = 0
 

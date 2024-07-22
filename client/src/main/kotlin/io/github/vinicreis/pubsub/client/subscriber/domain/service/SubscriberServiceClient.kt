@@ -18,6 +18,6 @@ interface SubscriberServiceClient {
     suspend fun list(): Response
     suspend fun publish(channel: Channel): Response
     suspend fun post(channelId: String, vararg message: Message): Response
-    suspend fun subscribe(channelId: String, type: Channel.Type): Response
+    suspend fun subscribe(channelId: String): Response
     suspend fun unsubscribe(channelId: String): Response
 }

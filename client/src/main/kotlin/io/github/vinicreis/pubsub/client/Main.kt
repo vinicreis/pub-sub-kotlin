@@ -5,6 +5,7 @@ import io.github.vinicreis.pubsub.client.subscriber.domain.model.Message
 import io.github.vinicreis.pubsub.client.subscriber.domain.model.ServerInfo
 import io.github.vinicreis.pubsub.client.subscriber.domain.service.SubscriberServiceClient
 import io.github.vinicreis.pubsub.client.subscriber.infra.SubscriberServiceGRPC
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -19,37 +20,39 @@ private fun SubscriberServiceClient.Response.print() {
 private val String.asMessage get()  = Message(this)
 
 fun main() {
-    val coroutineScope = CoroutineScope(Dispatchers.IO)
+    val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        throwable.printStackTrace()
+    }
+
+    val coroutineScope = CoroutineScope(Dispatchers.IO + exceptionHandler)
 
     val job1 = coroutineScope.launch {
         SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
             publish(Channel("channel-1", "Channel 1", Channel.Type.SIMPLE)).print()
             list()
+            var i = 0
 
-            val postJob = coroutineScope.launch {
-                var i = 0
-
-                while(true) {
-                    delay(2.seconds)
-                    post("channel-1", "Message ${++i}".asMessage).print()
-                }
+            while(true) {
+                delay(1.seconds)
+                post("channel-1", "Message ${++i}".asMessage).print()
+                println("Posted message $i")
             }
-
-            postJob.join()
         }
     }
 
     val job2 = coroutineScope.launch {
-        delay(5.seconds)
+        delay(2.seconds)
         SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
-            peek("channel-1").also {
-                println("Peeked message on 1: $it")
+            (subscribe("channel-1") as SubscriberServiceClient.Response.Subscribed).also { flow ->
+                flow.messages.collect {
+                    println("Received message on 1: $it")
+                }
             }
         }
     }
 
     val job3 = coroutineScope.launch {
-        delay(5.seconds)
+        delay(2.seconds)
         SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
             peek("channel-1").also {
                 println("Peeked message on 2: $it")
@@ -58,10 +61,18 @@ fun main() {
     }
 
     val job4 = coroutineScope.launch {
-        delay(5.seconds)
+        delay(2.seconds)
         SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
             peek("channel-1").also {
                 println("Peeked message on 3: $it")
+            }
+        }
+
+        delay(5.seconds)
+
+        SubscriberServiceGRPC(ServerInfo("localhost", 10090), Dispatchers.IO).run {
+            peek("channel-1").also {
+                println("Peeked message on 3 after some time: $it")
             }
         }
     }

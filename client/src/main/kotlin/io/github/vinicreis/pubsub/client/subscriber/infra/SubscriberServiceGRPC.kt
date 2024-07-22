@@ -70,7 +70,7 @@ class SubscriberServiceGRPC(
         }.asDomain
     }
 
-    override suspend fun subscribe(channelId: String, type: Channel.Type): SubscriberServiceClient.Response {
+    override suspend fun subscribe(channelId: String): SubscriberServiceClient.Response {
         return server.subscribe(
             request = subscribeRequest {
                 this.channelId = channelId
@@ -88,6 +88,6 @@ class SubscriberServiceGRPC(
     }
 
     override suspend fun unsubscribe(channelId: String): SubscriberServiceClient.Response {
-        TODO("Not yet implemented")
+        return SubscriberServiceClient.Response.Success
     }
 }

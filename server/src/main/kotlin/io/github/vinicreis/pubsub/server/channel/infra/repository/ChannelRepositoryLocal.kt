@@ -17,7 +17,7 @@ class ChannelRepositoryLocal : ChannelRepository {
     override suspend fun removeById(id: String): ChannelRepository.Result.Remove =
         channels.remove(id)?.let { removedChannel ->
             when(removedChannel) {
-                is Queue.Simple -> TODO("Not implemented")
+                is Queue.Simple -> removedChannel.close()
                 is Queue.Multiple -> removedChannel.close()
             }
 

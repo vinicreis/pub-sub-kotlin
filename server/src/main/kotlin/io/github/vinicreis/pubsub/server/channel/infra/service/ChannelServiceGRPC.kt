@@ -34,7 +34,6 @@ import io.grpc.InsecureServerCredentials
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withTimeout
@@ -160,27 +159,34 @@ class ChannelServiceGRPC(
     }
 
     override suspend fun publishSingle(request: PublishSingleRequest): PublishResponse {
-        return channelRepository.getById(request.channelId).let { result ->
-            when (result) {
-                ChannelRepository.Result.GetById.NotFound -> publishResponse {
-                    this.result = ResultOuterClass.Result.ERROR
-                    message = "Channel ${request.channelId} not found"
-                }
+        return try {
+            channelRepository.getById(request.channelId).let { result ->
+                when (result) {
+                    ChannelRepository.Result.GetById.NotFound -> publishResponse {
+                        this.result = ResultOuterClass.Result.ERROR
+                        message = "Channel ${request.channelId} not found"
+                    }
 
-                is ChannelRepository.Result.GetById.Error -> publishResponse {
-                    this.result = ResultOuterClass.Result.ERROR
-                    message = result.message
-                }
+                    is ChannelRepository.Result.GetById.Error -> publishResponse {
+                        this.result = ResultOuterClass.Result.ERROR
+                        message = result.message
+                    }
 
-                is ChannelRepository.Result.GetById.Success -> {
-                    result.queue.post(request.content.asDomain)
+                    is ChannelRepository.Result.GetById.Success -> {
+                        result.queue.post(request.content.asDomain)
 
-                    publishResponse {
-                        this.result = ResultOuterClass.Result.SUCCESS
-                        channel = result.queue.asRemote
+                        publishResponse {
+                            this.result = ResultOuterClass.Result.SUCCESS
+                            channel = result.queue.asRemote
+                        }
                     }
                 }
             }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            logger.severe("Failed to process publish single request: $e")
+
+            throw e
         }
     }
 
@@ -227,50 +233,24 @@ class ChannelServiceGRPC(
                         message = result.message
                     }.also { send(it); close() }
 
-                    is ChannelRepository.Result.GetById.Success -> when (result.queue) {
-                        is Queue.Simple -> {
-                            result.queue.subscribe().let { (_, flow) ->
-                                flow.onStart {
-                                    subscribeResponse {
-                                        status = Subscription.SubscriptionStatus.ACTIVE
-                                        channel = result.queue.asRemote
-                                    }.also { send(it) }
-                                }.onCompletion {
-                                    subscribeResponse {
-                                        status = Subscription.SubscriptionStatus.FINISHED
-                                        channel = result.queue.asRemote
-                                    }.also { send(it); close() }
-                                }.collect { message ->
-                                    subscribeResponse {
-                                        status = Subscription.SubscriptionStatus.UPDATE
-                                        channel = result.queue.asRemote
-                                        content = message.asRemote
-                                    }.also { send(it) }
-                                }
-                            }
+                    is ChannelRepository.Result.GetById.Success -> result.queue.messages
+                        .onStart {
+                            subscribeResponse {
+                                status = Subscription.SubscriptionStatus.ACTIVE
+                                channel = result.queue.asRemote
+                            }.also { send(it) }
+                        }.onCompletion {
+                            subscribeResponse {
+                                status = Subscription.SubscriptionStatus.FINISHED
+                                channel = result.queue.asRemote
+                            }.also { send(it); close() }
+                        }.collect { message ->
+                            subscribeResponse {
+                                status = Subscription.SubscriptionStatus.UPDATE
+                                channel = result.queue.asRemote
+                                content = message.asRemote
+                            }.also { send(it) }
                         }
-
-                        is Queue.Multiple -> {
-                            result.queue.messages
-                                .onStart {
-                                    subscribeResponse {
-                                        status = Subscription.SubscriptionStatus.ACTIVE
-                                        channel = result.queue.asRemote
-                                    }.also { send(it) }
-                                }.onCompletion {
-                                    subscribeResponse {
-                                        status = Subscription.SubscriptionStatus.FINISHED
-                                        channel = result.queue.asRemote
-                                    }.also { send(it); close() }
-                                }.collect { message ->
-                                    subscribeResponse {
-                                        status = Subscription.SubscriptionStatus.UPDATE
-                                        channel = result.queue.asRemote
-                                        content = message.asRemote
-                                    }.also { send(it) }
-                                }
-                        }
-                    }
                 }
             }
         }
@@ -289,52 +269,24 @@ class ChannelServiceGRPC(
                     message = result.message
                 }
 
-                is ChannelRepository.Result.GetById.Success -> when (result.queue) {
-                    is Queue.Simple -> {
-                        val timeout = request.timeoutSeconds.takeIf { it > 0 } ?: Long.MAX_VALUE
+                is ChannelRepository.Result.GetById.Success -> {
+                    val timeout = request.timeoutSeconds.takeIf { it > 0 } ?: Long.MAX_VALUE
 
-                        try {
-                            withTimeout(timeout.seconds) {
-                                result.queue.subscribe().let { (id, flow) ->
-                                    flow.first().let { message ->
-                                        result.queue.unsubscribe(id)
-
-                                        peekResponse {
-                                            this.result = ResultOuterClass.Result.SUCCESS
-                                            channel = result.queue.asRemote
-                                            this.content = message.asRemote
-                                        }
-                                    }
+                    try {
+                        withTimeout(timeout.seconds) {
+                            result.queue.nextMessage().let { message ->
+                                peekResponse {
+                                    this.result = ResultOuterClass.Result.SUCCESS
+                                    channel = result.queue.asRemote
+                                    this.content = message.asRemote
                                 }
-                            }
-                        } catch (e: TimeoutCancellationException) {
-                            peekResponse {
-                                this.result = ResultOuterClass.Result.ERROR
-                                channel = result.queue.asRemote
-                                this.message = "Peek last message timeout"
                             }
                         }
-                    }
-
-                    is Queue.Multiple -> {
-                        val timeout = request.timeoutSeconds.takeIf { it > 0 } ?: Long.MAX_VALUE
-
-                        try {
-                            withTimeout(timeout.seconds) {
-                                result.queue.nextMessage.first().let { message ->
-                                    peekResponse {
-                                        this.result = ResultOuterClass.Result.SUCCESS
-                                        channel = result.queue.asRemote
-                                        this.content = message.asRemote
-                                    }
-                                }
-                            }
-                        } catch (e: TimeoutCancellationException) {
-                            peekResponse {
-                                this.result = ResultOuterClass.Result.ERROR
-                                channel = result.queue.asRemote
-                                this.message = "Peek last message timeout"
-                            }
+                    } catch (e: TimeoutCancellationException) {
+                        peekResponse {
+                            this.result = ResultOuterClass.Result.ERROR
+                            channel = result.queue.asRemote
+                            this.message = "Peek last message timeout"
                         }
                     }
                 }

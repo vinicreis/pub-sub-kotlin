@@ -2,43 +2,51 @@ package io.github.vinicreis.pubsub.server.channel.domain.model
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.random.Random
 
 sealed class Queue(
     val id: String,
     val name: String = id,
 ) {
+    abstract val messages: Flow<Message>
+    abstract suspend fun nextMessage(): Message
+
     class Simple(
         id: String,
         name: String = id,
     ) : Queue(id, name) {
-        private val subscribers = mutableMapOf<String, Channel<Message>>()
+        private val subscribers = ConcurrentHashMap<String, Channel<Message>>()
+        private val queue = ConcurrentLinkedQueue<Message>()
+        private val mutex = Mutex()
 
-        fun subscribe(): Pair<String, Flow<Message>> {
-            val subscriptionId = UUID.randomUUID().toString()
-
-            return subscribers
-                .getOrPut(subscriptionId) { Channel(Channel.UNLIMITED) }
-                .receiveAsFlow().let { flow -> Pair(subscriptionId, flow) }
-        }
-
-        fun unsubscribe(subscriberId: String) {
-            subscribers.remove(subscriberId)?.close()
-        }
-
-        private fun <K, V> Map<K, V>.random(): Map.Entry<K, V> = entries.elementAt(Random.nextInt(size))
-
-        override suspend fun post(vararg message: Message) {
-            message.forEach {
-                subscribers.random().also { (id, channel) ->
-                    println("Posting message to subscription $id")
-
-                    channel.send(it)
-                }
+        override val messages: Flow<Message>
+            get() = UUID.randomUUID().toString().let { uuid ->
+                Channel<Message>(Channel.UNLIMITED).also { channel ->
+                    subscribers[uuid] = channel
+                }.receiveAsFlow()
+                    .onStart { queue.poll()?.also { emit(it) } }
+                    .onEach { message -> println("Message $message emitted to $uuid") }
+                    .onCompletion { subscribers.remove(uuid) }
             }
+
+        override suspend fun nextMessage(): Message = messages.first()
+
+        private fun <K, V> Map<K, V>.choose(): V? =
+            takeIf { isNotEmpty() }?.values?.elementAt(Random.nextInt(size))
+
+        override suspend fun post(vararg message: Message) = mutex.withLock {
+            message.forEach { message -> subscribers.choose()?.send(message) ?: queue.add(message) }
         }
 
         override fun close() {
@@ -52,8 +60,9 @@ sealed class Queue(
         name: String = id,
     ) : Queue(id, name) {
         private val mutableMessages = Channel<Message>(Channel.UNLIMITED)
-        val messages: Flow<Message> = mutableMessages.receiveAsFlow()
-        val nextMessage: Flow<Message> = mutableMessages.consumeAsFlow()
+        override val messages: Flow<Message> = mutableMessages.receiveAsFlow()
+
+        override suspend fun nextMessage(): Message = messages.last()
 
         override suspend fun post(vararg message: Message) {
             message.forEach { mutableMessages.send(it) }

@@ -133,9 +133,7 @@ class ChannelServiceGRPC(
                     }
 
                     is ChannelRepository.Result.Remove.Success -> {
-                        val messageCloseResult = messageRepository.remove(channel = result.channel)
-
-                        when(messageCloseResult) {
+                        when(val messageCloseResult = messageRepository.remove(channel = result.channel)) {
                             is MessageRepository.Result.Remove.Error -> removeByIdResponse {
                                 this.result = ResultOuterClass.Result.ERROR
                                 message = messageCloseResult.e.message ?: "Something went wrong..."

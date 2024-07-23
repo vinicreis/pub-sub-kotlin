@@ -14,11 +14,7 @@ class ChannelRepositoryLocal(
     override suspend fun add(id: String, name: String, type: Channel.Type): ChannelRepository.Result.Add {
         if (exists(id)) return ChannelRepository.Result.Add.AlreadyFound
 
-        return Channel(
-            id = id,
-            name = name,
-            type = type,
-        ).let { channel ->
+        return Channel(id, name, type).let { channel ->
             channels[id] = channel
 
             ChannelRepository.Result.Add.Success(channel)

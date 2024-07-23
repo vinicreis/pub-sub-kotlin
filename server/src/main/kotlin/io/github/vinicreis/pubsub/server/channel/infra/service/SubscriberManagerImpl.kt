@@ -35,7 +35,7 @@ class SubscriberManagerImpl(
 
         messageRepository.subscribe(channel).let {
             when (it) {
-                MessageRepository.Result.Subscribe.ChannelNotFound ->
+                MessageRepository.Result.Subscribe.QueueNotFound ->
                     close(IllegalStateException("Channel not found"))
 
                 is MessageRepository.Result.Subscribe.Error ->
@@ -67,7 +67,7 @@ class SubscriberManagerImpl(
                             it.close(CancellationException("Failed to get channel messages queue"))
                         }
 
-                    MessageRepository.Result.Subscribe.ChannelNotFound ->
+                    MessageRepository.Result.Subscribe.QueueNotFound ->
                         subscribers[this@collectMessagesIfNotStarted]?.values?.forEach {
                             it.close(CancellationException("Channel not found on messages queue"))
                         }

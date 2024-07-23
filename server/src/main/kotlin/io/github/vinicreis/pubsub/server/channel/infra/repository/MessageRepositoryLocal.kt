@@ -36,17 +36,17 @@ class MessageRepositoryLocal : MessageRepository {
         return try {
             queues[channel.id]?.let { queue ->
                 queue.receive().let { message -> MessageRepository.Result.Poll.Success(message) }
-            } ?: MessageRepository.Result.Poll.ChannelNotFound
+            } ?: MessageRepository.Result.Poll.QueueNotFound
         } catch (e: Exception) {
             MessageRepository.Result.Poll.Error(e)
         }
     }
 
-    override suspend fun subscribe(channel: Channel): MessageRepository.Result.Subscribe {
+    override fun subscribe(channel: Channel): MessageRepository.Result.Subscribe {
         return try {
             queues[channel.id]?.let { queue ->
                 MessageRepository.Result.Subscribe.Success(queue)
-            } ?: MessageRepository.Result.Subscribe.ChannelNotFound
+            } ?: MessageRepository.Result.Subscribe.QueueNotFound
         } catch (e: Exception) {
             MessageRepository.Result.Subscribe.Error(e)
         }

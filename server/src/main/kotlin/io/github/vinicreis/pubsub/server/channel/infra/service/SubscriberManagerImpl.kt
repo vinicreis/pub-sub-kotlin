@@ -13,6 +13,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
@@ -30,16 +31,18 @@ class SubscriberManagerImpl(
     private val coroutineScope = CoroutineScope(SupervisorJob() + coroutineContext)
     private val jobs = ConcurrentHashMap<Channel, Job>()
 
+    override fun subscribersCount(channel: Channel): Int = subscribers[channel]?.size ?: 0
+
     override fun subscribe(channel: Channel): Flow<Message> = channelFlow {
         val subscriberId: String = UUID.randomUUID().toString()
 
         messageRepository.subscribe(channel).let {
             when (it) {
                 MessageRepository.Result.Subscribe.QueueNotFound ->
-                    close(IllegalStateException("Channel not found"))
+                    close(IllegalStateException("Channel ${channel.id} not found"))
 
                 is MessageRepository.Result.Subscribe.Error ->
-                    close(RuntimeException("Failed to get channel messages queue"))
+                    close(RuntimeException("Failed to get channel ${channel.id} messages queue", it.e))
 
                 is MessageRepository.Result.Subscribe.Success -> {
                     subscribers.getOrPut(channel) { ConcurrentHashMap() }[subscriberId] = this
@@ -73,13 +76,21 @@ class SubscriberManagerImpl(
                         }
 
                     is MessageRepository.Result.Subscribe.Success -> result.messages.receiveAsFlow()
-                        .onCompletion { logger.info("Channel $id message queue finished!") }
-                        .collect { message ->
+                        .onEach { logger.fine("Received message: ${it.content}") }
+                        .onCompletion { cause ->
+                            cause?.let {
+                                logger.severe("Channel $id message queue failed! Closing subscribers...")
+                            } ?: logger.info("Channel $id message queue finished! Closing subscribers...")
+
+                            subscribers[this@collectMessagesIfNotStarted]?.forEach { (_, producerScope) ->
+                                producerScope.close(CancellationException("Message queue finished!"))
+                            }
+                        }.collect { message ->
                             when (type) {
-                                Channel.Type.SIMPLE -> subscribers[this@collectMessagesIfNotStarted]?.values?.choose()?.send(message)
-                                Channel.Type.MULTIPLE -> subscribers[this@collectMessagesIfNotStarted]?.values?.forEach { producerScope ->
-                                    producerScope.send(message)
-                                }
+                                Channel.Type.SIMPLE -> subscribers[this@collectMessagesIfNotStarted]
+                                    ?.values?.choose()?.send(message)
+                                Channel.Type.MULTIPLE -> subscribers[this@collectMessagesIfNotStarted]
+                                    ?.values?.forEach { producerScope -> producerScope.send(message) }
                             }
                         }
                 }

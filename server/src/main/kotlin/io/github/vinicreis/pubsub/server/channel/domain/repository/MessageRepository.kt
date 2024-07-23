@@ -22,10 +22,17 @@ interface MessageRepository {
             data class Success(val messages: KotlinChannel<Message>) : Subscribe
             data object QueueNotFound : Subscribe
         }
+
+        sealed interface Remove : Result {
+            data class Error(val e: Exception) : Remove
+            data class Success(val messages: KotlinChannel<Message>) : Remove
+            data object QueueNotFound : Remove
+        }
     }
 
     suspend fun add(channel: Channel, message: Message): Result.Add
     suspend fun addAll(channel: Channel, messages: List<Message>): Result.Add
     suspend fun poll(channel: Channel): Result.Poll
     fun subscribe(channel: Channel): Result.Subscribe
+    fun remove(channel: Channel): Result.Remove
 }

@@ -132,10 +132,26 @@ class ChannelServiceGRPC(
                         message = result.e.message ?: "Something went wrong..."
                     }
 
-                    is ChannelRepository.Result.Remove.Success -> removeByIdResponse {
-                        this.result = ResultOuterClass.Result.SUCCESS
-                        id = request.id
-                        this.channel = result.channel.asRemote
+                    is ChannelRepository.Result.Remove.Success -> {
+                        val messageCloseResult = messageRepository.remove(channel = result.channel)
+
+                        when(messageCloseResult) {
+                            is MessageRepository.Result.Remove.Error -> removeByIdResponse {
+                                this.result = ResultOuterClass.Result.ERROR
+                                message = messageCloseResult.e.message ?: "Something went wrong..."
+                            }
+
+                            MessageRepository.Result.Remove.QueueNotFound -> removeByIdResponse {
+                                this.result = ResultOuterClass.Result.ERROR
+                                message = "Channel ${request.id} message queue not found"
+                            }
+
+                            is MessageRepository.Result.Remove.Success -> removeByIdResponse {
+                                this.result = ResultOuterClass.Result.SUCCESS
+                                id = request.id
+                                this.channel = result.channel.asRemote
+                            }
+                        }
                     }
                 }
             }
@@ -184,26 +200,36 @@ class ChannelServiceGRPC(
     }
 
     override suspend fun publishMultiple(request: PublishMultipleRequest): PublishResponse {
-        return channelRepository.getById(request.channelId).let { result ->
-            when (result) {
-                ChannelRepository.Result.GetById.NotFound -> publishResponse {
-                    this.result = ResultOuterClass.Result.ERROR
-                    message = "Channel ${request.channelId} not found"
-                }
+        return try {
+            channelRepository.getById(request.channelId).let { result ->
+                when (result) {
+                    ChannelRepository.Result.GetById.NotFound -> publishResponse {
+                        this.result = ResultOuterClass.Result.ERROR
+                        message = "Channel ${request.channelId} not found"
+                    }
 
-                is ChannelRepository.Result.GetById.Error -> publishResponse {
-                    this.result = ResultOuterClass.Result.ERROR
-                    message = result.e.message ?: "Something went wrong..."
-                }
+                    is ChannelRepository.Result.GetById.Error -> publishResponse {
+                        this.result = ResultOuterClass.Result.ERROR
+                        message = result.e.message ?: "Something went wrong..."
+                    }
 
-                is ChannelRepository.Result.GetById.Success -> {
-                    messageRepository.addAll(result.channel, request.contentList.map(TextMessage::asDomain))
+                    is ChannelRepository.Result.GetById.Success -> {
+                        messageRepository.addAll(result.channel, request.contentList.map(TextMessage::asDomain))
 
-                    publishResponse {
-                        this.result = ResultOuterClass.Result.SUCCESS
-                        channel = result.channel.asRemote
+                        publishResponse {
+                            this.result = ResultOuterClass.Result.SUCCESS
+                            channel = result.channel.asRemote
+                        }
                     }
                 }
+            }
+        } catch (e: Throwable) {
+            logger.severe("Failed to process publish single request: $e")
+            e.printStackTrace()
+
+            publishResponse {
+                result = ResultOuterClass.Result.ERROR
+                message = e.message ?: "Something went wrong..."
             }
         }
     }
@@ -251,39 +277,49 @@ class ChannelServiceGRPC(
     }
 
     override suspend fun peek(request: PeekRequest): PeekResponse {
-        return channelRepository.getById(request.channelId).let { result ->
-            when (result) {
-                ChannelRepository.Result.GetById.NotFound -> peekResponse {
-                    this.result = ResultOuterClass.Result.ERROR
-                    message = "Channel ${request.channelId} not found"
-                }
+        return try {
+            channelRepository.getById(request.channelId).let { result ->
+                when (result) {
+                    ChannelRepository.Result.GetById.NotFound -> peekResponse {
+                        this.result = ResultOuterClass.Result.ERROR
+                        message = "Channel ${request.channelId} not found"
+                    }
 
-                is ChannelRepository.Result.GetById.Error -> peekResponse {
-                    this.result = ResultOuterClass.Result.ERROR
-                    message = result.e.message ?: "Something went wrong..."
-                }
+                    is ChannelRepository.Result.GetById.Error -> peekResponse {
+                        this.result = ResultOuterClass.Result.ERROR
+                        message = result.e.message ?: "Something went wrong..."
+                    }
 
-                is ChannelRepository.Result.GetById.Success -> {
-                    val timeout = request.timeoutSeconds.takeIf { it > 0 } ?: Long.MAX_VALUE
+                    is ChannelRepository.Result.GetById.Success -> {
+                        val timeout = request.timeoutSeconds.takeIf { it > 0 } ?: Long.MAX_VALUE
 
-                    try {
-                        withTimeout(timeout.seconds) {
-                            subscriberManager.subscribe(result.channel).first().let { pendingMessage ->
-                                peekResponse {
-                                    this.result = ResultOuterClass.Result.SUCCESS
-                                    channel = result.channel.asRemote
-                                    this.content = pendingMessage.asRemote
+                        try {
+                            withTimeout(timeout.seconds) {
+                                subscriberManager.subscribe(result.channel).first().let { pendingMessage ->
+                                    peekResponse {
+                                        this.result = ResultOuterClass.Result.SUCCESS
+                                        channel = result.channel.asRemote
+                                        this.content = pendingMessage.asRemote
+                                    }
                                 }
                             }
-                        }
-                    } catch (e: TimeoutCancellationException) {
-                        peekResponse {
-                            this.result = ResultOuterClass.Result.ERROR
-                            channel = result.channel.asRemote
-                            this.message = "Peek last message timeout"
+                        } catch (e: TimeoutCancellationException) {
+                            peekResponse {
+                                this.result = ResultOuterClass.Result.ERROR
+                                channel = result.channel.asRemote
+                                this.message = "Peek last message timeout"
+                            }
                         }
                     }
                 }
+            }
+        } catch (e: Throwable) {
+            logger.severe("Failed to process publish single request: $e")
+            e.printStackTrace()
+
+            peekResponse {
+                result = ResultOuterClass.Result.ERROR
+                message = "Something went wrong..."
             }
         }
     }

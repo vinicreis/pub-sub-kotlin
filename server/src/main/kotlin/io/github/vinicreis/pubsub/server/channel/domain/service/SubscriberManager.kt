@@ -5,5 +5,6 @@ import io.github.vinicreis.pubsub.server.channel.domain.model.Message
 import kotlinx.coroutines.flow.Flow
 
 interface SubscriberManager {
+    fun subscribersCount(channel: Channel): Int
     fun subscribe(channel: Channel): Flow<Message>
 }

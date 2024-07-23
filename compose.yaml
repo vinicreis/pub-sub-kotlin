@@ -1,0 +1,9 @@
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: pubsub
+      POSTGRES_USER: student
+      POSTGRES_PASSWORD: Ufabc@123
+    ports:
+      - "5432:5432"

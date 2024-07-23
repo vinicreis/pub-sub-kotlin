@@ -7,6 +7,8 @@ protobuf-plugin = "0.9.4"
 protobuf-compiler = "4.27.2"
 grpc-core = "1.65.1"
 grpc-kotlin = "1.4.1"
+exposed = "0.52.0"
+postgres-driver = "42.7.3"
 
 junit = "5.10.0"
 mockk = "1.13.12"
@@ -21,6 +23,10 @@ google-protobuf-kotlin = { group = "com.google.protobuf", name = "protobuf-kotli
 grpc-okhttp = { group = "io.grpc", name = "grpc-okhttp", version.ref = "grpc-core" }
 grpc-protobuf = { group = "io.grpc", name = "grpc-protobuf", version.ref = "grpc-core" }
 grpc-kotlin-stub = { group = "io.grpc", name = "grpc-kotlin-stub", version.ref = "grpc-kotlin" }
+exposed-core = { group = "org.jetbrains.exposed", name = "exposed-core", version.ref = "exposed" }
+exposed-jdbc = { group = "org.jetbrains.exposed", name = "exposed-jdbc", version.ref = "exposed" }
+exposed-kotlin-datetime = { group = "org.jetbrains.exposed", name = "exposed-kotlin-datetime", version.ref = "exposed" }
+postgres-driver = { group = "org.postgresql", name = "postgresql", version.ref = "postgres-driver" }
 
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }

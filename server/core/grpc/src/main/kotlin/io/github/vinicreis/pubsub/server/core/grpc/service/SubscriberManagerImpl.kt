@@ -83,7 +83,9 @@ class SubscriberManagerImpl(
                             } ?: logger.info("Channel $id message queue finished! Closing subscribers...")
 
                             subscribers[this@collectMessagesIfNotStarted]?.forEach { (_, producerScope) ->
-                                producerScope.close(CancellationException("Message queue finished!"))
+                                cause?.let {
+                                    producerScope.close(CancellationException("Message queue finished by error!", it))
+                                } ?: producerScope.close()
                             }
                         }.collect { message ->
                             when (type) {

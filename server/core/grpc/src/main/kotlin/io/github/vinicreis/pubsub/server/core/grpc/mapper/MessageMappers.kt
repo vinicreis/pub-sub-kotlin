@@ -1,4 +1,4 @@
-package io.github.vinicreis.pubsub.server.core.grpc.model.mapper
+package io.github.vinicreis.pubsub.server.core.grpc.mapper
 
 import io.github.vinicreis.domain.server.core.model.data.textMessage
 import io.github.vinicreis.pubsub.server.core.model.data.Message

@@ -1,6 +1,7 @@
 package io.github.vinicreis.pubsub.buildlogic.convention.java.database
 
 import io.github.vinicreis.pubsub.buildlogic.convention.java.database.config.applyDatabaseDependencies
+import io.github.vinicreis.pubsub.buildlogic.convention.java.database.config.applyTestDatabaseDependencies
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -12,6 +13,7 @@ class JavaLibraryDatabasePlugin : Plugin<Project> {
         with(target) {
             ensureIsJavaLibrary()
             applyDatabaseDependencies()
+            applyTestDatabaseDependencies()
         }
     }
 

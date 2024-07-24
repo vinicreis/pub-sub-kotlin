@@ -2,6 +2,7 @@ package io.github.vinicreis.pubsub.buildlogic.convention.java.database.config
 
 import io.github.vinicreis.pubsub.buildlogic.convention.extension.implementation
 import io.github.vinicreis.pubsub.buildlogic.convention.extension.libs
+import io.github.vinicreis.pubsub.buildlogic.convention.extension.testImplementation
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaApplication
 import org.gradle.kotlin.dsl.dependencies
@@ -32,6 +33,7 @@ private object Libraries {
     const val EXPOSED_JDBC = "exposed.jdbc"
     const val EXPOSED_KOTLIN_DATETIME = "exposed.kotlin.datetime"
     const val POSTGRES_DRIVER = "postgres.driver"
+    const val H2_DATABASE = "h2.database"
 }
 
 internal fun Project.applyDatabaseDependencies() {
@@ -40,5 +42,11 @@ internal fun Project.applyDatabaseDependencies() {
         implementation(libs.findLibrary(Libraries.EXPOSED_JDBC).get())
         implementation(libs.findLibrary(Libraries.EXPOSED_KOTLIN_DATETIME).get())
         implementation(libs.findLibrary(Libraries.POSTGRES_DRIVER).get())
+    }
+}
+
+internal fun Project.applyTestDatabaseDependencies() {
+    dependencies {
+        testImplementation(libs.findLibrary(Libraries.H2_DATABASE).get())
     }
 }

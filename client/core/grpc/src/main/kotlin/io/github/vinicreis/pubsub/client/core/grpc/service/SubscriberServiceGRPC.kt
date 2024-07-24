@@ -1,5 +1,6 @@
 package io.github.vinicreis.pubsub.client.core.grpc.service
 
+import io.github.vinicreis.domain.server.core.model.data.channel
 import io.github.vinicreis.domain.server.core.model.request.ListRequest
 import io.github.vinicreis.domain.server.core.model.request.addRequest
 import io.github.vinicreis.domain.server.core.model.request.peekRequest
@@ -42,9 +43,11 @@ class SubscriberServiceGRPC(
     override suspend fun publish(channel: Channel) = withContext(coroutineContext) {
         server.add(
             request = addRequest {
-                this.id = channel.id
-                this.name = channel.name
-                this.type = channel.type.asRemote
+                this.channel = channel {
+                    id = channel.id
+                    name = channel.name
+                    type = channel.type.asRemote
+                }
             }
         ).asDomain
     }

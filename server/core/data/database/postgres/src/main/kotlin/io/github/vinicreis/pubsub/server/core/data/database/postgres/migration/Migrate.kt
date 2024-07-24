@@ -4,6 +4,7 @@ import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.ent
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Transaction
 
-fun Transaction.createMissingTablesAndObjects() {
+context(Transaction)
+fun createMissingTablesAndObjects() {
     SchemaUtils.createMissingTablesAndColumns(Channels)
 }

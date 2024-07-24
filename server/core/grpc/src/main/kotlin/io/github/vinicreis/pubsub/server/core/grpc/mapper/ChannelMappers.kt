@@ -1,4 +1,4 @@
-package io.github.vinicreis.pubsub.server.core.grpc.model.mapper
+package io.github.vinicreis.pubsub.server.core.grpc.mapper
 
 import io.github.vinicreis.domain.server.core.model.data.channel
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
@@ -11,6 +11,14 @@ internal val RemoteChannel.Type.asDomain: Channel.Type
         RemoteChannel.Type.UNRECOGNIZED -> error("Unknown channel type received: $this")
     }
 
+internal val RemoteChannel.asDomain: Channel
+    get() = Channel(
+        id = this.id,
+        type = this.type.asDomain,
+        name = this.name,
+        pendingMessagesCount = this.pendingMessagesCount
+    )
+
 internal val Channel.Type.asRemote: RemoteChannel.Type
     get() = when(this) {
         Channel.Type.SIMPLE -> RemoteChannel.Type.SIMPLE
@@ -22,4 +30,5 @@ internal val Channel.asRemote: RemoteChannel
         id = this@asRemote.id
         type = this@asRemote.type.asRemote
         name = this@asRemote.name
+        pendingMessagesCount = this@asRemote.pendingMessagesCount
     }

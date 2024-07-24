@@ -23,8 +23,8 @@ import io.github.vinicreis.domain.server.core.model.response.publishResponse
 import io.github.vinicreis.domain.server.core.model.response.removeByIdResponse
 import io.github.vinicreis.domain.server.core.model.response.subscribeResponse
 import io.github.vinicreis.domain.server.core.service.ChannelServiceGrpcKt
-import io.github.vinicreis.pubsub.server.core.grpc.model.mapper.asDomain
-import io.github.vinicreis.pubsub.server.core.grpc.model.mapper.asRemote
+import io.github.vinicreis.pubsub.server.core.grpc.mapper.asDomain
+import io.github.vinicreis.pubsub.server.core.grpc.mapper.asRemote
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
 import io.github.vinicreis.pubsub.server.core.service.ChannelService
 import io.github.vinicreis.pubsub.server.core.service.SubscriberManagerService
@@ -68,7 +68,7 @@ class ChannelServiceGrpc(
 
     override suspend fun add(request: AddRequest): AddResponse {
         return try {
-            channelRepository.add(Channel(request.id, request.name, request.type.asDomain)).let { result ->
+            channelRepository.add(request.channel.asDomain).let { result ->
                 when (result) {
                     is ChannelRepository.Result.Add.Error -> addResponse {
                         this.result = ResultOuterClass.Result.ERROR
@@ -77,7 +77,7 @@ class ChannelServiceGrpc(
 
                     is ChannelRepository.Result.Add.AlreadyFound -> addResponse {
                         this.result = ResultOuterClass.Result.ERROR
-                        message = "Channel ${request.id} already exists"
+                        message = "Channel ${request.channel.asDomain} already exists"
                     }
 
                     is ChannelRepository.Result.Add.Success -> addResponse {
@@ -134,7 +134,7 @@ class ChannelServiceGrpc(
                     }
 
                     is ChannelRepository.Result.Remove.Success -> {
-                        when(val messageCloseResult = messageRepository.remove(channel = result.channel)) {
+                        when (val messageCloseResult = messageRepository.remove(channel = result.channel)) {
                             is MessageRepository.Result.Remove.Error -> removeByIdResponse {
                                 this.result = ResultOuterClass.Result.ERROR
                                 message = messageCloseResult.e.message ?: "Something went wrong..."
@@ -163,6 +163,18 @@ class ChannelServiceGrpc(
         }
     }
 
+    private fun MessageRepository.Result.Add.toPublishResponse(channel: Channel) = when (this) {
+        is MessageRepository.Result.Add.Error -> publishResponse {
+            this.result = ResultOuterClass.Result.ERROR
+            message = e.message ?: "Something went wrong..."
+        }
+
+        MessageRepository.Result.Add.Success -> publishResponse {
+            this.result = ResultOuterClass.Result.SUCCESS
+            this.channel = channel.asRemote
+        }
+    }
+
     override suspend fun publishSingle(request: PublishSingleRequest): PublishResponse {
         return try {
             channelRepository.getById(request.channelId).let { result ->
@@ -177,14 +189,11 @@ class ChannelServiceGrpc(
                         message = result.e.message ?: "Something went wrong..."
                     }
 
-                    is ChannelRepository.Result.GetById.Success -> {
-                        messageRepository.add(result.channel, request.content.asDomain)
-
-                        publishResponse {
-                            this.result = ResultOuterClass.Result.SUCCESS
-                            channel = result.channel.asRemote
-                        }
-                    }
+                    is ChannelRepository.Result.GetById.Success ->
+                        messageRepository.add(
+                            channel = result.channel,
+                            message = request.content.asDomain
+                        ).toPublishResponse(result.channel)
                 }
             }
         } catch (e: Throwable) {
@@ -212,14 +221,11 @@ class ChannelServiceGrpc(
                         message = result.e.message ?: "Something went wrong..."
                     }
 
-                    is ChannelRepository.Result.GetById.Success -> {
-                        messageRepository.addAll(result.channel, request.contentList.map(TextMessageOuterClass.TextMessage::asDomain))
-
-                        publishResponse {
-                            this.result = ResultOuterClass.Result.SUCCESS
-                            channel = result.channel.asRemote
-                        }
-                    }
+                    is ChannelRepository.Result.GetById.Success ->
+                        messageRepository.addAll(
+                            channel = result.channel,
+                            messages = request.contentList.map(TextMessageOuterClass.TextMessage::asDomain)
+                        ).toPublishResponse(result.channel)
                 }
             }
         } catch (e: Throwable) {

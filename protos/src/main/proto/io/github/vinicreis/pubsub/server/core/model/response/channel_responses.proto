@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+import "io/github/vinicreis/pubsub/server/core/model/data/result.proto";
+import "io/github/vinicreis/pubsub/server/core/model/data/channel.proto";
+import "io/github/vinicreis/pubsub/server/core/model/data/subscription_status.proto";
+import "io/github/vinicreis/pubsub/server/core/model/data/text_message.proto";
+
+option java_package = "io.github.vinicreis.domain.server.core.model.response";
+option java_multiple_files = true;
+
+message AddResponse {
+  Result result = 1;
+  Channel channel = 2;
+  optional string message = 3;
+}
+
+message ListResponse {
+  Result result = 1;
+  repeated Channel channels = 2;
+  optional string message = 3;
+}
+
+message RemoveByIdResponse {
+  Result result = 1;
+  string id = 2;
+  optional Channel channel = 3;
+  optional string message = 4;
+}
+
+message PublishResponse {
+  Result result = 1;
+  optional Channel channel = 2;
+  optional string message = 3;
+}
+
+message SubscribeResponse {
+  SubscriptionStatus status = 1;
+  optional Channel channel = 2;
+  optional TextMessage content = 3;
+  optional string message = 4;
+}
+
+message PeekResponse {
+  Result result = 1;
+  optional Channel channel = 2;
+  optional TextMessage content = 3;
+  optional string message = 4;
+}

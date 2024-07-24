@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-option java_package = "io.github.vinicreis.domain.server.channel.model";
-
-message TextMessage {
-  string content = 1;
-}

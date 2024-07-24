@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option java_package = "io.github.vinicreis.domain.server.core.model.data";
+
+enum SubscriptionStatus {
+  PROCESSING = 0;
+  ACTIVE = 1;
+  UPDATE = 2;
+  FINISHED = 3;
+}

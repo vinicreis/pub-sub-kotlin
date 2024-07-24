@@ -33,7 +33,7 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":protos"))
+    implementation(projects.protos)
     implementation(libs.kotlinx.coroutines.core)
 
     implementation(libs.google.protobuf.kotlin)

@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-option java_package = "io.github.vinicreis.domain.model";
-
-enum Result {
-  SUCCESS = 0;
-  ERROR = 1;
-}

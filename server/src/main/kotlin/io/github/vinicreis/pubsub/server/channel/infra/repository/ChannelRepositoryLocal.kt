@@ -11,14 +11,12 @@ class ChannelRepositoryLocal(
 
     override suspend fun exists(channelId: String): Boolean = channels.containsKey(channelId)
 
-    override suspend fun add(id: String, name: String, type: Channel.Type): ChannelRepository.Result.Add {
-        if (exists(id)) return ChannelRepository.Result.Add.AlreadyFound
+    override suspend fun add(channel: Channel): ChannelRepository.Result.Add {
+        if (exists(channel.id)) return ChannelRepository.Result.Add.AlreadyFound
 
-        return Channel(id, name, type).let { channel ->
-            channels[id] = channel
+        channels[channel.id] = channel
 
-            ChannelRepository.Result.Add.Success(channel)
-        }
+        return ChannelRepository.Result.Add.Success(channel)
     }
 
     override suspend fun removeById(id: String): ChannelRepository.Result.Remove =

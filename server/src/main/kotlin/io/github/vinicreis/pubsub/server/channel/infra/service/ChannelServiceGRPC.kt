@@ -25,6 +25,7 @@ import io.github.vinicreis.domain.server.channel.response.subscribeResponse
 import io.github.vinicreis.domain.server.channel.service.ChannelServiceGrpcKt
 import io.github.vinicreis.pubsub.server.channel.domain.mapper.asDomain
 import io.github.vinicreis.pubsub.server.channel.domain.mapper.asRemote
+import io.github.vinicreis.pubsub.server.channel.domain.model.Channel
 import io.github.vinicreis.pubsub.server.channel.domain.repository.ChannelRepository
 import io.github.vinicreis.pubsub.server.channel.domain.repository.MessageRepository
 import io.github.vinicreis.pubsub.server.channel.domain.service.ChannelService
@@ -67,7 +68,7 @@ class ChannelServiceGRPC(
 
     override suspend fun add(request: AddRequest): AddResponse {
         return try {
-            channelRepository.add(request.id, request.name, request.type.asDomain).let { result ->
+            channelRepository.add(Channel(request.id, request.name, request.type.asDomain)).let { result ->
                 when (result) {
                     is ChannelRepository.Result.Add.Error -> addResponse {
                         this.result = ResultOuterClass.Result.ERROR

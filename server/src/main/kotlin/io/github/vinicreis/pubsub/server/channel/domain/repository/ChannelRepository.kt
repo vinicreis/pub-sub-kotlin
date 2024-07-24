@@ -33,7 +33,7 @@ interface ChannelRepository {
     }
 
     suspend fun exists(channelId: String): Boolean
-    suspend fun add(id: String, name: String, type: Channel.Type): Result.Add
+    suspend fun add(channel: Channel): Result.Add
     suspend fun remove(channel: Channel): Result.Remove
     suspend fun removeById(id: String): Result.Remove
     suspend fun getAll(): Result.GetAll

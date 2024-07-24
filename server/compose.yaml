@@ -5,5 +5,7 @@ services:
       POSTGRES_DB: pubsub
       POSTGRES_USER: student
       POSTGRES_PASSWORD: Ufabc@123
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"

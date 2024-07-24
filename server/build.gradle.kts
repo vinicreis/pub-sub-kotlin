@@ -4,6 +4,9 @@ plugins {
 }
 
 application {
+    val databaseProtocol: String by properties
+    val databaseDomain: String by properties
+    val databaseDriver: String by properties
     val databaseName: String by properties
     val databaseUser: String by properties
     val databasePassword: String by properties
@@ -12,11 +15,21 @@ application {
     applicationName = "Pub Sub Server"
     mainClass = "io.github.vinicreis.pubsub.server.MainKt"
     applicationDefaultJvmArgs = mutableListOf(
+        "-Ddatabase.protocol=$databaseProtocol",
+        "-Ddatabase.domain=$databaseDomain",
+        "-Ddatabase.driver=$databaseDriver",
         "-Ddatabase.name=$databaseName",
         "-Ddatabase.user=$databaseUser",
         "-Ddatabase.password=$databasePassword",
         "-Ddatabase.port=$databasePort",
     )
+}
+
+kotlin {
+    jvmToolchain(17)
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-receivers")
+    }
 }
 
 dependencies {

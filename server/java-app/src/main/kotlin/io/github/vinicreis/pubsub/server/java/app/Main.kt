@@ -1,12 +1,12 @@
 package io.github.vinicreis.pubsub.server.java.app
 
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.repository.ChannelRepositoryDatabase
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.migration.createMissingTablesAndObjects
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.script.initializePostgres
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.script.setLogger
+import io.github.vinicreis.pubsub.server.core.grpc.service.ChannelServiceGrpc
+import io.github.vinicreis.pubsub.server.core.grpc.service.SubscriberManagerImpl
 import io.github.vinicreis.pubsub.server.data.database.local.MessageRepositoryLocal
-import io.github.vinicreis.pubsub.server.data.database.postgres.channel.repository.ChannelRepositoryDatabase
-import io.github.vinicreis.pubsub.server.data.database.postgres.migration.createMissingTablesAndObjects
-import io.github.vinicreis.pubsub.server.data.database.postgres.script.initializePostgres
-import io.github.vinicreis.pubsub.server.data.database.postgres.script.setLogger
-import io.github.vinicreis.pubsub.server.grpc.service.ChannelServiceGRPC
-import io.github.vinicreis.pubsub.server.grpc.service.SubscriberManagerImpl
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -28,7 +28,7 @@ fun main(args: Array<String>) {
 
     val port = args.firstOrNull()?.toIntOrNull() ?: run { onError(); return }
     val messageRepository = MessageRepositoryLocal()
-    val service = ChannelServiceGRPC(
+    val service = ChannelServiceGrpc(
         port = port,
         coroutineContext = Dispatchers.IO,
         channelRepository = ChannelRepositoryDatabase(),

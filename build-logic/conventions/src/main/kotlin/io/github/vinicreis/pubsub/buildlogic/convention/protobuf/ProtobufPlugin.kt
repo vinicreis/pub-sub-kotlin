@@ -26,7 +26,7 @@ class ProtobufPlugin : Plugin<Project> {
 
     private fun Project.applyPlugins() {
         pluginManager.apply {
-            apply(libs.findPlugin(Plugins.GOOGLE_PROTOBUF).get().get().pluginId)
+            apply(Plugins.GOOGLE_PROTOBUF_PLUGIN_ID)
         }
     }
 
@@ -71,13 +71,13 @@ class ProtobufPlugin : Plugin<Project> {
 
     private fun Project.applyDependencies() {
         dependencies {
-            implementation(libs.findLibrary(Libraries.GOOGLE_PROTOBUF).get().get())
+            implementation(libs.findLibrary(Libraries.GOOGLE_PROTOBUF).get())
         }
     }
 
     companion object {
         private object Plugins {
-            const val GOOGLE_PROTOBUF = "google.protobuf"
+            const val GOOGLE_PROTOBUF_PLUGIN_ID = "com.google.protobuf"
         }
 
         private object Versions {

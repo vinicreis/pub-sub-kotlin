@@ -20,10 +20,5 @@ internal val RemoteChannel.asDomain: Channel
     get() = Channel(
         id = id,
         name = name,
-        type = when (type) {
-            RemoteChannel.Type.SIMPLE -> Channel.Type.SIMPLE
-            RemoteChannel.Type.MULTIPLE -> Channel.Type.MULTIPLE
-            RemoteChannel.Type.UNRECOGNIZED -> error("Unrecognized channel type")
-            null -> error("Null channel type")
-        }
+        type = type.asDomain
     )

@@ -14,12 +14,13 @@ class KotlinJvmPlugin : Plugin<Project> {
             applyPlugins()
             configureKotlin()
             dependencies()
+            testDependencies()
         }
     }
 
     private fun Project.applyPlugins() {
         pluginManager.apply {
-            apply(libs.findPlugin(KOTLIN_PLUGIN_ALIAS).get().get().pluginId)
+            apply(KOTLIN_PLUGIN_ALIAS)
         }
     }
 
@@ -35,15 +36,22 @@ class KotlinJvmPlugin : Plugin<Project> {
 
     private fun Project.dependencies() {
         dependencies {
-            implementation(libs.findLibrary(Libraries.KOTLINX_COROUTINES_CORE).get().get())
+            implementation(libs.findLibrary(Libraries.KOTLINX_COROUTINES_CORE).get())
+        }
+    }
+
+    private fun Project.testDependencies() {
+        dependencies {
+            implementation(libs.findLibrary(Libraries.KOTLINX_COROUTINES_TEST).get())
         }
     }
 
     companion object {
-        private const val KOTLIN_PLUGIN_ALIAS = "kotlin.jvm"
+        private const val KOTLIN_PLUGIN_ALIAS = "org.jetbrains.kotlin.jvm"
 
         private object Libraries {
             const val KOTLINX_COROUTINES_CORE = "kotlinx.coroutines.core"
+            const val KOTLINX_COROUTINES_TEST = "kotlinx.coroutines.test"
         }
     }
 }

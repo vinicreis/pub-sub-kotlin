@@ -10,9 +10,4 @@ dependencies {
     implementation(projects.server.core.model)
     implementation(projects.server.core.service)
     implementation(projects.server.core.data.repository)
-
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.mockk)
 }

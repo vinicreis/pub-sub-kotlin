@@ -37,5 +37,15 @@ gradlePlugin {
             id = "io.github.vinicreis.pubsub.build.convention.grpc"
             implementationClass = "io.github.vinicreis.pubsub.buildlogic.convention.grpc.GrpcPlugin"
         }
+
+        register("pubsub.java.database.application") {
+            id = "io.github.vinicreis.pubsub.build.convention.java.database.application"
+            implementationClass = "io.github.vinicreis.pubsub.buildlogic.convention.java.database.JavaApplicationDatabasePlugin"
+        }
+
+        register("pubsub.java.database.library") {
+            id = "io.github.vinicreis.pubsub.build.convention.java.database.library"
+            implementationClass = "io.github.vinicreis.pubsub.buildlogic.convention.java.database.JavaLibraryDatabasePlugin"
+        }
     }
 }

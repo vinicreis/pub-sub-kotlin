@@ -15,7 +15,4 @@ dependencies {
     implementation(projects.client.core.model)
     implementation(projects.client.core.service)
     implementation(projects.client.core.grpc)
-
-    testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit.jupiter)
 }

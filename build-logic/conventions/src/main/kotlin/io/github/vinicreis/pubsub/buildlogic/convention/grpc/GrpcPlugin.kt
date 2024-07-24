@@ -39,10 +39,11 @@ class GrpcPlugin : Plugin<Project> {
 
     private fun Project.applyDependencies() {
         dependencies {
-            implementation(libs.findLibrary(Libraries.GRPC_PROTOBUF).get().get())
-            implementation(libs.findLibrary(Libraries.GRPC_KOTLIN_STUB).get().get())
+            implementation(libs.findLibrary(Libraries.GRPC_PROTOBUF).get())
+            implementation(libs.findLibrary(Libraries.GRPC_KOTLIN_STUB).get())
+            implementation(libs.findLibrary(Libraries.GRPC_OKHTTP).get())
 
-            testImplementation(libs.findLibrary(Libraries.GRPC_PROTOBUF).get().get())
+            testImplementation(libs.findLibrary(Libraries.GRPC_PROTOBUF).get())
         }
     }
 
@@ -59,6 +60,7 @@ class GrpcPlugin : Plugin<Project> {
         private object Libraries {
             const val GRPC_PROTOBUF = "grpc.protobuf"
             const val GRPC_KOTLIN_STUB = "grpc.kotlin.stub"
+            const val GRPC_OKHTTP = "grpc-okhttp"
         }
     }
 }

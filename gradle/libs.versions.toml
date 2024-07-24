@@ -16,12 +16,11 @@ mockk = "1.13.12"
 [plugins]
 pubsub-java-application = { id = "io.github.vinicreis.pubsub.build.convention.java.application", version = "unspecified" }
 pubsub-java-library = { id = "io.github.vinicreis.pubsub.build.convention.java.library", version = "unspecified" }
+pubsub-java-database-application = { id = "io.github.vinicreis.pubsub.build.convention.java.database.application", version = "unspecified" }
+pubsub-java-database-library = { id = "io.github.vinicreis.pubsub.build.convention.java.database.library", version = "unspecified" }
 pubsub-kotlin-jvm = { id = "io.github.vinicreis.pubsub.build.convention.kotlin.jvm", version = "unspecified" }
 pubsub-protobuf = { id = "io.github.vinicreis.pubsub.build.convention.protobuf", version = "unspecified" }
 pubsub-grpc = { id = "io.github.vinicreis.pubsub.build.convention.grpc", version = "unspecified" }
-
-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-google-protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }
 
 [libraries]
 kotlin-jvm = { group = "org.jetbrains.kotlin.jvm", name = "org.jetbrains.kotlin.jvm.gradle.plugin", version.ref = "kotlin" }

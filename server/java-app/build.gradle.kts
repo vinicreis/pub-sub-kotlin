@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.pubsub.kotlin.jvm)
     alias(libs.plugins.pubsub.protobuf)
     alias(libs.plugins.pubsub.grpc)
+    alias(libs.plugins.pubsub.java.database.application)
 }
 
 application {
@@ -18,8 +19,4 @@ dependencies {
     implementation(projects.server.core.data.repository)
     implementation(projects.server.core.data.database.local)
     implementation(projects.server.core.data.database.postgres)
-
-    implementation(libs.exposed.core)
-    implementation(libs.exposed.jdbc)
-    implementation(libs.exposed.kotlin.datetime)
 }

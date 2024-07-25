@@ -5,6 +5,7 @@ import io.github.vinicreis.domain.server.core.model.data.SubscriptionStatusOuter
 import io.github.vinicreis.domain.server.core.model.data.textMessage
 import io.github.vinicreis.domain.server.core.model.request.addRequest
 import io.github.vinicreis.domain.server.core.model.request.listRequest
+import io.github.vinicreis.domain.server.core.model.request.peekRequest
 import io.github.vinicreis.domain.server.core.model.request.publishMultipleRequest
 import io.github.vinicreis.domain.server.core.model.request.publishSingleRequest
 import io.github.vinicreis.domain.server.core.model.request.removeByIdRequest
@@ -23,11 +24,15 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -37,6 +42,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.util.logging.Logger
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 import io.github.vinicreis.domain.server.core.model.data.ChannelOuterClass.Channel as RemoteChannel
 import io.github.vinicreis.domain.server.core.model.data.TextMessageOuterClass.TextMessage as RemoteTextMessage
 import kotlinx.coroutines.channels.Channel as KotlinChannel
@@ -252,6 +258,27 @@ class ChannelServiceGrpcTests {
             runTest(testDispatcher) {
                 val id = id()
                 val request = removeByIdRequest { this.id = id }
+
+                coEvery { channelRepositoryMock.removeById(id) } returns
+                        ChannelResult.Remove.error("Failed by some reason")
+                coEvery { messageRepositoryMock.remove(any()) } answers {
+                    fail("Should not be called if channel is not found")
+                }
+
+                val response = sut.removeById(request)
+
+                coVerify(exactly = 1) { channelRepositoryMock.removeById(id) }
+                coVerify(exactly = 0) { messageRepositoryMock.remove(any()) }
+                assertEquals(ResultOuterClass.Result.ERROR, response.result)
+                assertEquals(RemoteChannel.getDefaultInstance(), response.channel)
+                assertEquals("Failed by some reason", response.message)
+            }
+
+        @Test
+        fun `Should return error with exception message when its thrown while removing channel message queue`() =
+            runTest(testDispatcher) {
+                val id = id()
+                val request = removeByIdRequest { this.id = id }
                 val channel = channel()
 
                 coEvery { channelRepositoryMock.removeById(id) } returns ChannelResult.Remove.success(channel)
@@ -264,6 +291,25 @@ class ChannelServiceGrpcTests {
                 assertEquals(ResultOuterClass.Result.ERROR, response.result)
                 assertEquals(RemoteChannel.getDefaultInstance(), response.channel)
                 assertEquals(GENERIC_ERROR_MESSAGE, response.message)
+            }
+
+        @Test
+        fun `Should return error with exception message when removing channel message queue fails`() =
+            runTest(testDispatcher) {
+                val id = id()
+                val request = removeByIdRequest { this.id = id }
+                val channel = channel()
+
+                coEvery { channelRepositoryMock.removeById(id) } returns ChannelResult.Remove.success(channel)
+                coEvery { messageRepositoryMock.remove(channel) } returns MessageResult.Remove.error("Didn't remove!")
+
+                val response = sut.removeById(request)
+
+                coVerify(exactly = 1) { channelRepositoryMock.removeById(id) }
+                coVerify(exactly = 1) { messageRepositoryMock.remove(channel) }
+                assertEquals(ResultOuterClass.Result.ERROR, response.result)
+                assertEquals(RemoteChannel.getDefaultInstance(), response.channel)
+                assertEquals("Didn't remove!", response.message)
             }
     }
 
@@ -345,6 +391,32 @@ class ChannelServiceGrpcTests {
                     assertEquals(ResultOuterClass.Result.ERROR, response.result)
                     assertEquals(RemoteChannel.getDefaultInstance(), response.channel)
                     assertEquals(GENERIC_ERROR_MESSAGE, response.message)
+                }
+
+            @Test
+            fun `Should return error with exception message when publishing message fails`() =
+                runTest(testDispatcher) {
+                    val id = id()
+                    val channel = channel()
+                    val message = randomMessage()
+                    val errorMessage = randomMessage()
+                    val request = publishSingleRequest {
+                        this.channelId = id
+                        this.content = message.asRemoteMessage
+                    }
+
+                    coEvery { channelRepositoryMock.getById(id) } returns ChannelResult.GetById.success(channel)
+                    coEvery {
+                        messageRepositoryMock.add(channel, message.asDomainMessage)
+                    } returns MessageResult.Add.error(errorMessage)
+
+                    val response = sut.publishSingle(request)
+
+                    coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
+                    coVerify(exactly = 1) { messageRepositoryMock.add(channel, message.asDomainMessage) }
+                    assertEquals(ResultOuterClass.Result.ERROR, response.result)
+                    assertEquals(RemoteChannel.getDefaultInstance(), response.channel)
+                    assertEquals(errorMessage, response.message)
                 }
         }
 
@@ -470,31 +542,122 @@ class ChannelServiceGrpcTests {
             coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
             verify(exactly = 0) { subscriberManagerServiceMock.subscribe(any()) }
 
+            assertEquals(SubscriptionStatus.PROCESSING, responses[0].status)
+            assertEquals(RemoteChannel.getDefaultInstance(), responses[0].channel)
+            assertEquals(RemoteTextMessage.getDefaultInstance(), responses[0].content)
+            assertTrue(responses[0].message.isEmpty())
 
-            assertEquals(SubscriptionStatus.PROCESSING, response.status)
-            assertEquals(RemoteChannel.getDefaultInstance(), response.channel)
-            assertEquals(RemoteTextMessage.getDefaultInstance(), response.content)
-            assertTrue(response.message.isEmpty())
+            assertEquals(SubscriptionStatus.FINISHED, responses[1].status)
+            assertEquals(RemoteChannel.getDefaultInstance(), responses[1].channel)
+            assertEquals(RemoteTextMessage.getDefaultInstance(), responses[1].content)
+            assertTrue(responses[1].message.contains("not found"))
         }
 
         @Test
         fun `Should emit finished status with error when channel fails to be fetch`() = runTest(testDispatcher) {
+            val id = id()
+            val channel = channel(id)
+            val request = subscribeRequest { this.channelId = id }
+            val responses = mutableListOf<SubscribeResponse>()
 
+            coEvery { channelRepositoryMock.getById(id) } returns ChannelResult.GetById.error("No more error messages")
+            every { subscriberManagerServiceMock.subscribe(channel) } answers {
+                fail("Should not be called if channel is not found")
+            }
+
+            val subscriber = sut.subscribe(request)
+
+            backgroundScope.launch { subscriber.toList(responses) }
+
+            coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
+            verify(exactly = 0) { subscriberManagerServiceMock.subscribe(any()) }
+
+            assertEquals(SubscriptionStatus.PROCESSING, responses[0].status)
+            assertEquals(RemoteChannel.getDefaultInstance(), responses[0].channel)
+            assertEquals(RemoteTextMessage.getDefaultInstance(), responses[0].content)
+            assertTrue(responses[0].message.isEmpty())
+
+            assertEquals(SubscriptionStatus.FINISHED, responses[1].status)
+            assertEquals(RemoteChannel.getDefaultInstance(), responses[1].channel)
+            assertEquals(RemoteTextMessage.getDefaultInstance(), responses[1].content)
+            assertEquals("No more error messages", responses[1].message)
         }
 
         @Test
         fun `Should emit active status when subscriber starts collecting results`() = runTest(testDispatcher) {
+            val id = id()
+            val channel = channel(id)
+            val request = subscribeRequest { this.channelId = id }
+            val responses = mutableListOf<SubscribeResponse>()
+            val kotlinChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
 
+            coEvery { channelRepositoryMock.getById(id) } returns ChannelResult.GetById.success(channel)
+            every { subscriberManagerServiceMock.subscribe(channel) } returns kotlinChannel.receiveAsFlow()
+
+            val subscriber = sut.subscribe(request)
+
+            backgroundScope.launch { subscriber.toList(responses) }
+
+            coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
+            verify(exactly = 1) { subscriberManagerServiceMock.subscribe(channel) }
+
+            assertEquals(SubscriptionStatus.PROCESSING, responses[0].status)
+            assertEquals(RemoteChannel.getDefaultInstance(), responses[0].channel)
+            assertEquals(RemoteTextMessage.getDefaultInstance(), responses[0].content)
+            assertTrue(responses[0].message.isEmpty())
+
+            assertEquals(SubscriptionStatus.ACTIVE, responses[1].status)
+            assertEquals(channel, responses[1].channel.asDomain)
+            assertEquals(RemoteTextMessage.getDefaultInstance(), responses[1].content)
+            assertTrue(responses[1].message.isEmpty())
         }
 
         @Test
-        fun `Should emit update status when some message is sent on message queue`() = runTest(testDispatcher) {
+        fun `Should emit status update when then events happen`() = runTest(testDispatcher) {
+            val id = id()
+            val channel = channel(id)
+            val request = subscribeRequest { this.channelId = id }
+            val responses = mutableListOf<SubscribeResponse>()
+            val kotlinChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
+            val emittedMessages = MESSAGE_LIST.randomSlice()
 
-        }
+            coEvery { channelRepositoryMock.getById(id) } returns ChannelResult.GetById.success(channel)
+            every { subscriberManagerServiceMock.subscribe(channel) } returns kotlinChannel.receiveAsFlow()
 
-        @Test
-        fun `Should emit finish status if the message queue completes`() = runTest(testDispatcher) {
+            val subscriber = sut.subscribe(request)
 
+            backgroundScope.launch { subscriber.toList(responses) }
+
+            emittedMessages.forEach { kotlinChannel.send(it.asDomainMessage) }
+
+            coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
+            verify(exactly = 1) { subscriberManagerServiceMock.subscribe(channel) }
+
+            assertEquals(SubscriptionStatus.PROCESSING, responses[0].status)
+            assertEquals(RemoteChannel.getDefaultInstance(), responses[0].channel)
+            assertEquals(RemoteTextMessage.getDefaultInstance(), responses[0].content)
+            assertTrue(responses[0].message.isEmpty())
+
+            assertEquals(SubscriptionStatus.ACTIVE, responses[1].status)
+            assertEquals(channel, responses[1].channel.asDomain)
+            assertEquals(RemoteTextMessage.getDefaultInstance(), responses[1].content)
+            assertTrue(responses[1].message.isEmpty())
+
+            emittedMessages.forEachIndexed { index, message ->
+                assertEquals(SubscriptionStatus.UPDATE, responses[index + 2].status)
+                assertEquals(channel, responses[index + 2].channel.asDomain)
+                assertEquals(message, responses[index + 2].content.content)
+                assertTrue(responses[index + 2].message.isEmpty())
+            }
+
+            kotlinChannel.close()
+
+            assertEquals(SubscriptionStatus.FINISHED, responses.last().status)
+            assertEquals(channel, responses.last().channel.asDomain)
+            assertEquals(RemoteTextMessage.getDefaultInstance(), responses.last().content)
+            assertTrue(responses.last().message.isEmpty())
+
+            assertEquals(emittedMessages.size + 3, responses.size)
         }
     }
 
@@ -503,30 +666,134 @@ class ChannelServiceGrpcTests {
     inner class PeekTests {
         @Test
         fun `Should return next emitted message successfully in a valid channel`() = runTest(testDispatcher) {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            val id = id()
+            val channel = channel(id)
+            val request = peekRequest { this.channelId = id }
+            val message = MESSAGE_LIST.randomItem()
+            val kotlinChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
 
+            coEvery { channelRepositoryMock.getById(id) } returns ChannelResult.GetById.success(channel)
+            every { subscriberManagerServiceMock.subscribe(channel) } returns kotlinChannel.receiveAsFlow()
+
+            backgroundScope.launch(dispatcher) {
+                delay(1.seconds)
+                kotlinChannel.send(message.asDomainMessage)
+            }
+
+            val response = backgroundScope.async(dispatcher) { sut.peek(request) }.await()
+
+            coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
+            verify(exactly = 1) { subscriberManagerServiceMock.subscribe(channel) }
+
+            assertEquals(ResultOuterClass.Result.SUCCESS, response.result)
+            assertEquals(message, response.content.content)
+            assertEquals(channel, response.channel.asDomain)
+            assertTrue(response.message.isEmpty())
         }
 
         @Test
         fun `Should return error response when the channel is not found`() = runTest(testDispatcher) {
+            val id = id()
+            val request = peekRequest { this.channelId = id }
 
+            coEvery { channelRepositoryMock.getById(id) } returns ChannelResult.GetById.notFound()
+            every { subscriberManagerServiceMock.subscribe(any()) } answers {
+                fail("Should not be called if channel is not found")
+            }
+
+            val response = sut.peek(request)
+
+            coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
+            verify(exactly = 0) { subscriberManagerServiceMock.subscribe(any()) }
+
+            assertEquals(ResultOuterClass.Result.ERROR, response.result)
+            assertEquals(RemoteTextMessage.getDefaultInstance(), response.content)
+            assertEquals(RemoteChannel.getDefaultInstance(), response.channel)
+            assertTrue(response.message.contains("not found"))
         }
 
         @Test
         fun `Should return error response with exception message thrown while getting channel`() =
             runTest(testDispatcher) {
+                val id = id()
+                val request = peekRequest { this.channelId = id }
 
+                coEvery { channelRepositoryMock.getById(id) } returns ChannelResult.GetById.error("Tired of failing...")
+                every { subscriberManagerServiceMock.subscribe(any()) } answers {
+                    fail("Should not be called if channel is not found")
+                }
+
+                val response = sut.peek(request)
+
+                coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
+                verify(exactly = 0) { subscriberManagerServiceMock.subscribe(any()) }
+
+                assertEquals(ResultOuterClass.Result.ERROR, response.result)
+                assertEquals(RemoteTextMessage.getDefaultInstance(), response.content)
+                assertEquals(RemoteChannel.getDefaultInstance(), response.channel)
+                assertEquals("Tired of failing...", response.message)
             }
 
         @Test
         fun `Should fail by timeout in case no message is emitted in the sent seconds time`() =
             runTest(testDispatcher) {
+                val dispatcher = StandardTestDispatcher(testScheduler)
+                val id = id()
+                val channel = channel(id)
+                val timeout = Random.nextLong(60L)
+                val request = peekRequest {
+                    this.channelId = id
+                    this.timeoutSeconds = timeout
+                }
+                val kotlinChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
 
+                coEvery { channelRepositoryMock.getById(id) } returns ChannelResult.GetById.success(channel)
+                every { subscriberManagerServiceMock.subscribe(channel) } returns kotlinChannel.receiveAsFlow()
+
+                val response = backgroundScope.async(dispatcher) { sut.peek(request) }.await()
+
+                coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
+                verify(exactly = 1) { subscriberManagerServiceMock.subscribe(channel) }
+
+                assertEquals(timeout.seconds.inWholeMilliseconds, currentTime)
+                assertEquals(ResultOuterClass.Result.ERROR, response.result)
+                assertEquals(RemoteTextMessage.getDefaultInstance(), response.content)
+                assertEquals(channel, response.channel.asDomain)
+                assertTrue(response.message.contains("message timeout"))
             }
 
         @Test
         fun `Should return the first emitted message only in case more than one is emitted on message queue`() =
             runTest(testDispatcher) {
+                val dispatcher = StandardTestDispatcher(testScheduler)
+                val id = id()
+                val channel = channel(id)
+                val request = peekRequest { this.channelId = id }
+                val messages = MESSAGE_LIST.randomSlice()
+                val kotlinChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
+                val waitTime = Random.nextLong(1_000)
 
+                coEvery { channelRepositoryMock.getById(id) } returns ChannelResult.GetById.success(channel)
+                every { subscriberManagerServiceMock.subscribe(channel) } returns kotlinChannel.receiveAsFlow()
+
+                backgroundScope.launch(dispatcher) {
+                    messages.forEach { message ->
+                        delay(waitTime)
+                        kotlinChannel.send(message.asDomainMessage)
+                    }
+                }
+
+                val response = backgroundScope.async(dispatcher) { sut.peek(request) }.await()
+
+                coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
+                verify(exactly = 1) { subscriberManagerServiceMock.subscribe(channel) }
+
+                assertEquals(waitTime, currentTime)
+                assertEquals(ResultOuterClass.Result.SUCCESS, response.result)
+                assertEquals(messages.first(), response.content.content)
+                assertEquals(channel, response.channel.asDomain)
+                assertTrue(response.message.isEmpty())
             }
     }
 

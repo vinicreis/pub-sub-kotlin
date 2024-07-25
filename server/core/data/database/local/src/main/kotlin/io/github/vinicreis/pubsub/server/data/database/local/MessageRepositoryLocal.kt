@@ -4,16 +4,29 @@ import io.github.vinicreis.pubsub.server.core.model.data.Channel
 import io.github.vinicreis.pubsub.server.core.model.data.Message
 import io.github.vinicreis.pubsub.server.data.repository.ChannelRepository
 import io.github.vinicreis.pubsub.server.data.repository.MessageRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.ProducerScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
-import kotlinx.coroutines.channels.Channel as KotlinChannel
+import kotlin.coroutines.CoroutineContext
 
 class MessageRepositoryLocal(
-    private val channelRepository: ChannelRepository
+    private val channelRepository: ChannelRepository,
+    private val coroutineContext: CoroutineContext,
 ) : MessageRepository {
-    private val queues = ConcurrentHashMap<Channel, KotlinChannel<Message>>()
+    private val queues = ConcurrentHashMap<Channel, ProducerScope<Message>>()
+    private val subscribers = ConcurrentHashMap<Channel, MutableList<Job>>()
+    private val coroutineScope = CoroutineScope(SupervisorJob() + coroutineContext)
+    private val mutex = Mutex()
 
-    private fun MutableMap<Channel, KotlinChannel<Message>>.getOrPutNew(key: Channel) =
-        getOrPut(key) { KotlinChannel(KotlinChannel.UNLIMITED) }
+    private val Channel.subscriberJobs: MutableList<Job>? get() = subscribers[this]
+
+    private suspend fun <E> ProducerScope<E>.sendAll(elements: List<E>) {
+        mutex.withLock { elements.forEach { send(it) } }
+    }
 
     override suspend fun add(channel: Channel, message: Message): MessageRepository.Result.Add {
         return try {
@@ -21,7 +34,9 @@ class MessageRepositoryLocal(
                 return MessageRepository.Result.Add.QueueNotFound
             }
 
-            queues.getOrPutNew(channel).send(message)
+            queues[channel]?.send(message) ?: run {
+                // TODO: Save on database
+            }
 
             MessageRepository.Result.Add.Success
         } catch (e: Exception) {
@@ -35,7 +50,9 @@ class MessageRepositoryLocal(
                 return MessageRepository.Result.Add.QueueNotFound
             }
 
-            messages.forEach { message -> queues.getOrPutNew(channel).send(message) }
+            queues[channel]?.sendAll(messages) ?: run {
+                // TODO: Save on database
+            }
 
             MessageRepository.Result.Add.Success
         } catch (e: Exception) {

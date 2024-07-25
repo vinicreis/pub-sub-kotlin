@@ -194,6 +194,20 @@ class MessageRepositoryDatabaseTests {
     @DisplayName("3 - Subscribe operation tests")
     @TestMethodOrder(MethodOrderer.MethodName::class)
     inner class SubscribeTests {
+        @Test
+        fun `1 - Should subscribe to a valid channel successfully`() {
+
+        }
+
+        @Test
+        fun `2 - Should fail to subscribe to a non-existent channel`() {
+
+        }
+
+        @Test
+        fun `3 - Should receive messages from a subscribed channel in order`() {
+
+        }
     }
 
     @Nested

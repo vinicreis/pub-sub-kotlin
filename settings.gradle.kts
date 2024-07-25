@@ -38,6 +38,7 @@ include("server:core:data:database")
 include("server:core:data:database:postgres")
 include("server:core:data:database:local")
 include("server:core:data:repository")
+include("server:core:test")
 include("server:java-app")
 
 include("client:core")

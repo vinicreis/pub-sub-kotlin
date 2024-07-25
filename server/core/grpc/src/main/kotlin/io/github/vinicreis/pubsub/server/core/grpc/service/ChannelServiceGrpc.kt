@@ -163,6 +163,11 @@ class ChannelServiceGrpc(
     }
 
     private fun MessageRepository.Result.Add.toPublishResponse(channel: Channel) = when (this) {
+        is MessageRepository.Result.Add.QueueNotFound -> publishResponse {
+            this.result = ResultOuterClass.Result.ERROR
+            message = "Channel ${channel.id} message queue not found"
+        }
+
         is MessageRepository.Result.Add.Error -> publishResponse {
             this.result = ResultOuterClass.Result.ERROR
             message = e.message ?: "Something went wrong..."

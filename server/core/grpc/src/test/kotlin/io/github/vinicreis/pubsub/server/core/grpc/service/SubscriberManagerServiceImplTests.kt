@@ -2,6 +2,8 @@ package io.github.vinicreis.pubsub.server.core.grpc.service
 
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
 import io.github.vinicreis.pubsub.server.core.model.data.Message
+import io.github.vinicreis.pubsub.server.core.test.extension.asMessage
+import io.github.vinicreis.pubsub.server.core.test.fixture.ChannelFixture
 import io.github.vinicreis.pubsub.server.data.repository.MessageRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -36,7 +38,7 @@ class SubscriberManagerServiceImplTests {
         every { messageRepository.subscribe(any()) } returns MessageRepository.Result.Subscribe.QueueNotFound
 
         val messages = mutableListOf<Message>()
-        val channel = Fixture.channel()
+        val channel = ChannelFixture.instance()
         val subscriber = sut.subscribe(channel)
 
         launch { assertThrows<IllegalStateException> { subscriber.toList(messages) } }
@@ -52,7 +54,7 @@ class SubscriberManagerServiceImplTests {
                 MessageRepository.Result.Subscribe.Error(IllegalArgumentException("Error"))
 
         val messages = mutableListOf<Message>()
-        val channel = Fixture.channel()
+        val channel = ChannelFixture.instance()
         val subscriber = sut.subscribe(channel)
 
         launch { assertThrows<RuntimeException> { subscriber.toList(messages) } }
@@ -66,7 +68,7 @@ class SubscriberManagerServiceImplTests {
     fun `Should return a valid channel flow for subscriber when the channel is found`() = runTest {
         val messageChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
         val messages = mutableListOf<Message>()
-        val channel = Fixture.channel(type = Channel.Type.SIMPLE)
+        val channel = ChannelFixture.instance(type = Channel.Type.SIMPLE)
         val messagesEmitted = Random.nextInt(10)
 
         every { messageRepository.subscribe(any()) } returns
@@ -90,7 +92,7 @@ class SubscriberManagerServiceImplTests {
     @Test
     fun `Should send message to only one subscriber when some message is posted on a simple channel`() = runTest {
         val messageChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
-        val channel = Fixture.channel(type = Channel.Type.SIMPLE)
+        val channel = ChannelFixture.instance(type = Channel.Type.SIMPLE)
         val messagesEmitted = Random.nextInt(10)
         val messages1 = mutableListOf<Message>()
         val messages2 = mutableListOf<Message>()
@@ -125,7 +127,7 @@ class SubscriberManagerServiceImplTests {
     @Test
     fun `Should send message to all subscribers when some message is posted on a multiple channel`() = runTest {
         val messageChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
-        val channel = Fixture.channel(type = Channel.Type.MULTIPLE)
+        val channel = ChannelFixture.instance(type = Channel.Type.MULTIPLE)
         val messages1 = mutableListOf<Message>()
         val messages2 = mutableListOf<Message>()
         val messages3 = mutableListOf<Message>()
@@ -167,7 +169,7 @@ class SubscriberManagerServiceImplTests {
     @Test
     fun `Should close channel if the channel is removed from message queue`() = runTest {
         val messageChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
-        val channel = Fixture.channel(type = Channel.Type.MULTIPLE)
+        val channel = ChannelFixture.instance(type = Channel.Type.MULTIPLE)
         val messagesEmitted = Random.nextInt(10)
         val messages = mutableListOf<Message>()
 
@@ -194,21 +196,5 @@ class SubscriberManagerServiceImplTests {
         assertEquals(0, sut.subscribersCount(channel))
         println("Validating cancellation...")
         assertTrue(listJob.isCancelled)
-    }
-
-    companion object {
-        private object Fixture {
-            fun channel(
-                id: String = "channel-1",
-                name: String = "Channel 1",
-                type: Channel.Type = Channel.Type.SIMPLE,
-            ): Channel = Channel(
-                id = id,
-                name = name,
-                type = type,
-            )
-        }
-
-        private val String.asMessage: Message get() = Message(this)
     }
 }

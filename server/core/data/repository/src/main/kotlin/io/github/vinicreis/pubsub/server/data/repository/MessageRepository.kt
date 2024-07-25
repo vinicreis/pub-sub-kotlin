@@ -9,6 +9,7 @@ interface MessageRepository {
         sealed interface Add : Result {
             data class Error(val e: Exception) : Add
             data object Success : Add
+            data object QueueNotFound : Add
         }
 
         sealed interface Poll : Result {
@@ -33,6 +34,6 @@ interface MessageRepository {
     suspend fun add(channel: Channel, message: Message): Result.Add
     suspend fun addAll(channel: Channel, messages: List<Message>): Result.Add
     suspend fun poll(channel: Channel): Result.Poll
+    suspend fun remove(channel: Channel): Result.Remove
     fun subscribe(channel: Channel): Result.Subscribe
-    fun remove(channel: Channel): Result.Remove
 }

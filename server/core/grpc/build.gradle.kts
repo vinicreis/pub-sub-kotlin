@@ -10,4 +10,6 @@ dependencies {
     implementation(projects.server.core.model)
     implementation(projects.server.core.service)
     implementation(projects.server.core.data.repository)
+
+    testImplementation(testFixtures(projects.server.core.test))
 }

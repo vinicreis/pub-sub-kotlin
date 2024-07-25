@@ -17,11 +17,12 @@ fun main(args: Array<String>) {
     Database.initializePostgres()
 
     val port = args.firstOrNull()?.toIntOrNull() ?: run { onError(); return }
-    val messageRepository = MessageRepositoryLocal()
+    val channelRepository = ChannelRepositoryDatabase()
+    val messageRepository = MessageRepositoryLocal(channelRepository)
     val service = ChannelServiceGrpc(
         port = port,
         coroutineContext = Dispatchers.IO,
-        channelRepository = ChannelRepositoryDatabase(),
+        channelRepository = channelRepository,
         messageRepository = messageRepository,
         subscriberManagerService = SubscriberManagerImpl(messageRepository, Dispatchers.Default)
     )

@@ -1,8 +1,11 @@
 package io.github.vinicreis.pubsub.server.core.model.data
 
+import java.util.*
+
 data class Channel(
-    val id: String,
-    val name: String = id,
+    val id: UUID,
+    val code: String,
+    val name: String = code,
     val type: Type,
     var pendingMessagesCount: Int = 0,
 ) {

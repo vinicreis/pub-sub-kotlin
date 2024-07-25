@@ -9,9 +9,9 @@ internal object Messages : IdTable<UUID>() {
     override val tableName: String = "messages"
 
     override val id: Column<EntityID<UUID>> = uuid("id").entityId()
-    val channel: Column<EntityID<UUID>> = reference("channel", Channels.id)
+    val channel: Column<EntityID<UUID>> = reference("channel_id", Channels.id)
     val content: Column<String> = varchar("content", 20_000)
-    val createdAt: Column<Long> = long("created_at").default(Date().time)
+    val createdAt: Column<Long> = long("created_at")
 
     override val primaryKey: PrimaryKey = PrimaryKey(id, name = "PK_Message_ID")
 }

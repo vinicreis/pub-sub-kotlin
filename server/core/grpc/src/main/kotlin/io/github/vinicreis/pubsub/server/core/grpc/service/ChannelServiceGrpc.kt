@@ -23,6 +23,7 @@ import io.github.vinicreis.domain.server.core.model.response.publishResponse
 import io.github.vinicreis.domain.server.core.model.response.removeByIdResponse
 import io.github.vinicreis.domain.server.core.model.response.subscribeResponse
 import io.github.vinicreis.domain.server.core.service.ChannelServiceGrpcKt
+import io.github.vinicreis.pubsub.server.core.extension.asUuid
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asDomain
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asRemote
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
@@ -121,7 +122,7 @@ class ChannelServiceGrpc(
 
     override suspend fun removeById(request: RemoveByIdRequest): RemoveByIdResponse {
         return try {
-            channelRepository.removeById(request.id).let { result ->
+            channelRepository.removeById(request.id.asUuid).let { result ->
                 when (result) {
                     ChannelRepository.Result.Remove.NotFound -> removeByIdResponse {
                         this.result = ResultOuterClass.Result.ERROR
@@ -181,7 +182,7 @@ class ChannelServiceGrpc(
 
     override suspend fun publishSingle(request: PublishSingleRequest): PublishResponse {
         return try {
-            channelRepository.getById(request.channelId).let { result ->
+            channelRepository.getById(request.channelId.asUuid).let { result ->
                 when (result) {
                     ChannelRepository.Result.GetById.NotFound -> publishResponse {
                         this.result = ResultOuterClass.Result.ERROR
@@ -213,7 +214,7 @@ class ChannelServiceGrpc(
 
     override suspend fun publishMultiple(request: PublishMultipleRequest): PublishResponse {
         return try {
-            channelRepository.getById(request.channelId).let { result ->
+            channelRepository.getById(request.channelId.asUuid).let { result ->
                 when (result) {
                     ChannelRepository.Result.GetById.NotFound -> publishResponse {
                         this.result = ResultOuterClass.Result.ERROR
@@ -249,7 +250,7 @@ class ChannelServiceGrpc(
                 status = SubscriptionStatusOuterClass.SubscriptionStatus.PROCESSING
             }.also { send(it) }
 
-            channelRepository.getById(request.channelId).let { result ->
+            channelRepository.getById(request.channelId.asUuid).let { result ->
                 when (result) {
                     ChannelRepository.Result.GetById.NotFound -> subscribeResponse {
                         status = SubscriptionStatusOuterClass.SubscriptionStatus.FINISHED
@@ -287,7 +288,7 @@ class ChannelServiceGrpc(
 
     override suspend fun peek(request: PeekRequest): PeekResponse {
         return try {
-            channelRepository.getById(request.channelId).let { result ->
+            channelRepository.getById(request.channelId.asUuid).let { result ->
                 when (result) {
                     ChannelRepository.Result.GetById.NotFound -> peekResponse {
                         this.result = ResultOuterClass.Result.ERROR

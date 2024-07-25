@@ -2,6 +2,7 @@ package io.github.vinicreis.pubsub.server.core.grpc.mapper
 
 import io.github.vinicreis.domain.server.core.model.data.channel
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
+import io.github.vinicreis.pubsub.server.core.test.fixture.ChannelFixture
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -35,9 +36,10 @@ class ChannelMapperTests {
     @Test
     fun `Should map remote channel to domain channel properly`() {
         val domainChannel = Channel(
-            id = "5",
+            id = ChannelFixture.id(),
+            code = "channel-3",
+            name = "Channel 5",
             type = Channel.Type.MULTIPLE,
-            name = "channel-3",
             pendingMessagesCount = 3,
         )
 

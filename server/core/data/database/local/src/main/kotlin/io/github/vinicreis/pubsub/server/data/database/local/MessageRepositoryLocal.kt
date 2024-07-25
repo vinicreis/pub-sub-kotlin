@@ -4,39 +4,36 @@ import io.github.vinicreis.pubsub.server.core.model.data.Channel
 import io.github.vinicreis.pubsub.server.core.model.data.Message
 import io.github.vinicreis.pubsub.server.data.repository.ChannelRepository
 import io.github.vinicreis.pubsub.server.data.repository.MessageRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.ProducerScope
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.channels.Channel as KotlinChannel
 
 class MessageRepositoryLocal(
     private val channelRepository: ChannelRepository,
     private val coroutineContext: CoroutineContext,
 ) : MessageRepository {
-    private val queues = ConcurrentHashMap<Channel, ProducerScope<Message>>()
-    private val subscribers = ConcurrentHashMap<Channel, MutableList<Job>>()
-    private val coroutineScope = CoroutineScope(SupervisorJob() + coroutineContext)
-    private val mutex = Mutex()
+    private val queues = ConcurrentHashMap<Channel, KotlinChannel<Message>>()
 
-    private val Channel.subscriberJobs: MutableList<Job>? get() = subscribers[this]
-
-    private suspend fun <E> ProducerScope<E>.sendAll(elements: List<E>) {
-        mutex.withLock { elements.forEach { send(it) } }
+    private suspend fun <E> KotlinChannel<E>.sendAll(elements: List<E>) {
+        elements.forEach { send(it) }
     }
+
+    private suspend fun Channel.notExists(): Boolean =
+        channelRepository.getById(id) !is ChannelRepository.Result.GetById.Success
+
+    private fun MutableMap<Channel, KotlinChannel<Message>>.getOrPut(channel: Channel): KotlinChannel<Message> =
+        getOrPut(channel) { KotlinChannel(KotlinChannel.UNLIMITED) }
 
     override suspend fun add(channel: Channel, message: Message): MessageRepository.Result.Add {
         return try {
-            if(channelRepository.getById(channel.id) !is ChannelRepository.Result.GetById.Success) {
-                return MessageRepository.Result.Add.QueueNotFound
-            }
+            if(channel.notExists()) return MessageRepository.Result.Add.QueueNotFound
 
-            queues[channel]?.send(message) ?: run {
-                // TODO: Save on database
-            }
+            // TODO: Save on database
+            queues.getOrPut(channel).send(message)
 
             MessageRepository.Result.Add.Success
         } catch (e: Exception) {
@@ -46,13 +43,10 @@ class MessageRepositoryLocal(
 
     override suspend fun addAll(channel: Channel, messages: List<Message>): MessageRepository.Result.Add {
         return try {
-            if(channelRepository.getById(channel.id) !is ChannelRepository.Result.GetById.Success) {
-                return MessageRepository.Result.Add.QueueNotFound
-            }
+            if(channel.notExists()) return MessageRepository.Result.Add.QueueNotFound
 
-            queues[channel]?.sendAll(messages) ?: run {
-                // TODO: Save on database
-            }
+            // TODO: Save on database
+            queues.getOrPut(channel).sendAll(messages)
 
             MessageRepository.Result.Add.Success
         } catch (e: Exception) {
@@ -62,9 +56,12 @@ class MessageRepositoryLocal(
 
     override suspend fun poll(channel: Channel): MessageRepository.Result.Poll {
         return try {
-            queues[channel]?.let { queue ->
-                queue.receive().let { message -> MessageRepository.Result.Poll.Success(message) }
-            } ?: MessageRepository.Result.Poll.QueueNotFound
+            if(channel.notExists()) return MessageRepository.Result.Poll.QueueNotFound
+
+            val message = queues.getOrPut(channel).receive()
+            // TODO: Delete from database
+
+            MessageRepository.Result.Poll.Success(message)
         } catch (e: Exception) {
             MessageRepository.Result.Poll.Error(e)
         }
@@ -72,21 +69,25 @@ class MessageRepositoryLocal(
 
     override suspend fun remove(channel: Channel): MessageRepository.Result.Remove {
         return try {
-            queues.remove(channel)?.let { removedQueue ->
-                removedQueue.close()
+            if(channel.notExists()) return MessageRepository.Result.Remove.QueueNotFound
 
-                MessageRepository.Result.Remove.Success
-            } ?: MessageRepository.Result.Remove.QueueNotFound
+            queues.remove(channel)?.close()
+            // TODO: Delete what is on database
+
+            MessageRepository.Result.Remove.Success
         } catch (e: Exception) {
             MessageRepository.Result.Remove.Error(e)
         }
     }
 
+    private fun Flow<Message>.deletingFromDatabase(): Flow<Message> =
+        flowOn(coroutineContext).onEach { /* TODO: Delete from database */ }
+
     override fun subscribe(channel: Channel): MessageRepository.Result.Subscribe {
         return try {
-            queues[channel]?.let { queue ->
-                MessageRepository.Result.Subscribe.Success(queue)
-            } ?: MessageRepository.Result.Subscribe.QueueNotFound
+            queues.getOrPut(channel) { KotlinChannel(KotlinChannel.UNLIMITED) }.let { queue ->
+                MessageRepository.Result.Subscribe.Success(queue.receiveAsFlow().deletingFromDatabase())
+            }
         } catch (e: Exception) {
             MessageRepository.Result.Subscribe.Error(e)
         }

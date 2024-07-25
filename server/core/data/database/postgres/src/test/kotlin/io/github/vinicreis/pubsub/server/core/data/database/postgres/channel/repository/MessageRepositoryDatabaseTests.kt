@@ -1,5 +1,6 @@
 package io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.repository
 
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.entity.Messages
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.fixture.DatabaseFixture
 import io.github.vinicreis.pubsub.server.core.test.extension.asMessage
 import io.github.vinicreis.pubsub.server.core.test.fixture.ChannelFixture
@@ -12,6 +13,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.selectAll
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -30,16 +33,13 @@ import kotlin.time.Duration.Companion.milliseconds
 @OptIn(ExperimentalCoroutinesApi::class)
 @TestMethodOrder(MethodOrderer.DisplayName::class)
 class MessageRepositoryDatabaseTests {
-    private val testDispatcher = UnconfinedTestDispatcher()
-    private val channelRepository = ChannelRepositoryDatabase()
-
     @Nested
     @DisplayName("1 - Add operation tests")
     @TestMethodOrder(MethodOrderer.MethodName::class)
     inner class AddTests {
         @Test
         fun `1 - Should fail to add a message to a non-existent channel`() = runTest(testDispatcher) {
-            val channel = ChannelFixture.instance(id = "non-existent-channel")
+            val channel = ChannelFixture.instance(code = "non-existent-channel")
             val message = MessageFixture.any().asMessage
 
             when (sut.add(channel, message)) {
@@ -51,7 +51,7 @@ class MessageRepositoryDatabaseTests {
 
         @Test
         fun `2 - Should fail to add an invalid message to a valid channel`() = runTest(testDispatcher) {
-            val channel = ChannelFixture.instance(id = "channel-1")
+            val channel = ChannelFixture.instance(code = "channel-1")
 
             if (channelRepository.add(channel) !is ChannelRepository.Result.Add.Success) {
                 fail("Failed to add channel to repository")
@@ -65,7 +65,7 @@ class MessageRepositoryDatabaseTests {
                 is MessageRepository.Result.Add.Error -> {
                     assertInstanceOf(IllegalArgumentException::class.java, result.e)
                     assertNotNull(result.e.message)
-                    assertTrue(result.e.message!!.contains("id"))
+                    assertTrue(result.e.message!!.contains("content"))
                     assertTrue(result.e.message!!.contains("not be blank"))
                 }
             }
@@ -73,7 +73,7 @@ class MessageRepositoryDatabaseTests {
 
         @Test
         fun `3 - Should add a valid message to a valid channel successfully`() = runTest(testDispatcher) {
-            val channel = ChannelFixture.instance(id = "channel-1")
+            val channel = ChannelFixture.instance(code = "channel-1")
 
             if (channelRepository.add(channel) !is ChannelRepository.Result.Add.Success) {
                 fail("Failed to add channel to repository")
@@ -101,7 +101,7 @@ class MessageRepositoryDatabaseTests {
 
         @Test
         fun `4 - Should add multiple messages to a valid channel successfully`() = runTest(testDispatcher) {
-            val channel = ChannelFixture.instance(id = "channel-1")
+            val channel = ChannelFixture.instance(code = "channel-1")
             val messages = MessageFixture.EXAMPLES.take(5).map { it.asMessage }
 
             when (val result = sut.addAll(channel, messages)) {
@@ -118,7 +118,22 @@ class MessageRepositoryDatabaseTests {
 
         @Test
         fun `5 - Should fail when message fails to be added on database`() = runTest(testDispatcher) {
-            val channel = ChannelFixture.instance(id = "channel-1")
+            val channel = ChannelFixture.instance(code = "channel-1")
+            val tooLongMessage = "aaaaa".repeat(10_000)
+
+            when (val result = sut.add(channel, tooLongMessage.asMessage)) {
+                MessageRepository.Result.Add.QueueNotFound -> fail("Should not fail with queue not found")
+                is MessageRepository.Result.Add.Success -> fail("Should not poll a message longer than limit")
+                is MessageRepository.Result.Add.Error -> {
+                    assertNotNull(result.e.message)
+                    assertEquals(GENERIC_ERROR_MESSAGE, result.e.message)
+                }
+            }
+        }
+
+        @Test
+        fun `6 - Should add message on database if no subscriber exists for channel`() = runTest(testDispatcher) {
+            val channel = ChannelFixture.instance(code = "channel-1")
             val tooLongMessage = "aaaaa".repeat(10_000)
 
             when (val result = sut.add(channel, tooLongMessage.asMessage)) {
@@ -138,21 +153,27 @@ class MessageRepositoryDatabaseTests {
     inner class PollTests {
         @Test
         fun `1 - Should poll a message from a valid channel successfully`() = runTest(testDispatcher) {
-            val channel = ChannelFixture.instance(id = "channel-1")
+            val channel = ChannelFixture.instance(code = "channel-1")
             val messages = MessageFixture.EXAMPLES.take(5).map { it.asMessage }
 
             messages.forEach { message ->
                 when (val result = sut.poll(channel)) {
                     MessageRepository.Result.Poll.QueueNotFound -> fail("Should not fail with queue not found")
                     is MessageRepository.Result.Poll.Error -> fail("Should not add a message to a non-existent channel")
-                    is MessageRepository.Result.Poll.Success -> assertEquals(message, result.message)
+                    is MessageRepository.Result.Poll.Success -> {
+                        assertEquals(message, result.message)
+                        Messages.selectAll().where {
+                            Messages.content eq message.content and
+                                (Messages.channel eq channel.id)
+                        }.any()
+                    }
                 }
             }
         }
 
         @Test
         fun `2 - Should wait for message to be added`() = runTest(testDispatcher) {
-            val channel = ChannelFixture.instance(id = "channel-1")
+            val channel = ChannelFixture.instance(code = "channel-1")
             val message = MessageFixture.any().asMessage
             val waitTime = Random.nextLong(30_000L)
 
@@ -175,7 +196,7 @@ class MessageRepositoryDatabaseTests {
 
         @Test
         fun `3 - Should fail by timeout if no message is added`() = runTest(testDispatcher) {
-            val channel = ChannelFixture.instance(id = "channel-1")
+            val channel = ChannelFixture.instance(code = "channel-1")
 
             when (val result = sut.poll(channel)) {
                 MessageRepository.Result.Poll.QueueNotFound -> fail("Should not fail with queue not found")
@@ -232,6 +253,8 @@ class MessageRepositoryDatabaseTests {
 
     companion object {
         private const val GENERIC_ERROR_MESSAGE = "Failed to add message on queue"
+        private val testDispatcher = UnconfinedTestDispatcher()
+        private lateinit var channelRepository: ChannelRepository
         private lateinit var sut: MessageRepositoryDatabase
 
         @JvmStatic
@@ -239,7 +262,11 @@ class MessageRepositoryDatabaseTests {
         fun setup() {
             DatabaseFixture.up()
 
-            sut = MessageRepositoryDatabase()
+            channelRepository = ChannelRepositoryDatabase()
+            sut = MessageRepositoryDatabase(
+                channelRepository = channelRepository,
+                coroutineContext = testDispatcher
+            )
         }
 
         @JvmStatic

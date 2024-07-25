@@ -4,7 +4,6 @@ import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.ent
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.statements.UpdateBuilder
-import java.util.*
 
 internal val Channel.Type.toEntity: Channels.Type
     get() = when (this) {
@@ -14,8 +13,8 @@ internal val Channel.Type.toEntity: Channels.Type
 
 context(Channels)
 infix fun UpdateBuilder<Number>.from(channel: Channel) {
-    this[id] = UUID.randomUUID()
-    this[code] = channel.id
+    this[id] = channel.id
+    this[code] = channel.code
     this[name] = channel.name
     this[Channels.type] = channel.type.toEntity
 }
@@ -27,7 +26,8 @@ internal val Channels.Type.asDomain: Channel.Type
     }
 
 val ResultRow.asDomain: Channel get() = Channel(
-    id = this[Channels.code].toString(),
+    id = this[Channels.id].value,
+    code = this[Channels.code],
     name = this[Channels.name],
-    type = this[Channels.type].asDomain
+    type = this[Channels.type].asDomain,
 )

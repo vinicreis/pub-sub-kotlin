@@ -113,7 +113,7 @@ class ChannelServiceGrpcTests {
             assertEquals(ResultOuterClass.Result.ERROR, response.result)
             assertEquals(RemoteChannel.getDefaultInstance(), response.channel)
             assertTrue(response.message.contains("already exists"))
-            assertTrue(response.message.contains(channel.id))
+            assertTrue(response.message.contains(channel.id.toString()))
         }
 
         @Test
@@ -204,8 +204,8 @@ class ChannelServiceGrpcTests {
         fun `Should return success response when valid channel is removed`() =
             runTest(testDispatcher) {
                 val id = ChannelFixture.id()
-                val request = removeByIdRequest { this.id = id }
-                val channel = ChannelFixture.instance(id)
+                val request = removeByIdRequest { this.id = id.toString() }
+                val channel = ChannelFixture.instance(id = id)
 
                 coEvery { channelRepositoryMock.removeById(id) } returns ChannelFixture.Repository.Remove.success(channel)
                 coEvery { messageRepositoryMock.remove(channel) } returns MessageFixture.Repository.Remove.success()
@@ -222,7 +222,7 @@ class ChannelServiceGrpcTests {
         @Test
         fun `Should return error response if the removed channel is not found`() = runTest(testDispatcher) {
             val id = ChannelFixture.id()
-            val request = removeByIdRequest { this.id = id }
+            val request = removeByIdRequest { this.id = id.toString() }
             val channel = ChannelFixture.instance(id)
 
             coEvery { channelRepositoryMock.removeById(id) } returns ChannelFixture.Repository.Remove.notFound()
@@ -243,7 +243,7 @@ class ChannelServiceGrpcTests {
         fun `Should return error response if the removed channel message queue is not found`() =
             runTest(testDispatcher) {
                 val id = ChannelFixture.id()
-                val request = removeByIdRequest { this.id = id }
+                val request = removeByIdRequest { this.id = id.toString() }
                 val channel = ChannelFixture.instance()
 
                 coEvery { channelRepositoryMock.removeById(id) } returns ChannelFixture.Repository.Remove.success(channel)
@@ -262,7 +262,7 @@ class ChannelServiceGrpcTests {
         fun `Should return error with exception message when its thrown while removing channel`() =
             runTest(testDispatcher) {
                 val id = ChannelFixture.id()
-                val request = removeByIdRequest { this.id = id }
+                val request = removeByIdRequest { this.id = id.toString() }
 
                 coEvery { channelRepositoryMock.removeById(id) } returns
                         ChannelFixture.Repository.Remove.error("Failed by some reason")
@@ -283,7 +283,7 @@ class ChannelServiceGrpcTests {
         fun `Should return error with exception message when its thrown while removing channel message queue`() =
             runTest(testDispatcher) {
                 val id = ChannelFixture.id()
-                val request = removeByIdRequest { this.id = id }
+                val request = removeByIdRequest { this.id = id.toString() }
                 val channel = ChannelFixture.instance()
 
                 coEvery { channelRepositoryMock.removeById(id) } returns ChannelFixture.Repository.Remove.success(channel)
@@ -302,7 +302,7 @@ class ChannelServiceGrpcTests {
         fun `Should return error with exception message when removing channel message queue fails`() =
             runTest(testDispatcher) {
                 val id = ChannelFixture.id()
-                val request = removeByIdRequest { this.id = id }
+                val request = removeByIdRequest { this.id = id.toString() }
                 val channel = ChannelFixture.instance()
 
                 coEvery { channelRepositoryMock.removeById(id) } returns ChannelFixture.Repository.Remove.success(channel)
@@ -331,19 +331,17 @@ class ChannelServiceGrpcTests {
                     val channel = ChannelFixture.instance()
                     val message = MessageFixture.any()
                     val request = publishSingleRequest {
-                        this.channelId = id
+                        this.channelId = id.toString()
                         this.content = message.asRemoteMessage
                     }
 
                     coEvery { channelRepositoryMock.getById(id) } returns ChannelFixture.Repository.GetById.success(channel)
-                    coEvery {
-                        messageRepositoryMock.add(channel, message.asMessage)
-                    } returns MessageFixture.Repository.Add.success()
+                    coEvery { messageRepositoryMock.add(channel, any()) } returns MessageFixture.Repository.Add.success()
 
                     val response = sut.publishSingle(request)
 
                     coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
-                    coVerify(exactly = 1) { messageRepositoryMock.add(channel, message.asMessage) }
+                    coVerify(exactly = 1) { messageRepositoryMock.add(channel, any()) }
                     assertEquals(ResultOuterClass.Result.SUCCESS, response.result)
                     assertEquals(channel.asRemote, response.channel)
                     assertTrue(response.message.isEmpty())
@@ -355,13 +353,13 @@ class ChannelServiceGrpcTests {
                 val channel = ChannelFixture.instance()
                 val message = MessageFixture.any()
                 val request = publishSingleRequest {
-                    this.channelId = id
+                    this.channelId = id.toString()
                     this.content = message.asRemoteMessage
                 }
 
                 coEvery { channelRepositoryMock.getById(id) } returns ChannelFixture.Repository.GetById.notFound()
                 coEvery {
-                    messageRepositoryMock.add(channel, message.asMessage)
+                    messageRepositoryMock.add(channel, any())
                 } answers { fail("Should not be called if channel is not found") }
 
                 val response = sut.publishSingle(request)
@@ -380,19 +378,17 @@ class ChannelServiceGrpcTests {
                     val channel = ChannelFixture.instance()
                     val message = MessageFixture.any()
                     val request = publishSingleRequest {
-                        this.channelId = id
+                        this.channelId = id.toString()
                         this.content = message.asRemoteMessage
                     }
 
                     coEvery { channelRepositoryMock.getById(id) } returns ChannelFixture.Repository.GetById.success(channel)
-                    coEvery {
-                        messageRepositoryMock.add(channel, message.asMessage)
-                    } throws RuntimeException(MessageFixture.any())
+                    coEvery { messageRepositoryMock.add(channel, any()) } throws RuntimeException(MessageFixture.any())
 
                     val response = sut.publishSingle(request)
 
                     coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
-                    coVerify(exactly = 1) { messageRepositoryMock.add(channel, message.asMessage) }
+                    coVerify(exactly = 1) { messageRepositoryMock.add(channel, any()) }
                     assertEquals(ResultOuterClass.Result.ERROR, response.result)
                     assertEquals(RemoteChannel.getDefaultInstance(), response.channel)
                     assertEquals(GENERIC_ERROR_MESSAGE, response.message)
@@ -406,19 +402,19 @@ class ChannelServiceGrpcTests {
                     val message = MessageFixture.any()
                     val errorMessage = MessageFixture.any()
                     val request = publishSingleRequest {
-                        this.channelId = id
+                        this.channelId = id.toString()
                         this.content = message.asRemoteMessage
                     }
 
                     coEvery { channelRepositoryMock.getById(id) } returns ChannelFixture.Repository.GetById.success(channel)
                     coEvery {
-                        messageRepositoryMock.add(channel, message.asMessage)
+                        messageRepositoryMock.add(channel, any())
                     } returns MessageFixture.Repository.Add.error(errorMessage)
 
                     val response = sut.publishSingle(request)
 
                     coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
-                    coVerify(exactly = 1) { messageRepositoryMock.add(channel, message.asMessage) }
+                    coVerify(exactly = 1) { messageRepositoryMock.add(channel, any()) }
                     assertEquals(ResultOuterClass.Result.ERROR, response.result)
                     assertEquals(RemoteChannel.getDefaultInstance(), response.channel)
                     assertEquals(errorMessage, response.message)
@@ -435,19 +431,19 @@ class ChannelServiceGrpcTests {
                     val channel = ChannelFixture.instance()
                     val messages = MessageFixture.EXAMPLES.randomSlice()
                     val request = publishMultipleRequest {
-                        this.channelId = id
+                        this.channelId = id.toString()
                         this.content.addAll(messages.map { it.asRemoteMessage })
                     }
 
                     coEvery { channelRepositoryMock.getById(id) } returns ChannelFixture.Repository.GetById.success(channel)
                     coEvery {
-                        messageRepositoryMock.addAll(channel, messages.map { it.asMessage })
+                        messageRepositoryMock.addAll(channel, any())
                     } returns MessageFixture.Repository.Add.success()
 
                     val response = sut.publishMultiple(request)
 
                     coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
-                    coVerify(exactly = 1) { messageRepositoryMock.addAll(channel, messages.map { it.asMessage }) }
+                    coVerify(exactly = 1) { messageRepositoryMock.addAll(channel, any()) }
                     assertEquals(ResultOuterClass.Result.SUCCESS, response.result)
                     assertEquals(channel.asRemote, response.channel)
                     assertTrue(response.message.isEmpty())
@@ -459,13 +455,13 @@ class ChannelServiceGrpcTests {
                 val channel = ChannelFixture.instance()
                 val messages = MessageFixture.EXAMPLES.randomSlice()
                 val request = publishMultipleRequest {
-                    this.channelId = id
+                    this.channelId = id.toString()
                     this.content.addAll(messages.map { it.asRemoteMessage })
                 }
 
                 coEvery { channelRepositoryMock.getById(id) } returns ChannelFixture.Repository.GetById.notFound()
                 coEvery {
-                    messageRepositoryMock.addAll(channel, messages.map { it.asMessage })
+                    messageRepositoryMock.addAll(channel, any())
                 } answers { fail("Should not be called if channel is not found") }
 
                 val response = sut.publishMultiple(request)
@@ -484,19 +480,19 @@ class ChannelServiceGrpcTests {
                     val channel = ChannelFixture.instance()
                     val messages = MessageFixture.EXAMPLES.randomSlice()
                     val request = publishMultipleRequest {
-                        this.channelId = id
+                        this.channelId = id.toString()
                         this.content.addAll(messages.map { it.asRemoteMessage })
                     }
 
                     coEvery { channelRepositoryMock.getById(id) } returns ChannelFixture.Repository.GetById.success(channel)
                     coEvery {
-                        messageRepositoryMock.addAll(channel, messages.map { it.asMessage })
+                        messageRepositoryMock.addAll(channel, any())
                     } throws RuntimeException(MessageFixture.any())
 
                     val response = sut.publishMultiple(request)
 
                     coVerify(exactly = 1) { channelRepositoryMock.getById(id) }
-                    coVerify(exactly = 1) { messageRepositoryMock.addAll(channel, messages.map { it.asMessage }) }
+                    coVerify(exactly = 1) { messageRepositoryMock.addAll(channel, any()) }
                     assertEquals(ResultOuterClass.Result.ERROR, response.result)
                     assertEquals(RemoteChannel.getDefaultInstance(), response.channel)
                     assertEquals(GENERIC_ERROR_MESSAGE, response.message)
@@ -512,7 +508,7 @@ class ChannelServiceGrpcTests {
             val id = ChannelFixture.id()
             val channel = ChannelFixture.instance(id)
             val kotlinChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
-            val request = subscribeRequest { this.channelId = id }
+            val request = subscribeRequest { this.channelId = id.toString() }
 
             coEvery { channelRepositoryMock.getById(id) } returns ChannelFixture.Repository.GetById.success(channel)
             every { subscriberManagerServiceMock.subscribe(channel) } returns kotlinChannel.receiveAsFlow()
@@ -532,7 +528,7 @@ class ChannelServiceGrpcTests {
         fun `Should emit finished status with error when channel is not found`() = runTest(testDispatcher) {
             val id = ChannelFixture.id()
             val channel = ChannelFixture.instance(id)
-            val request = subscribeRequest { this.channelId = id }
+            val request = subscribeRequest { this.channelId = id.toString() }
             val responses = mutableListOf<SubscribeResponse>()
 
             coEvery { channelRepositoryMock.getById(id) } returns ChannelFixture.Repository.GetById.notFound()
@@ -562,7 +558,7 @@ class ChannelServiceGrpcTests {
         fun `Should emit finished status with error when channel fails to be fetch`() = runTest(testDispatcher) {
             val id = ChannelFixture.id()
             val channel = ChannelFixture.instance(id)
-            val request = subscribeRequest { this.channelId = id }
+            val request = subscribeRequest { this.channelId = id.toString() }
             val responses = mutableListOf<SubscribeResponse>()
 
             coEvery { channelRepositoryMock.getById(id) } returns ChannelFixture.Repository.GetById.error("No more error messages")
@@ -592,7 +588,7 @@ class ChannelServiceGrpcTests {
         fun `Should emit active status when subscriber starts collecting results`() = runTest(testDispatcher) {
             val id = ChannelFixture.id()
             val channel = ChannelFixture.instance(id)
-            val request = subscribeRequest { this.channelId = id }
+            val request = subscribeRequest { this.channelId = id.toString() }
             val responses = mutableListOf<SubscribeResponse>()
             val kotlinChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
 
@@ -621,7 +617,7 @@ class ChannelServiceGrpcTests {
         fun `Should emit status update when then events happen`() = runTest(testDispatcher) {
             val id = ChannelFixture.id()
             val channel = ChannelFixture.instance(id)
-            val request = subscribeRequest { this.channelId = id }
+            val request = subscribeRequest { this.channelId = id.toString() }
             val responses = mutableListOf<SubscribeResponse>()
             val kotlinChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
             val emittedMessages = MessageFixture.EXAMPLES.randomSlice()
@@ -674,7 +670,7 @@ class ChannelServiceGrpcTests {
             val dispatcher = StandardTestDispatcher(testScheduler)
             val id = ChannelFixture.id()
             val channel = ChannelFixture.instance(id)
-            val request = peekRequest { this.channelId = id }
+            val request = peekRequest { this.channelId = id.toString() }
             val message = MessageFixture.EXAMPLES.randomItem()
             val kotlinChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
 
@@ -700,7 +696,7 @@ class ChannelServiceGrpcTests {
         @Test
         fun `Should return error response when the channel is not found`() = runTest(testDispatcher) {
             val id = ChannelFixture.id()
-            val request = peekRequest { this.channelId = id }
+            val request = peekRequest { this.channelId = id.toString() }
 
             coEvery { channelRepositoryMock.getById(id) } returns ChannelFixture.Repository.GetById.notFound()
             every { subscriberManagerServiceMock.subscribe(any()) } answers {
@@ -722,7 +718,7 @@ class ChannelServiceGrpcTests {
         fun `Should return error response with exception message thrown while getting channel`() =
             runTest(testDispatcher) {
                 val id = ChannelFixture.id()
-                val request = peekRequest { this.channelId = id }
+                val request = peekRequest { this.channelId = id.toString() }
 
                 coEvery { channelRepositoryMock.getById(id) } returns ChannelFixture.Repository.GetById.error("Tired of failing...")
                 every { subscriberManagerServiceMock.subscribe(any()) } answers {
@@ -748,7 +744,7 @@ class ChannelServiceGrpcTests {
                 val channel = ChannelFixture.instance(id)
                 val timeout = Random.nextLong(60L)
                 val request = peekRequest {
-                    this.channelId = id
+                    this.channelId = id.toString()
                     this.timeoutSeconds = timeout
                 }
                 val kotlinChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
@@ -774,7 +770,7 @@ class ChannelServiceGrpcTests {
                 val dispatcher = StandardTestDispatcher(testScheduler)
                 val id = ChannelFixture.id()
                 val channel = ChannelFixture.instance(id)
-                val request = peekRequest { this.channelId = id }
+                val request = peekRequest { this.channelId = id.toString() }
                 val messages = MessageFixture.EXAMPLES.randomSlice()
                 val kotlinChannel = KotlinChannel<Message>(KotlinChannel.UNLIMITED)
                 val waitTime = Random.nextLong(1_000)

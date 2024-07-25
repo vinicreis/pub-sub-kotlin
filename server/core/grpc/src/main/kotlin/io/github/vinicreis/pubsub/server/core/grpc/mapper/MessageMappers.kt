@@ -10,6 +10,4 @@ internal val Message.asRemote: RemoteTextMessage
     }
 
 internal val RemoteTextMessage.asDomain: Message
-    get() = Message(
-        content = this.content
-    )
+    get() = Message(content = this.content)

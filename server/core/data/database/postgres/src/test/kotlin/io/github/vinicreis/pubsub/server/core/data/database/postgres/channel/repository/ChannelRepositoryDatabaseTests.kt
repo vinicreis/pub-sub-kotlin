@@ -2,6 +2,8 @@ package io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.re
 
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.fixture.DatabaseFixture
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
+import io.github.vinicreis.pubsub.server.core.test.fixture.ChannelFixture
+import io.github.vinicreis.pubsub.server.core.test.fixture.ChannelFixture.id
 import io.github.vinicreis.pubsub.server.data.repository.ChannelRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -21,7 +23,12 @@ import org.junit.jupiter.api.TestMethodOrder
 class ChannelRepositoryDatabaseTests {
     @Test
     fun `1 - Should add channel successfully`() = runTest(testDispatcher) {
-        val channel = Channel("channel-1", "Test Channel 1", Channel.Type.MULTIPLE)
+        val channel = ChannelFixture.instance(
+            id = id(),
+            code = "channel-1",
+            name = "Test Channel 1",
+            type = Channel.Type.MULTIPLE
+        )
 
         sut.add(channel).also {
             assertInstanceOf(ChannelRepository.Result.Add.Success::class.java, it)
@@ -40,7 +47,12 @@ class ChannelRepositoryDatabaseTests {
 
     @Test
     fun `2 - Should not add channel with empty or blank id`() = runTest(testDispatcher) {
-        val channel = Channel(" ", "Test Channel 2", Channel.Type.MULTIPLE)
+        val channel = ChannelFixture.instance(
+            id = id(),
+            code = " ",
+            name = "Test Channel 2",
+            type = Channel.Type.MULTIPLE
+        )
 
         sut.add(channel).also {
             when (it) {
@@ -56,7 +68,12 @@ class ChannelRepositoryDatabaseTests {
 
     @Test
     fun `3 - Should not add channel with empty or blank name`() = runTest(testDispatcher) {
-        val channel = Channel("channel", " ", Channel.Type.MULTIPLE)
+        val channel = ChannelFixture.instance(
+            id = id(),
+            code = "channel",
+            name = " ",
+            type = Channel.Type.MULTIPLE
+        )
 
         sut.add(channel).also {
             when (it) {
@@ -72,7 +89,12 @@ class ChannelRepositoryDatabaseTests {
 
     @Test
     fun `4 - Should not allow existing channel to be added`() = runTest(testDispatcher) {
-        val channel = Channel("channel-1", "Test", Channel.Type.MULTIPLE)
+        val channel = ChannelFixture.instance(
+            id = id(),
+            code = "channel-1",
+            name = "Test",
+            type = Channel.Type.MULTIPLE
+        )
 
         sut.add(channel).also {
             when (it) {
@@ -85,7 +107,12 @@ class ChannelRepositoryDatabaseTests {
 
     @Test
     fun `5 - Should get the correct channel by id`() = runTest(testDispatcher) {
-        val channel = Channel("channel-2", "Test", Channel.Type.SIMPLE)
+        val channel = ChannelFixture.instance(
+            id = id(),
+            code = "channel-2",
+            name = "Test",
+            type = Channel.Type.SIMPLE
+        )
 
         sut.add(channel).also {
             when (it) {
@@ -116,13 +143,23 @@ class ChannelRepositoryDatabaseTests {
 
     @Test
     fun `7 - Should remove a existing channel successfully`() = runTest(testDispatcher) {
-        val removedChannel = Channel("channel-1", "Test Channel 1", Channel.Type.MULTIPLE)
-        val removedChannel2 = Channel("channel-2", "Test", Channel.Type.SIMPLE)
+        val removedChannel = ChannelFixture.instance(
+            id = id(),
+            code = "channel-1",
+            name = "Test Channel 1",
+            type = Channel.Type.MULTIPLE
+        )
+        val removedChannel2 = ChannelFixture.instance(
+            id = id(),
+            code = "channel-2",
+            name = "Test",
+            type = Channel.Type.SIMPLE
+        )
 
-        sut.removeById(removedChannel.id).also {
+        sut.removeByCode(removedChannel.code).also {
             when (it) {
                 is ChannelRepository.Result.Remove.Error -> fail("Remove should not fail with generic error")
-                ChannelRepository.Result.Remove.NotFound -> fail("Channel with id \"channel-1\" should exist on database")
+                ChannelRepository.Result.Remove.NotFound -> fail("Channel with code \"channel-1\" should exist on database")
                 is ChannelRepository.Result.Remove.Success -> assertEquals(removedChannel, it.channel)
             }
         }
@@ -137,7 +174,7 @@ class ChannelRepositoryDatabaseTests {
             }
         }
 
-        sut.remove(removedChannel2).also {
+        sut.removeByCode(removedChannel2.code).also {
             when (it) {
                 is ChannelRepository.Result.Remove.Error -> fail("Remove should not fail with generic error")
                 ChannelRepository.Result.Remove.NotFound -> fail("Channel $removedChannel2 should exist on database")

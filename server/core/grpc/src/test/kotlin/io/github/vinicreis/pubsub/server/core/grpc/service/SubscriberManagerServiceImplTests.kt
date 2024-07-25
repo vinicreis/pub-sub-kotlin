@@ -10,6 +10,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -72,7 +73,7 @@ class SubscriberManagerServiceImplTests {
         val messagesEmitted = Random.nextInt(10)
 
         every { messageRepository.subscribe(any()) } returns
-                MessageRepository.Result.Subscribe.Success(messageChannel)
+                MessageRepository.Result.Subscribe.Success(messageChannel.receiveAsFlow())
 
         val subscriber = sut.subscribe(channel)
 
@@ -100,7 +101,7 @@ class SubscriberManagerServiceImplTests {
         val messages4 = mutableListOf<Message>()
 
         every { messageRepository.subscribe(any()) } returns
-                MessageRepository.Result.Subscribe.Success(messageChannel)
+                MessageRepository.Result.Subscribe.Success(messageChannel.receiveAsFlow())
 
         val subscriber1 = sut.subscribe(channel)
         val subscriber2 = sut.subscribe(channel)
@@ -139,7 +140,7 @@ class SubscriberManagerServiceImplTests {
         }
 
         every { messageRepository.subscribe(any()) } returns
-                MessageRepository.Result.Subscribe.Success(messageChannel)
+                MessageRepository.Result.Subscribe.Success(messageChannel.receiveAsFlow())
 
         val subscriber1 = sut.subscribe(channel)
         val subscriber2 = sut.subscribe(channel)
@@ -174,7 +175,7 @@ class SubscriberManagerServiceImplTests {
         val messages = mutableListOf<Message>()
 
         every { messageRepository.subscribe(any()) } returns
-                MessageRepository.Result.Subscribe.Success(messageChannel)
+                MessageRepository.Result.Subscribe.Success(messageChannel.receiveAsFlow())
 
         val subscriber = sut.subscribe(channel)
 

@@ -9,7 +9,7 @@ internal object Channels : IdTable<UUID>() {
     override val tableName: String = "channels"
 
     override val id: Column<EntityID<UUID>> = uuid("id").entityId()
-    val code: Column<String> = varchar("code", 255)
+    val code: Column<String> = varchar("code", 255).uniqueIndex()
     val name: Column<String> = varchar("name", 255)
     val type: Column<Type> = enumerationByName("type", 16, Type::class)
 

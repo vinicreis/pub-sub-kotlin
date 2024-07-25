@@ -1,7 +1,9 @@
 package io.github.vinicreis.pubsub.server.core.grpc.mapper
 
 import io.github.vinicreis.domain.server.core.model.data.channel
+import io.github.vinicreis.pubsub.server.core.extension.asUuid
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
+import java.util.*
 import io.github.vinicreis.domain.server.core.model.data.ChannelOuterClass.Channel as RemoteChannel
 
 internal val RemoteChannel.Type.asDomain: Channel.Type
@@ -13,7 +15,8 @@ internal val RemoteChannel.Type.asDomain: Channel.Type
 
 internal val RemoteChannel.asDomain: Channel
     get() = Channel(
-        id = this.id,
+        id = this.id.takeIf { it.isNotBlank() }?.asUuid ?: UUID.randomUUID(),
+        code = this.code,
         type = this.type.asDomain,
         name = this.name,
         pendingMessagesCount = this.pendingMessagesCount
@@ -27,7 +30,8 @@ internal val Channel.Type.asRemote: RemoteChannel.Type
 
 internal val Channel.asRemote: RemoteChannel
     get() = channel {
-        id = this@asRemote.id
+        id = this@asRemote.id.toString()
+        code = this@asRemote.code
         type = this@asRemote.type.asRemote
         name = this@asRemote.name
         pendingMessagesCount = this@asRemote.pendingMessagesCount

@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -36,13 +35,13 @@ class SubscriberManagerImpl(
     override fun subscribe(channel: Channel): Flow<Message> = channelFlow {
         val subscriberId: String = UUID.randomUUID().toString()
 
-        messageRepository.subscribe(channel).let {
-            when (it) {
+        messageRepository.subscribe(channel).let { result ->
+            when (result) {
                 MessageRepository.Result.Subscribe.QueueNotFound ->
                     close(IllegalStateException("Channel ${channel.id} not found"))
 
                 is MessageRepository.Result.Subscribe.Error ->
-                    close(RuntimeException("Failed to get channel ${channel.id} messages queue", it.e))
+                    close(RuntimeException("Failed to get channel ${channel.id} messages queue", result.e))
 
                 is MessageRepository.Result.Subscribe.Success -> {
                     subscribers.getOrPut(channel) { ConcurrentHashMap() }[subscriberId] = this
@@ -75,7 +74,7 @@ class SubscriberManagerImpl(
                             it.close(CancellationException("Channel not found on messages queue"))
                         }
 
-                    is MessageRepository.Result.Subscribe.Success -> result.messages.receiveAsFlow()
+                    is MessageRepository.Result.Subscribe.Success -> result.messages
                         .onEach { logger.fine("Received message: ${it.content}") }
                         .onCompletion { cause ->
                             cause?.let {

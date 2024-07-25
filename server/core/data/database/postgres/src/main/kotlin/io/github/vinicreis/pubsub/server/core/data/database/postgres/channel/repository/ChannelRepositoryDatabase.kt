@@ -11,6 +11,7 @@ import org.jetbrains.exposed.sql.exists
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.util.*
 import java.util.logging.Logger
 
 class ChannelRepositoryDatabase(
@@ -22,19 +23,19 @@ class ChannelRepositoryDatabase(
         }
     }
 
-    override suspend fun exists(channelId: String): Boolean = transaction {
-        Channels.selectAll().count { it[Channels.code] == channelId } > 0
+    override suspend fun exists(channel: Channel): Boolean = transaction {
+        Channels.selectAll().any { it[Channels.id].value == channel.id || it[Channels.code] == channel.code }
     }
 
     private fun Channel.validate() {
-        require(id.isNotBlank()) { "Channel id cannot be blank" }
+        require(code.isNotBlank()) { "Channel id cannot be blank" }
         require(name.isNotBlank()) { "Channel name cannot be blank" }
     }
 
     override suspend fun add(channel: Channel): ChannelRepository.Result.Add {
         return try {
             channel.validate()
-            if (exists(channel.id)) return ChannelRepository.Result.Add.AlreadyFound
+            if (exists(channel)) return ChannelRepository.Result.Add.AlreadyFound
 
             transaction { Channels.insert { it from channel } }
 
@@ -49,8 +50,8 @@ class ChannelRepositoryDatabase(
 
     override suspend fun remove(channel: Channel): ChannelRepository.Result.Remove = try {
         transaction {
-            Channels.selectAll().where { Channels.code eq channel.id }.map { it.asDomain }.firstOrNull()?.let {
-                Channels.deleteWhere { code eq channel.id }
+            Channels.selectAll().where { Channels.id eq channel.id }.map { it.asDomain }.firstOrNull()?.let {
+                Channels.deleteWhere { id eq channel.id }
 
                 ChannelRepository.Result.Remove.Success(it)
             } ?: ChannelRepository.Result.Remove.NotFound
@@ -62,16 +63,31 @@ class ChannelRepositoryDatabase(
         ChannelRepository.Result.Remove.Error(e)
     }
 
-    override suspend fun removeById(id: String): ChannelRepository.Result.Remove = try {
+    override suspend fun removeById(id: UUID): ChannelRepository.Result.Remove = try {
         transaction {
-            Channels.selectAll().where { Channels.code eq id }.map { it.asDomain }.firstOrNull()?.let {
-                Channels.deleteWhere { code eq id }
+            Channels.selectAll().where { Channels.id eq id }.map { it.asDomain }.firstOrNull()?.let {
+                Channels.deleteWhere { this.id eq id }
 
                 ChannelRepository.Result.Remove.Success(it)
             } ?: ChannelRepository.Result.Remove.NotFound
         }
     } catch (e: Exception) {
         logger.severe("Failed to remove channel $id")
+        e.printStackTrace()
+
+        ChannelRepository.Result.Remove.Error(e)
+    }
+
+    override suspend fun removeByCode(code: String): ChannelRepository.Result.Remove = try {
+        transaction {
+            Channels.selectAll().where { Channels.code eq code }.firstOrNull()?.asDomain?.let {
+                Channels.deleteWhere { this.code eq code }
+
+                ChannelRepository.Result.Remove.Success(it)
+            } ?: ChannelRepository.Result.Remove.NotFound
+        }
+    } catch (e: Exception) {
+        logger.severe("Failed to remove channel with code $code")
         e.printStackTrace()
 
         ChannelRepository.Result.Remove.Error(e)
@@ -90,9 +106,9 @@ class ChannelRepositoryDatabase(
         ChannelRepository.Result.GetAll.Error(e)
     }
 
-    override suspend fun getById(id: String): ChannelRepository.Result.GetById = try {
+    override suspend fun getById(id: UUID): ChannelRepository.Result.GetById = try {
         transaction {
-            Channels.selectAll().firstOrNull { it[Channels.code] == id }?.asDomain?.let { channel ->
+            Channels.selectAll().firstOrNull { it[Channels.id].value == id }?.asDomain?.let { channel ->
                 ChannelRepository.Result.GetById.Success(channel)
             } ?: ChannelRepository.Result.GetById.NotFound
         }

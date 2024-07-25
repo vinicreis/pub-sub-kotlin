@@ -2,18 +2,23 @@ package io.github.vinicreis.pubsub.server.core.test.fixture
 
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
 import io.github.vinicreis.pubsub.server.data.repository.ChannelRepository
+import java.util.*
 import kotlin.random.Random
 
 object ChannelFixture {
-    fun id(): String = "channel-" + Random.nextInt(100_000)
+    fun id(): UUID = UUID.randomUUID()
+
+    fun code(): String = "channel-" + Random.nextInt(100_000)
 
     fun instance(
-        id: String = id(),
+        id: UUID = id(),
+        code: String = code(),
         name: String = "Channel 1",
         type: Channel.Type = Channel.Type.SIMPLE,
-        pendingMessagesCount: Int = Random.nextInt(1000),
+        pendingMessagesCount: Int = 0, // Random.nextInt(1000),
     ) = Channel(
         id = id,
+        code = code,
         name = name,
         type = type,
         pendingMessagesCount = pendingMessagesCount,

@@ -18,7 +18,7 @@ fun main(args: Array<String>) {
 
     val port = args.firstOrNull()?.toIntOrNull() ?: run { onError(); return }
     val channelRepository = ChannelRepositoryDatabase()
-    val messageRepository = MessageRepositoryLocal(channelRepository)
+    val messageRepository = MessageRepositoryLocal(channelRepository, Dispatchers.Default)
     val service = ChannelServiceGrpc(
         port = port,
         coroutineContext = Dispatchers.IO,

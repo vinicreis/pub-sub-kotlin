@@ -2,7 +2,7 @@ package io.github.vinicreis.pubsub.server.data.repository
 
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
 import io.github.vinicreis.pubsub.server.core.model.data.Message
-import kotlinx.coroutines.channels.Channel as KotlinChannel
+import kotlinx.coroutines.flow.Flow
 
 interface MessageRepository {
     sealed interface Result {
@@ -20,7 +20,7 @@ interface MessageRepository {
 
         sealed interface Subscribe : Result {
             data class Error(val e: Exception) : Subscribe
-            data class Success(val messages: KotlinChannel<Message>) : Subscribe
+            data class Success(val messages: Flow<Message>) : Subscribe
             data object QueueNotFound : Subscribe
         }
 

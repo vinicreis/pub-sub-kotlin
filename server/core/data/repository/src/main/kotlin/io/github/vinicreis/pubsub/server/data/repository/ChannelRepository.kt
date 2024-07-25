@@ -1,6 +1,7 @@
 package io.github.vinicreis.pubsub.server.data.repository
 
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
+import java.util.*
 
 interface ChannelRepository {
     sealed interface Result {
@@ -32,10 +33,11 @@ interface ChannelRepository {
         }
     }
 
-    suspend fun exists(channelId: String): Boolean
+    suspend fun exists(channel: Channel): Boolean
     suspend fun add(channel: Channel): Result.Add
     suspend fun remove(channel: Channel): Result.Remove
-    suspend fun removeById(id: String): Result.Remove
+    suspend fun removeByCode(code: String): Result.Remove
+    suspend fun removeById(id: UUID): Result.Remove
     suspend fun getAll(): Result.GetAll
-    suspend fun getById(id: String): Result.GetById
+    suspend fun getById(id: UUID): Result.GetById
 }

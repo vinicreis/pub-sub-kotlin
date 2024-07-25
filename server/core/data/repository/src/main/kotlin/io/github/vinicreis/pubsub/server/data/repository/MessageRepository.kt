@@ -25,7 +25,7 @@ interface MessageRepository {
 
         sealed interface Remove : Result {
             data class Error(val e: Exception) : Remove
-            data class Success(val messages: KotlinChannel<Message>) : Remove
+            data object Success : Remove
             data object QueueNotFound : Remove
         }
     }

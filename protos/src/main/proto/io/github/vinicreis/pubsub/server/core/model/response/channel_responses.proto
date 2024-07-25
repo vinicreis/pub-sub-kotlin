@@ -22,9 +22,8 @@ message ListResponse {
 
 message RemoveByIdResponse {
   Result result = 1;
-  string id = 2;
-  optional Channel channel = 3;
-  optional string message = 4;
+  optional Channel channel = 2;
+  optional string message = 3;
 }
 
 message PublishResponse {

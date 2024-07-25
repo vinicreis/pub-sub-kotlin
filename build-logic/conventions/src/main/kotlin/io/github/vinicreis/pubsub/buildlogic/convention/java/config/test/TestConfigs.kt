@@ -7,6 +7,10 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.withType
 
+private object Plugins {
+    const val TEST_LOGGER = "com.adarshr.test-logger"
+}
+
 private object Libraries {
     const val JUNIT_BOM = "junit.bom"
     const val JUNIT_JUPITER = "junit.jupiter"
@@ -14,8 +18,13 @@ private object Libraries {
 }
 
 internal fun Project.setupTests() {
+    applyTestLogger()
     configureTestDependencies()
     configureJUnit()
+}
+
+private fun Project.applyTestLogger() {
+    pluginManager.apply(Plugins.TEST_LOGGER)
 }
 
 private fun Project.configureTestDependencies() {

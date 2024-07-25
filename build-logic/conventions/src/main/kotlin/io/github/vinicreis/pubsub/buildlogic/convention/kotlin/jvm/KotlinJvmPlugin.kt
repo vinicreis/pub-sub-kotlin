@@ -19,9 +19,7 @@ class KotlinJvmPlugin : Plugin<Project> {
     }
 
     private fun Project.applyPlugins() {
-        pluginManager.apply {
-            apply(KOTLIN_PLUGIN_ALIAS)
-        }
+        pluginManager.apply(Plugins.KOTLIN_JVM)
     }
 
     private fun Project.configureKotlin() {
@@ -47,7 +45,9 @@ class KotlinJvmPlugin : Plugin<Project> {
     }
 
     companion object {
-        private const val KOTLIN_PLUGIN_ALIAS = "org.jetbrains.kotlin.jvm"
+        private object Plugins {
+            const val KOTLIN_JVM = "org.jetbrains.kotlin.jvm"
+        }
 
         private object Libraries {
             const val KOTLINX_COROUTINES_CORE = "kotlinx.coroutines.core"

@@ -26,7 +26,7 @@ class ProtobufPlugin : Plugin<Project> {
 
     private fun Project.applyPlugins() {
         pluginManager.apply {
-            apply(Plugins.GOOGLE_PROTOBUF_PLUGIN_ID)
+            apply(Plugins.GOOGLE_PROTOBUF)
         }
     }
 
@@ -77,7 +77,7 @@ class ProtobufPlugin : Plugin<Project> {
 
     companion object {
         private object Plugins {
-            const val GOOGLE_PROTOBUF_PLUGIN_ID = "com.google.protobuf"
+            const val GOOGLE_PROTOBUF = "com.google.protobuf"
         }
 
         private object Versions {

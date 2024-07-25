@@ -57,7 +57,7 @@ class MessageRepositoryLocal : MessageRepository {
             queues.remove(channel)?.let { removedQueue ->
                 removedQueue.close()
 
-                MessageRepository.Result.Remove.Success(removedQueue)
+                MessageRepository.Result.Remove.Success
             } ?: MessageRepository.Result.Remove.QueueNotFound
         } catch (e: Exception) {
             MessageRepository.Result.Remove.Error(e)

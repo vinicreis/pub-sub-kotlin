@@ -147,7 +147,6 @@ class ChannelServiceGrpc(
 
                             is MessageRepository.Result.Remove.Success -> removeByIdResponse {
                                 this.result = ResultOuterClass.Result.SUCCESS
-                                id = request.id
                                 this.channel = result.channel.asRemote
                             }
                         }
@@ -202,7 +201,7 @@ class ChannelServiceGrpc(
 
             publishResponse {
                 result = ResultOuterClass.Result.ERROR
-                message = e.message ?: "Something went wrong..."
+                message = "Something went wrong..."
             }
         }
     }
@@ -234,7 +233,7 @@ class ChannelServiceGrpc(
 
             publishResponse {
                 result = ResultOuterClass.Result.ERROR
-                message = e.message ?: "Something went wrong..."
+                message = "Something went wrong..."
             }
         }
     }

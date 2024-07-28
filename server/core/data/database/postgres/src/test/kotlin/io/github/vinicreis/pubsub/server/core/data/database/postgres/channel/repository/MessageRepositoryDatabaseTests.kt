@@ -2,6 +2,7 @@ package io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.re
 
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.entity.Messages
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.fixture.DatabaseFixture
+import io.github.vinicreis.pubsub.server.core.model.data.Message
 import io.github.vinicreis.pubsub.server.core.test.extension.asMessage
 import io.github.vinicreis.pubsub.server.core.test.fixture.ChannelFixture
 import io.github.vinicreis.pubsub.server.core.test.fixture.MessageFixture
@@ -103,7 +104,35 @@ class MessageRepositoryDatabaseTests {
         }
 
         @Test
-        fun `5 - Should fail when message fails to be added on database`() = runTest(testDispatcher) {
+        fun `5 - Should fail when message does not match constraints`() = runTest(testDispatcher) {
+            val channel = ChannelFixture.instance(id = channelId)
+            val tooLongMessage = "aaaaa".repeat(10_000)
+
+            when (val result = sut.add(channel, tooLongMessage.asMessage)) {
+                MessageRepository.Result.Add.QueueNotFound -> fail("Should not fail with queue not found")
+                is MessageRepository.Result.Add.Success -> fail("Should not poll a message longer than limit")
+                is MessageRepository.Result.Add.Error -> {
+                    assertInstanceOf(IllegalArgumentException::class.java, result.e)
+                    assertNotNull(result.e.message)
+                    assertTrue(result.e.message!!.contains("can not be longer than"))
+                    assertTrue(result.e.message!!.contains(Message.MAX_CONTENT_LENGTH.toString()))
+                }
+            }
+
+            val blankMessage = "   "
+
+            when (val result = sut.add(channel, blankMessage.asMessage)) {
+                MessageRepository.Result.Add.QueueNotFound -> fail("Should not fail with queue not found")
+                is MessageRepository.Result.Add.Success -> fail("Should not poll a message longer than limit")
+                is MessageRepository.Result.Add.Error -> {
+                    assertNotNull(result.e.message)
+                    assertTrue(result.e.message!!.contains("can not be blank"))
+                }
+            }
+        }
+
+        @Test
+        fun `6 - Should fail when message fails to be added on database`() = runTest(testDispatcher) {
             val channel = ChannelFixture.instance(id = channelId)
             val tooLongMessage = "aaaaa".repeat(10_000)
 
@@ -118,7 +147,7 @@ class MessageRepositoryDatabaseTests {
         }
 
         @Test
-        fun `6 - Should add message on database if no subscriber exists for channel`() = runTest(testDispatcher) {
+        fun `7 - Should add message on database if no subscriber exists for channel`() = runTest(testDispatcher) {
             val channel = ChannelFixture.instance(id = channelId)
             val tooLongMessage = "aaaaa".repeat(10_000)
 
@@ -238,7 +267,7 @@ class MessageRepositoryDatabaseTests {
     }
 
     companion object {
-        private const val GENERIC_ERROR_MESSAGE = "Failed to add message on queue"
+        private const val GENERIC_ERROR_MESSAGE = "Something went wrong while processing database operation"
         private val testDispatcher = UnconfinedTestDispatcher()
         private lateinit var channelRepository: ChannelRepository
         private lateinit var sut: MessageRepositoryDatabase

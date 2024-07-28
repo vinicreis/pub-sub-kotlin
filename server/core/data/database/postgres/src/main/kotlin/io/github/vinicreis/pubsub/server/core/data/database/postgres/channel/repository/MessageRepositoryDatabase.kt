@@ -39,60 +39,74 @@ class MessageRepositoryDatabase(
 
     private fun Message.validate() {
         require(content.isNotBlank()) { "Message content can not be blank" }
+        require(content.length <= Message.MAX_CONTENT_LENGTH) {
+            "Message content can not be longer than ${Message.MAX_CONTENT_LENGTH} characters"
+        }
+    }
+
+    private suspend fun <R : MessageRepository.Result> runCatchingErrors(
+        block: suspend () -> R,
+        error: (Exception) -> R
+    ): R = try {
+        block()
+    } catch (e: IllegalStateException) {
+        e.printStackTrace()
+        logger.fine(e.message)
+        error(e)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        logger.fine(e.message)
+        error(RuntimeException(GENERIC_ERROR_MESSAGE))
     }
 
     override suspend fun add(channel: Channel, message: Message): MessageRepository.Result.Add {
-        return try {
-            if(channel.notExists()) return MessageRepository.Result.Add.QueueNotFound
+        return runCatchingErrors(
+            error = { e -> MessageRepository.Result.Add.Error(e) },
+            block = {
+                if (channel.notExists()) return@runCatchingErrors MessageRepository.Result.Add.QueueNotFound
 
-            message.validate()
-            transaction {
-                Messages.insert {
-                    it[id] = UUID.randomUUID()
-                    it[this.channel] = channel.id
-                    it[content] = message.content
-                    it[createdAt] = Date().time
+                message.validate()
+                transaction {
+                    Messages.insert {
+                        it[id] = UUID.randomUUID()
+                        it[this.channel] = channel.id
+                        it[content] = message.content
+                        it[createdAt] = Date().time
+                    }
                 }
-            }
-            queues.getOrPut(channel).send(message)
+                queues.getOrPut(channel).send(message)
 
-            MessageRepository.Result.Add.Success
-        } catch (e: Exception) {
-            e.printStackTrace()
-            logger.fine(e.message)
-            MessageRepository.Result.Add.Error(e)
-        }
+                MessageRepository.Result.Add.Success
+            }
+        )
     }
 
     override suspend fun addAll(channel: Channel, messages: List<Message>): MessageRepository.Result.Add {
-        return try {
-            if(channel.notExists()) return MessageRepository.Result.Add.QueueNotFound
+        return runCatchingErrors(
+            error = { e -> MessageRepository.Result.Add.Error(e) },
+            block = {
+                if (channel.notExists()) return@runCatchingErrors MessageRepository.Result.Add.QueueNotFound
 
-            messages.forEach { it.validate() }
+                messages.forEach { it.validate() }
 
-            transaction {
-                Messages.batchInsert(messages) { message ->
-                    Messages.insert {
-                        it[this.id] = UUID.randomUUID()
-                        it[this.channel] = channel.id
-                        it[this.content] = message.content
-                        it[this.createdAt] = Date().time
+                transaction {
+                    Messages.batchInsert(messages) { message ->
+                        this[Messages.id] = UUID.randomUUID()
+                        this[Messages.channel] = channel.id
+                        this[Messages.content] = message.content
+                        this[Messages.createdAt] = Date().time
                     }
                 }
-            }
-            queues.getOrPut(channel).sendAll(messages)
+                queues.getOrPut(channel).sendAll(messages)
 
-            MessageRepository.Result.Add.Success
-        } catch (e: Exception) {
-            e.printStackTrace()
-            logger.fine(e.message)
-            MessageRepository.Result.Add.Error(e)
-        }
+                MessageRepository.Result.Add.Success
+            }
+        )
     }
 
     override suspend fun poll(channel: Channel): MessageRepository.Result.Poll {
         return try {
-            if(channel.notExists()) return MessageRepository.Result.Poll.QueueNotFound
+            if (channel.notExists()) return MessageRepository.Result.Poll.QueueNotFound
 
             val message = queues.getOrPut(channel).receive()
             transaction { Messages.deleteWhere { id eq message.id } }
@@ -107,7 +121,7 @@ class MessageRepositoryDatabase(
 
     override suspend fun remove(channel: Channel): MessageRepository.Result.Remove {
         return try {
-            if(channel.notExists()) return MessageRepository.Result.Remove.QueueNotFound
+            if (channel.notExists()) return MessageRepository.Result.Remove.QueueNotFound
 
             queues.remove(channel)?.close()
             transaction { Messages.deleteWhere { id eq channel.id } }
@@ -135,5 +149,9 @@ class MessageRepositoryDatabase(
             logger.fine(e.message)
             MessageRepository.Result.Subscribe.Error(e)
         }
+    }
+
+    companion object {
+        private const val GENERIC_ERROR_MESSAGE = "Something went wrong while processing database operation"
     }
 }

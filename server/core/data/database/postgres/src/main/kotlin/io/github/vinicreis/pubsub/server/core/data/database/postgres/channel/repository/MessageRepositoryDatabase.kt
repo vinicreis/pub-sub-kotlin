@@ -16,12 +16,14 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.logging.Logger
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.channels.Channel as KotlinChannel
 
 class MessageRepositoryDatabase(
     private val channelRepository: ChannelRepository,
     private val coroutineContext: CoroutineContext,
+    private val logger: Logger = Logger.getLogger(MessageRepositoryDatabase::class.java.simpleName)
 ) : MessageRepository {
     private val queues = ConcurrentHashMap<Channel, KotlinChannel<Message>>()
 
@@ -56,6 +58,8 @@ class MessageRepositoryDatabase(
 
             MessageRepository.Result.Add.Success
         } catch (e: Exception) {
+            e.printStackTrace()
+            logger.fine(e.message)
             MessageRepository.Result.Add.Error(e)
         }
     }
@@ -80,6 +84,8 @@ class MessageRepositoryDatabase(
 
             MessageRepository.Result.Add.Success
         } catch (e: Exception) {
+            e.printStackTrace()
+            logger.fine(e.message)
             MessageRepository.Result.Add.Error(e)
         }
     }
@@ -93,6 +99,8 @@ class MessageRepositoryDatabase(
 
             MessageRepository.Result.Poll.Success(message)
         } catch (e: Exception) {
+            e.printStackTrace()
+            logger.fine(e.message)
             MessageRepository.Result.Poll.Error(e)
         }
     }
@@ -106,6 +114,8 @@ class MessageRepositoryDatabase(
 
             MessageRepository.Result.Remove.Success
         } catch (e: Exception) {
+            e.printStackTrace()
+            logger.fine(e.message)
             MessageRepository.Result.Remove.Error(e)
         }
     }
@@ -121,6 +131,8 @@ class MessageRepositoryDatabase(
                 MessageRepository.Result.Subscribe.Success(queue.receiveAsFlow().deletingFromDatabase())
             }
         } catch (e: Exception) {
+            e.printStackTrace()
+            logger.fine(e.message)
             MessageRepository.Result.Subscribe.Error(e)
         }
     }

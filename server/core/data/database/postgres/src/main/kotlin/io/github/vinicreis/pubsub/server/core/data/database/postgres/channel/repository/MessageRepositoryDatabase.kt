@@ -25,17 +25,18 @@ class MessageRepositoryDatabase(
     private val coroutineContext: CoroutineContext,
     private val logger: Logger = Logger.getLogger(MessageRepositoryDatabase::class.java.simpleName)
 ) : MessageRepository {
-    private val queues = ConcurrentHashMap<Channel, KotlinChannel<Message>>()
+    private val queues = ConcurrentHashMap<UUID, KotlinChannel<Message>>()
 
     private suspend fun <E> KotlinChannel<E>.sendAll(elements: List<E>) {
-        elements.forEach { send(it) }
+        elements.forEach {
+            send(it) }
     }
 
     private suspend fun Channel.notExists(): Boolean =
         channelRepository.getById(id) !is ChannelRepository.Result.GetById.Success
 
-    private fun MutableMap<Channel, KotlinChannel<Message>>.getOrPut(channel: Channel): KotlinChannel<Message> =
-        getOrPut(channel) { KotlinChannel(KotlinChannel.UNLIMITED) }
+    private fun MutableMap<UUID, KotlinChannel<Message>>.getOrPut(channelId: UUID): KotlinChannel<Message> =
+        getOrPut(channelId) { KotlinChannel(KotlinChannel.UNLIMITED) }
 
     private fun Message.validate() {
         require(content.isNotBlank()) { "Message content can not be blank" }
@@ -49,34 +50,39 @@ class MessageRepositoryDatabase(
         error: (Exception) -> R
     ): R = try {
         block()
-    } catch (e: IllegalStateException) {
-        e.printStackTrace()
+    } catch (e: IllegalArgumentException) {
         logger.fine(e.message)
         error(e)
     } catch (e: Exception) {
-        e.printStackTrace()
         logger.fine(e.message)
         error(RuntimeException(GENERIC_ERROR_MESSAGE))
     }
+
+    private suspend fun <R : MessageRepository.Result> Channel.ifExists(
+        errorResult: R,
+        block: suspend () -> R
+    ): R = if (notExists()) errorResult else block()
 
     override suspend fun add(channel: Channel, message: Message): MessageRepository.Result.Add {
         return runCatchingErrors(
             error = { e -> MessageRepository.Result.Add.Error(e) },
             block = {
-                if (channel.notExists()) return@runCatchingErrors MessageRepository.Result.Add.QueueNotFound
+                channel.ifExists(errorResult = MessageRepository.Result.Add.QueueNotFound) {
+                    message.validate()
 
-                message.validate()
-                transaction {
-                    Messages.insert {
-                        it[id] = UUID.randomUUID()
-                        it[this.channel] = channel.id
-                        it[content] = message.content
-                        it[createdAt] = Date().time
+                    transaction {
+                        Messages.insert {
+                            it[id] = message.id
+                            it[this.channel] = channel.id
+                            it[content] = message.content
+                            it[createdAt] = Date().time
+                        }
                     }
-                }
-                queues.getOrPut(channel).send(message)
 
-                MessageRepository.Result.Add.Success
+                    queues.getOrPut(channel.id).send(message)
+
+                    MessageRepository.Result.Add.Success
+                }
             }
         )
     }
@@ -85,70 +91,57 @@ class MessageRepositoryDatabase(
         return runCatchingErrors(
             error = { e -> MessageRepository.Result.Add.Error(e) },
             block = {
-                if (channel.notExists()) return@runCatchingErrors MessageRepository.Result.Add.QueueNotFound
+                channel.ifExists(errorResult = MessageRepository.Result.Add.QueueNotFound) {
+                    messages.forEach { it.validate() }
 
-                messages.forEach { it.validate() }
-
-                transaction {
-                    Messages.batchInsert(messages) { message ->
-                        this[Messages.id] = UUID.randomUUID()
-                        this[Messages.channel] = channel.id
-                        this[Messages.content] = message.content
-                        this[Messages.createdAt] = Date().time
+                    transaction {
+                        Messages.batchInsert(messages) { message ->
+                            this[Messages.id] = message.id
+                            this[Messages.channel] = channel.id
+                            this[Messages.content] = message.content
+                            this[Messages.createdAt] = Date().time
+                        }
                     }
-                }
-                queues.getOrPut(channel).sendAll(messages)
+                    queues.getOrPut(channel.id).sendAll(messages)
 
-                MessageRepository.Result.Add.Success
+                    MessageRepository.Result.Add.Success
+                }
             }
         )
     }
 
-    override suspend fun poll(channel: Channel): MessageRepository.Result.Poll {
-        return try {
-            if (channel.notExists()) return MessageRepository.Result.Poll.QueueNotFound
-
-            val message = queues.getOrPut(channel).receive()
-            transaction { Messages.deleteWhere { id eq message.id } }
-
-            MessageRepository.Result.Poll.Success(message)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            logger.fine(e.message)
-            MessageRepository.Result.Poll.Error(e)
-        }
-    }
-
     override suspend fun remove(channel: Channel): MessageRepository.Result.Remove {
-        return try {
-            if (channel.notExists()) return MessageRepository.Result.Remove.QueueNotFound
+        return runCatchingErrors(
+            error = { e -> MessageRepository.Result.Remove.Error(e) },
+            block = {
+                channel.ifExists(MessageRepository.Result.Remove.QueueNotFound) {
+                    queues.remove(channel.id)?.close()
+                    transaction { Messages.deleteWhere { id eq channel.id } }
 
-            queues.remove(channel)?.close()
-            transaction { Messages.deleteWhere { id eq channel.id } }
-
-            MessageRepository.Result.Remove.Success
-        } catch (e: Exception) {
-            e.printStackTrace()
-            logger.fine(e.message)
-            MessageRepository.Result.Remove.Error(e)
-        }
+                    MessageRepository.Result.Remove.Success
+                }
+            }
+        )
     }
 
-    private fun Flow<Message>.deletingFromDatabase(): Flow<Message> =
-        flowOn(coroutineContext).onEach { message ->
-            transaction { Messages.deleteWhere { id eq message.id } }
-        }
+    private fun Flow<Message>.onEachDeleteFromDatabase(): Flow<Message> =
+        onEach { message -> transaction { Messages.deleteWhere { id eq message.id } } }
 
-    override fun subscribe(channel: Channel): MessageRepository.Result.Subscribe {
-        return try {
-            queues.getOrPut(channel).let { queue ->
-                MessageRepository.Result.Subscribe.Success(queue.receiveAsFlow().deletingFromDatabase())
+    override suspend fun subscribe(channel: Channel): MessageRepository.Result.Subscribe {
+        return runCatchingErrors(
+            error = { e -> MessageRepository.Result.Subscribe.Error(e) },
+            block = {
+                channel.ifExists(errorResult = MessageRepository.Result.Subscribe.QueueNotFound) {
+                    queues.getOrPut(channel.id).let { queue ->
+                        queue
+                            .receiveAsFlow()
+                            .onEachDeleteFromDatabase()
+                            .flowOn(coroutineContext)
+                            .let { flow -> MessageRepository.Result.Subscribe.Success(flow) }
+                    }
+                }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            logger.fine(e.message)
-            MessageRepository.Result.Subscribe.Error(e)
-        }
+        )
     }
 
     companion object {

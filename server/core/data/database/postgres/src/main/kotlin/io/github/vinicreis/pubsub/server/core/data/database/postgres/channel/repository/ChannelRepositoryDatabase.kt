@@ -1,7 +1,7 @@
 package io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.repository
 
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.entity.Channels
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.mapper.asDomain
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.mapper.asDomainChannel
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.mapper.from
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
 import io.github.vinicreis.pubsub.server.data.repository.ChannelRepository
@@ -50,7 +50,7 @@ class ChannelRepositoryDatabase(
 
     override suspend fun remove(channel: Channel): ChannelRepository.Result.Remove = try {
         transaction {
-            Channels.selectAll().where { Channels.id eq channel.id }.map { it.asDomain }.firstOrNull()?.let {
+            Channels.selectAll().where { Channels.id eq channel.id }.map { it.asDomainChannel }.firstOrNull()?.let {
                 Channels.deleteWhere { id eq channel.id }
 
                 ChannelRepository.Result.Remove.Success(it)
@@ -65,7 +65,7 @@ class ChannelRepositoryDatabase(
 
     override suspend fun removeById(id: UUID): ChannelRepository.Result.Remove = try {
         transaction {
-            Channels.selectAll().where { Channels.id eq id }.map { it.asDomain }.firstOrNull()?.let {
+            Channels.selectAll().where { Channels.id eq id }.map { it.asDomainChannel }.firstOrNull()?.let {
                 Channels.deleteWhere { this.id eq id }
 
                 ChannelRepository.Result.Remove.Success(it)
@@ -80,10 +80,10 @@ class ChannelRepositoryDatabase(
 
     override suspend fun removeByCode(code: String): ChannelRepository.Result.Remove = try {
         transaction {
-            Channels.selectAll().where { Channels.code eq code }.firstOrNull()?.asDomain?.let {
-                Channels.deleteWhere { this.code eq code }
-
-                ChannelRepository.Result.Remove.Success(it)
+            Channels.selectAll().where { Channels.code eq code }.firstOrNull()?.asDomainChannel?.let { removedChannel ->
+                Channels.deleteWhere { this.code eq code }.takeIf { it > 0 }?.let {
+                    ChannelRepository.Result.Remove.Success(removedChannel)
+                } ?: ChannelRepository.Result.Remove.NotFound
             } ?: ChannelRepository.Result.Remove.NotFound
         }
     } catch (e: Exception) {
@@ -95,7 +95,7 @@ class ChannelRepositoryDatabase(
 
     override suspend fun getAll(): ChannelRepository.Result.GetAll = try {
         transaction {
-            Channels.selectAll().map { it.asDomain }.let { channels ->
+            Channels.selectAll().map { it.asDomainChannel }.let { channels ->
                 ChannelRepository.Result.GetAll.Success(channels)
             }
         }
@@ -108,7 +108,7 @@ class ChannelRepositoryDatabase(
 
     override suspend fun getById(id: UUID): ChannelRepository.Result.GetById = try {
         transaction {
-            Channels.selectAll().firstOrNull { it[Channels.id].value == id }?.asDomain?.let { channel ->
+            Channels.selectAll().firstOrNull { it[Channels.id].value == id }?.asDomainChannel?.let { channel ->
                 ChannelRepository.Result.GetById.Success(channel)
             } ?: ChannelRepository.Result.GetById.NotFound
         }

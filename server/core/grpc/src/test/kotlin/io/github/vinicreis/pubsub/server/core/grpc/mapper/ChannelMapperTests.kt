@@ -6,20 +6,21 @@ import io.github.vinicreis.pubsub.server.core.test.fixture.ChannelFixture
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.util.*
 import io.github.vinicreis.domain.server.core.model.data.ChannelOuterClass.Channel as RemoteChannel
 
 class ChannelMapperTests {
     @Test
     fun `Should map domain channel to remote channel properly`() {
         val remoteChannel: RemoteChannel = channel {
-            id = "1"
-            type = RemoteChannel.Type.SIMPLE
+            id = UUID.randomUUID().toString()
             name = "channel-1"
+            type = RemoteChannel.Type.SIMPLE
             pendingMessagesCount = 3
         }
 
         remoteChannel.asDomain.also { domainChannel ->
-            assertEquals(remoteChannel.id, domainChannel.id)
+            assertEquals(remoteChannel.id, domainChannel.id.toString())
             assertEquals(remoteChannel.type.asDomain, domainChannel.type)
             assertEquals(remoteChannel.name, domainChannel.name)
             assertEquals(remoteChannel.pendingMessagesCount, domainChannel.pendingMessagesCount)
@@ -44,7 +45,7 @@ class ChannelMapperTests {
         )
 
         domainChannel.asRemote.also { remoteChannel ->
-            assertEquals(domainChannel.id, remoteChannel.id)
+            assertEquals(domainChannel.id.toString(), remoteChannel.id)
             assertEquals(domainChannel.type.asRemote, remoteChannel.type)
             assertEquals(domainChannel.name, remoteChannel.name)
             assertEquals(domainChannel.pendingMessagesCount, remoteChannel.pendingMessagesCount)

@@ -5,9 +5,9 @@ import io.github.vinicreis.pubsub.server.core.model.data.Message
 import io.github.vinicreis.pubsub.server.core.test.extension.asMessage
 import io.github.vinicreis.pubsub.server.core.test.fixture.ChannelFixture
 import io.github.vinicreis.pubsub.server.data.repository.MessageRepository
-import io.mockk.every
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -36,7 +36,7 @@ class SubscriberManagerServiceImplTests {
 
     @Test
     fun `Should close channel when the channel message queue is not found`() = runTest {
-        every { messageRepository.subscribe(any()) } returns MessageRepository.Result.Subscribe.QueueNotFound
+        coEvery { messageRepository.subscribe(any()) } returns MessageRepository.Result.Subscribe.QueueNotFound
 
         val messages = mutableListOf<Message>()
         val channel = ChannelFixture.instance()
@@ -45,13 +45,13 @@ class SubscriberManagerServiceImplTests {
         launch { assertThrows<IllegalStateException> { subscriber.toList(messages) } }
         advanceUntilIdle()
 
-        verify(exactly = 2) { messageRepository.subscribe(channel) }
+        coVerify(exactly = 2) { messageRepository.subscribe(channel) }
         assertTrue(messages.isEmpty())
     }
 
     @Test
     fun `Should close channel when some error happens to fetch message queue`() = runTest {
-        every { messageRepository.subscribe(any()) } returns
+        coEvery { messageRepository.subscribe(any()) } returns
                 MessageRepository.Result.Subscribe.Error(IllegalArgumentException("Error"))
 
         val messages = mutableListOf<Message>()
@@ -61,7 +61,7 @@ class SubscriberManagerServiceImplTests {
         launch { assertThrows<RuntimeException> { subscriber.toList(messages) } }
         advanceUntilIdle()
 
-        verify(exactly = 2) { messageRepository.subscribe(channel) }
+        coVerify(exactly = 2) { messageRepository.subscribe(channel) }
         assertTrue(messages.isEmpty())
     }
 
@@ -72,7 +72,7 @@ class SubscriberManagerServiceImplTests {
         val channel = ChannelFixture.instance(type = Channel.Type.SIMPLE)
         val messagesEmitted = Random.nextInt(10)
 
-        every { messageRepository.subscribe(any()) } returns
+        coEvery { messageRepository.subscribe(any()) } returns
                 MessageRepository.Result.Subscribe.Success(messageChannel.receiveAsFlow())
 
         val subscriber = sut.subscribe(channel)
@@ -86,7 +86,7 @@ class SubscriberManagerServiceImplTests {
 
         advanceUntilIdle()
 
-        verify(exactly = 2) { messageRepository.subscribe(channel) }
+        coVerify(exactly = 2) { messageRepository.subscribe(channel) }
         assertEquals(messagesEmitted, messages.size)
     }
 
@@ -100,7 +100,7 @@ class SubscriberManagerServiceImplTests {
         val messages3 = mutableListOf<Message>()
         val messages4 = mutableListOf<Message>()
 
-        every { messageRepository.subscribe(any()) } returns
+        coEvery { messageRepository.subscribe(any()) } returns
                 MessageRepository.Result.Subscribe.Success(messageChannel.receiveAsFlow())
 
         val subscriber1 = sut.subscribe(channel)
@@ -121,7 +121,7 @@ class SubscriberManagerServiceImplTests {
 
         advanceUntilIdle()
 
-        verify(exactly = 5) { messageRepository.subscribe(channel) }
+        coVerify(exactly = 5) { messageRepository.subscribe(channel) }
         assertEquals(messagesEmitted, messages1.size + messages2.size + messages3.size + messages4.size)
     }
 
@@ -139,7 +139,7 @@ class SubscriberManagerServiceImplTests {
             }
         }
 
-        every { messageRepository.subscribe(any()) } returns
+        coEvery { messageRepository.subscribe(any()) } returns
                 MessageRepository.Result.Subscribe.Success(messageChannel.receiveAsFlow())
 
         val subscriber1 = sut.subscribe(channel)
@@ -160,7 +160,7 @@ class SubscriberManagerServiceImplTests {
 
         advanceUntilIdle()
 
-        verify(exactly = 5) { messageRepository.subscribe(channel) }
+        coVerify(exactly = 5) { messageRepository.subscribe(channel) }
         assertEquals(messagesEmitted, messages1)
         assertEquals(messagesEmitted, messages2)
         assertEquals(messagesEmitted, messages3)
@@ -174,7 +174,7 @@ class SubscriberManagerServiceImplTests {
         val messagesEmitted = Random.nextInt(10)
         val messages = mutableListOf<Message>()
 
-        every { messageRepository.subscribe(any()) } returns
+        coEvery { messageRepository.subscribe(any()) } returns
                 MessageRepository.Result.Subscribe.Success(messageChannel.receiveAsFlow())
 
         val subscriber = sut.subscribe(channel)
@@ -192,7 +192,7 @@ class SubscriberManagerServiceImplTests {
 
         advanceUntilIdle()
 
-        verify(exactly = 2) { messageRepository.subscribe(channel) }
+        coVerify(exactly = 2) { messageRepository.subscribe(channel) }
         assertEquals(messagesEmitted, messages.size)
         assertEquals(0, sut.subscribersCount(channel))
         println("Validating cancellation...")

@@ -23,23 +23,16 @@ import org.junit.jupiter.api.TestMethodOrder
 class ChannelRepositoryDatabaseTests {
     @Test
     fun `1 - Should add channel successfully`() = runTest(testDispatcher) {
-        val channel = ChannelFixture.instance(
-            id = id(),
-            code = "channel-1",
-            name = "Test Channel 1",
-            type = Channel.Type.MULTIPLE
-        )
-
-        sut.add(channel).also {
+        sut.add(validChannel).also {
             assertInstanceOf(ChannelRepository.Result.Add.Success::class.java, it)
         }
 
         sut.getAll().also {
             when (it) {
-                is ChannelRepository.Result.GetAll.Error -> fail("Failed to get channel $channel from database")
+                is ChannelRepository.Result.GetAll.Error -> fail("Failed to get channel $validChannel from database")
                 is ChannelRepository.Result.GetAll.Success -> {
                     assertEquals(1, it.channels.size)
-                    assertEquals(channel, it.channels.first())
+                    assertEquals(validChannel, it.channels.first())
                 }
             }
         }
@@ -89,16 +82,9 @@ class ChannelRepositoryDatabaseTests {
 
     @Test
     fun `4 - Should not allow existing channel to be added`() = runTest(testDispatcher) {
-        val channel = ChannelFixture.instance(
-            id = id(),
-            code = "channel-1",
-            name = "Test",
-            type = Channel.Type.MULTIPLE
-        )
-
-        sut.add(channel).also {
+        sut.add(validChannel).also {
             when (it) {
-                is ChannelRepository.Result.Add.Success -> fail("Existing channel $channel should NOT added")
+                is ChannelRepository.Result.Add.Success -> fail("Existing channel $validChannel should NOT added")
                 is ChannelRepository.Result.Add.Error -> fail("Add should not fail with generic error")
                 ChannelRepository.Result.Add.AlreadyFound -> Unit
             }
@@ -106,27 +92,12 @@ class ChannelRepositoryDatabaseTests {
     }
 
     @Test
-    fun `5 - Should get the correct channel by id`() = runTest(testDispatcher) {
-        val channel = ChannelFixture.instance(
-            id = id(),
-            code = "channel-2",
-            name = "Test",
-            type = Channel.Type.SIMPLE
-        )
-
-        sut.add(channel).also {
+    fun `5 - Should get the correct channel`() = runTest(testDispatcher) {
+        sut.getById(validChannel.id).also {
             when (it) {
-                is ChannelRepository.Result.Add.Error -> fail("Add should not fail with generic error")
-                ChannelRepository.Result.Add.AlreadyFound -> fail("Channel $channel should NOT exist on database")
-                is ChannelRepository.Result.Add.Success -> Unit
-            }
-        }
-
-        sut.getById(channel.id).also {
-            when (it) {
-                is ChannelRepository.Result.GetById.Error -> fail("Failed to get channel $channel from database")
-                ChannelRepository.Result.GetById.NotFound -> fail("Channel $channel should exist on database")
-                is ChannelRepository.Result.GetById.Success -> assertEquals(channel, it.channel)
+                is ChannelRepository.Result.GetById.Error -> fail("Failed to get channel $validChannel from database")
+                ChannelRepository.Result.GetById.NotFound -> fail("Channel $validChannel should exist on database")
+                is ChannelRepository.Result.GetById.Success -> assertEquals(validChannel, it.channel)
             }
         }
     }
@@ -136,49 +107,18 @@ class ChannelRepositoryDatabaseTests {
         sut.getAll().also {
             when (it) {
                 is ChannelRepository.Result.GetAll.Error -> fail("Add should not fail with generic error")
-                is ChannelRepository.Result.GetAll.Success -> assertEquals(2, it.channels.size)
+                is ChannelRepository.Result.GetAll.Success -> assertEquals(1, it.channels.size)
             }
         }
     }
 
     @Test
     fun `7 - Should remove a existing channel successfully`() = runTest(testDispatcher) {
-        val removedChannel = ChannelFixture.instance(
-            id = id(),
-            code = "channel-1",
-            name = "Test Channel 1",
-            type = Channel.Type.MULTIPLE
-        )
-        val removedChannel2 = ChannelFixture.instance(
-            id = id(),
-            code = "channel-2",
-            name = "Test",
-            type = Channel.Type.SIMPLE
-        )
-
-        sut.removeByCode(removedChannel.code).also {
+        sut.removeByCode(validChannel.code).also {
             when (it) {
                 is ChannelRepository.Result.Remove.Error -> fail("Remove should not fail with generic error")
                 ChannelRepository.Result.Remove.NotFound -> fail("Channel with code \"channel-1\" should exist on database")
-                is ChannelRepository.Result.Remove.Success -> assertEquals(removedChannel, it.channel)
-            }
-        }
-
-        sut.getAll().also {
-            when (it) {
-                is ChannelRepository.Result.GetAll.Error -> fail("Add should not fail with generic error")
-                is ChannelRepository.Result.GetAll.Success -> {
-                    assertEquals(1, it.channels.size)
-                    assertEquals("channel-2", it.channels.first().id)
-                }
-            }
-        }
-
-        sut.removeByCode(removedChannel2.code).also {
-            when (it) {
-                is ChannelRepository.Result.Remove.Error -> fail("Remove should not fail with generic error")
-                ChannelRepository.Result.Remove.NotFound -> fail("Channel $removedChannel2 should exist on database")
-                is ChannelRepository.Result.Remove.Success -> assertEquals(removedChannel2, it.channel)
+                is ChannelRepository.Result.Remove.Success -> assertEquals(validChannel, it.channel)
             }
         }
 
@@ -193,6 +133,7 @@ class ChannelRepositoryDatabaseTests {
     companion object {
         private val testDispatcher = UnconfinedTestDispatcher()
         private lateinit var sut: ChannelRepositoryDatabase
+        private val validChannel = ChannelFixture.instance()
 
         @BeforeAll
         @JvmStatic

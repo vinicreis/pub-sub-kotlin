@@ -1,10 +1,10 @@
 package io.github.vinicreis.pubsub.server.java.app
 
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.repository.ChannelRepositoryDatabase
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.repository.MessageRepositoryDatabase
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.script.initializePostgres
 import io.github.vinicreis.pubsub.server.core.grpc.service.ChannelServiceGrpc
 import io.github.vinicreis.pubsub.server.core.grpc.service.SubscriberManagerImpl
-import io.github.vinicreis.pubsub.server.data.database.local.MessageRepositoryLocal
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
 
@@ -18,7 +18,7 @@ fun main(args: Array<String>) {
 
     val port = args.firstOrNull()?.toIntOrNull() ?: run { onError(); return }
     val channelRepository = ChannelRepositoryDatabase()
-    val messageRepository = MessageRepositoryLocal(channelRepository, Dispatchers.Default)
+    val messageRepository = MessageRepositoryDatabase(channelRepository, Dispatchers.Default)
     val service = ChannelServiceGrpc(
         port = port,
         coroutineContext = Dispatchers.IO,

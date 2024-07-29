@@ -17,6 +17,5 @@ dependencies {
     implementation(projects.server.core.grpc)
     implementation(projects.server.core.data.model)
     implementation(projects.server.core.data.repository)
-    implementation(projects.server.core.data.database.local)
     implementation(projects.server.core.data.database.postgres)
 }

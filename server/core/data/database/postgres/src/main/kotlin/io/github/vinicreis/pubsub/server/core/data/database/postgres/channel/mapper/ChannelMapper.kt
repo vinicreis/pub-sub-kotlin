@@ -25,7 +25,7 @@ internal val Channels.Type.asDomain: Channel.Type
         Channels.Type.MULTIPLE -> Channel.Type.MULTIPLE
     }
 
-val ResultRow.asDomain: Channel get() = Channel(
+val ResultRow.asDomainChannel: Channel get() = Channel(
     id = this[Channels.id].value,
     code = this[Channels.code],
     name = this[Channels.name],

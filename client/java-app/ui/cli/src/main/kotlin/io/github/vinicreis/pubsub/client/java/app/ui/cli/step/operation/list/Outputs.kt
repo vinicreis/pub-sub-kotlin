@@ -12,7 +12,7 @@ fun Channel.print() {
     println("\tHas $pendingMessagesCount pending messages")
 }
 
-fun SubscriberServiceClient.Response.ListAll.show() {
+fun SubscriberServiceClient.Response.ListAll.print() {
     when(this) {
         is SubscriberServiceClient.Response.ListAll.Fail -> println(StringResource.Operation.List.Error.GENERIC)
         is SubscriberServiceClient.Response.ListAll.Success -> channels.print(printElement = Channel::print)

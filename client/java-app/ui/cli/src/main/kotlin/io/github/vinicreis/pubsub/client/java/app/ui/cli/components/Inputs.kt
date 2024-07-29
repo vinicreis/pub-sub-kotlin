@@ -27,7 +27,7 @@ internal suspend fun selectOption(message: String, options: List<String>, defaul
         println()
     }
 
-    return getInput<Int>() ?: defaultIndex
+    return getInput<Int>()?.dec() ?: defaultIndex
 }
 
 internal fun <T> T?.notNullable(lazyMessage: (() -> String)?): T {

@@ -6,3 +6,6 @@ import io.github.vinicreis.domain.server.core.model.data.TextMessageOuterClass.T
 
 internal val Message.asRemote: RemoteTextMessage
     get() = textMessage { content = this@asRemote.content }
+
+internal val RemoteTextMessage.asDomain: Message
+    get() = Message(content = content)

@@ -2,7 +2,7 @@
   <configuration default="false" name="RunServer" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
       <option name="executionName" />
-      <option name="externalProjectPath" value="$PROJECT_DIR$/server/java-app" />
+      <option name="externalProjectPath" value="$PROJECT_DIR$/server/java-app/core" />
       <option name="externalSystemIdString" value="GRADLE" />
       <option name="scriptParameters" value="" />
       <option name="taskDescriptions">

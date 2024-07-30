@@ -13,8 +13,6 @@ import io.github.vinicreis.pubsub.server.data.repository.MessageRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -236,13 +234,8 @@ class MessageRepositoryDatabaseTests {
             }
         }
 
-        val jobs = subscribers.mapIndexed { i, subscriber ->
-            backgroundScope.launch {
-                subscriber
-                    .onStart { println("Subscriber $i is collecting messages...") }
-                    .onCompletion { println("Subscriber $i finished!") }
-                    .collect { }
-            }
+        val jobs = subscribers.map { subscriber ->
+            backgroundScope.launch { subscriber.collect { } }
         }
 
         when (sut.remove(channel)) {

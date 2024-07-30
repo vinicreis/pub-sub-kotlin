@@ -26,12 +26,14 @@ services:
       POSTGRES_USER: student
       POSTGRES_PASSWORD: Ufabc@123
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready"]
       interval: 10s
       retries: 5
       start_period: 30s
       timeout: 10s
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
+      - pubsubdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+volumes:
+  pubsubdata:

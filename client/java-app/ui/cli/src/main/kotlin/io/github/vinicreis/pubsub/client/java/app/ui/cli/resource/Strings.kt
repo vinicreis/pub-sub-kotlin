@@ -43,6 +43,7 @@ object StringResource {
             const val SUBSCRIPTION_ACTIVE = "Subscription on channel %s is active!"
             const val MESSAGE_RECEIVED = "Message received on channel %s: %s"
             const val SUBSCRIPTION_FINISHED = "Subscription on channel %s has finished: %s"
+            const val CHANNEL_REMOVED_SUCCESSFULLY = "Channel removed successfully"
         }
     }
 

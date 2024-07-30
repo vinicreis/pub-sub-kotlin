@@ -114,12 +114,10 @@ class MessageRepositoryDatabase(
         return runCatchingErrors(
             error = { e -> MessageRepository.Result.Remove.Error(e) },
             block = {
-                channel.ifExists(MessageRepository.Result.Remove.QueueNotFound) {
-                    queues.remove(channel.id)?.close()
-                    transaction { Messages.deleteWhere { id eq channel.id } }
+                queues.remove(channel.id)?.close()
+                transaction { Messages.deleteWhere { id eq channel.id } }
 
-                    MessageRepository.Result.Remove.Success
-                }
+                MessageRepository.Result.Remove.Success
             }
         )
     }

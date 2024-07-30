@@ -7,6 +7,7 @@ enum class ClientMenuOptions(val message: String) {
     PUBLISH_CHANNEL("Publish a channel"),
     POST_MESSAGE("Post a message on channel"),
     SUBSCRIBE_CHANNEL("Subscribe to a channel"),
+    REMOVE_CHANNEL("Remove a channel"),
     EXIT("Exit");
 
     companion object {

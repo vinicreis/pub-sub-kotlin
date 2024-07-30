@@ -8,9 +8,11 @@ import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.menu.selectMenuOpt
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.common.withChannelList
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.list.print
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.getMessage
+import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.print
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.selectChannel
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.publish.getChannelData
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.publish.print
+import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.remove.print
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.subscribe.collectAndPrint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +38,7 @@ fun main() {
                     ClientMenuOptions.PUBLISH_CHANNEL -> service.publish(getChannelData()).print()
                     ClientMenuOptions.POST_MESSAGE -> service.withChannelList { availableChannels ->
                         availableChannels.selectChannel { selectedChannel ->
-                            service.post(selectedChannel.id.toString(), getMessage())
+                            service.post(selectedChannel.id.toString(), getMessage()).print()
                         }
                     }
 
@@ -45,6 +47,12 @@ fun main() {
                             uiScope.launch {
                                 service.subscribe(selectedChannel.id.toString()).collectAndPrint()
                             }.also { job -> subscriberJobs.add(job) }
+                        }
+                    }
+
+                    ClientMenuOptions.REMOVE_CHANNEL -> service.withChannelList { availableChannels ->
+                        availableChannels.selectChannel { selectedChannel ->
+                            service.remove(selectedChannel.id.toString()).print()
                         }
                     }
 

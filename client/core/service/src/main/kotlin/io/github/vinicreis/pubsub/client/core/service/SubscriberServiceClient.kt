@@ -29,6 +29,11 @@ interface SubscriberServiceClient {
             data class Fail(val message: String?) : Peek
             data class Success(val channel: Channel, val message: Message) : Peek
         }
+
+        sealed interface Remove : Response {
+            data class Fail(val message: String?) : Remove
+            data class Success(val channel: Channel) : Remove
+        }
     }
 
     suspend fun list(): Response.ListAll
@@ -36,4 +41,5 @@ interface SubscriberServiceClient {
     suspend fun post(channelId: String, vararg message: Message): Response.Post
     suspend fun peek(channelId: String, timeoutSeconds: Long? = null): Response.Peek
     fun subscribe(channelId: String): Flow<SubscriptionEvent>
+    suspend fun remove(channelId: String): Response.Remove
 }

@@ -1,19 +1,23 @@
 package io.github.vinicreis.pubsub.client.java.app.ui.cli.components
 
-internal suspend inline fun <reified T> getInput(): T? {
-    return readlnOrNull() as? T?
+internal suspend fun getInputOrNull(): String? {
+    return readlnOrNull()?.ifBlank { null }
 }
 
-internal suspend inline fun <reified T> getInput(default: T): T {
-    return readlnOrNull() as? T? ?: default
-}
-
-internal suspend inline fun <reified T> getInput(message: String, default: T): T {
+internal suspend inline fun getInputOrNull(message: String, default: String? = null): String? {
     print(message)
-    default?.also { option -> print(" [\"$option\"]") }
+    default?.also { print(" [\"$it\"]") }
     print(": ")
 
-    return getInput(default = default) ?: default
+    return getInputOrNull() ?: default
+}
+
+internal suspend inline fun getInput(message: String, default: String): String {
+    print(message)
+    print(" [\"$default\"]")
+    print(": ")
+
+    return getInputOrNull() ?: default
 }
 
 internal suspend fun selectOption(message: String, options: List<String>, defaultIndex: Int? = null): Int? {
@@ -27,7 +31,7 @@ internal suspend fun selectOption(message: String, options: List<String>, defaul
         println()
     }
 
-    return getInput<Int>()?.dec() ?: defaultIndex
+    return getInputOrNull()?.toIntOrNull()?.dec() ?: defaultIndex
 }
 
 internal fun <T> T?.notNullable(lazyMessage: (() -> String)?): T {

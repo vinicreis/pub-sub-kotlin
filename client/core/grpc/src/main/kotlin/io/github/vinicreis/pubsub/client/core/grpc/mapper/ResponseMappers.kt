@@ -6,6 +6,7 @@ import io.github.vinicreis.domain.server.core.model.response.AddResponse
 import io.github.vinicreis.domain.server.core.model.response.ListResponse
 import io.github.vinicreis.domain.server.core.model.response.PeekResponse
 import io.github.vinicreis.domain.server.core.model.response.PublishResponse
+import io.github.vinicreis.domain.server.core.model.response.RemoveByIdResponse
 import io.github.vinicreis.domain.server.core.model.response.SubscribeResponse
 import io.github.vinicreis.pubsub.client.core.grpc.model.ServerResult
 import io.github.vinicreis.pubsub.client.core.model.SubscriptionEvent
@@ -59,5 +60,14 @@ internal val PeekResponse.asDomain: SubscriberServiceClient.Response.Peek
         ResultOuterClass.Result.SUCCESS -> SubscriberServiceClient.Response.Peek.Success(
             channel = channel.asDomain,
             message = content.asDomain
+        )
+    }
+
+internal val RemoveByIdResponse.oasDomain: SubscriberServiceClient.Response.Remove
+    get() = when(result) {
+        ResultOuterClass.Result.UNRECOGNIZED, null -> SubscriberServiceClient.Response.Remove.Fail("Unknown result received")
+        ResultOuterClass.Result.ERROR -> SubscriberServiceClient.Response.Remove.Fail(message.ifEmpty { null })
+        ResultOuterClass.Result.SUCCESS -> SubscriberServiceClient.Response.Remove.Success(
+            channel = channel.asDomain,
         )
     }

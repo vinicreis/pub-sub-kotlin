@@ -5,10 +5,12 @@ import io.github.vinicreis.domain.server.core.model.request.addRequest
 import io.github.vinicreis.domain.server.core.model.request.peekRequest
 import io.github.vinicreis.domain.server.core.model.request.publishMultipleRequest
 import io.github.vinicreis.domain.server.core.model.request.publishSingleRequest
+import io.github.vinicreis.domain.server.core.model.request.removeByIdRequest
 import io.github.vinicreis.domain.server.core.model.request.subscribeRequest
 import io.github.vinicreis.domain.server.core.service.ChannelServiceGrpcKt
 import io.github.vinicreis.pubsub.client.core.grpc.mapper.asDomain
 import io.github.vinicreis.pubsub.client.core.grpc.mapper.asRemote
+import io.github.vinicreis.pubsub.client.core.grpc.mapper.oasDomain
 import io.github.vinicreis.pubsub.client.core.model.Channel
 import io.github.vinicreis.pubsub.client.core.model.Message
 import io.github.vinicreis.pubsub.client.core.model.ServerInfo
@@ -79,4 +81,11 @@ class SubscriberServiceGRPC(
             }
         ).asDomain
     }
+
+    override suspend fun remove(channelId: String): SubscriberServiceClient.Response.Remove =
+        withContext(coroutineContext) {
+            server.removeById(
+                request = removeByIdRequest { this.id = channelId }
+            ).oasDomain
+        }
 }

@@ -26,7 +26,7 @@ object ChannelFixture {
 
     object Repository {
         object Add {
-            fun success(channel: Channel = ChannelFixture.instance()) = ChannelRepository.Result.Add.Success(channel)
+            fun success(channel: Channel = instance()) = ChannelRepository.Result.Add.Success(channel)
             fun alreadyFound() = ChannelRepository.Result.Add.AlreadyFound
             fun error(message: String = "Failed to add") =
                 ChannelRepository.Result.Add.Error(RuntimeException(message))
@@ -34,7 +34,7 @@ object ChannelFixture {
 
         object List {
             fun success(
-                channels: kotlin.collections.List<Channel> = listOf(ChannelFixture.instance(), ChannelFixture.instance())
+                channels: kotlin.collections.List<Channel> = listOf(instance(), instance())
             ) = ChannelRepository.Result.GetAll.Success(channels)
 
             fun error(message: String = "Failed to list") =
@@ -42,7 +42,7 @@ object ChannelFixture {
         }
 
         object Remove {
-            fun success(channel: Channel = ChannelFixture.instance()) = ChannelRepository.Result.Remove.Success(channel)
+            fun success(channel: Channel = instance()) = ChannelRepository.Result.Remove.Success(channel)
             fun error(message: String = "Failed to remove") =
                 ChannelRepository.Result.Remove.Error(RuntimeException(message))
 
@@ -50,7 +50,7 @@ object ChannelFixture {
         }
 
         object GetById {
-            fun success(channel: Channel = ChannelFixture.instance()) = ChannelRepository.Result.GetById.Success(channel)
+            fun success(channel: Channel = instance()) = ChannelRepository.Result.GetById.Success(channel)
             fun error(message: String = "Failed to remove") =
                 ChannelRepository.Result.GetById.Error(RuntimeException(message))
 

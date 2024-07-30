@@ -7,7 +7,7 @@ plugins {
 }
 
 application {
-    applicationName = "Pub Sub Server"
+    applicationName = "pub-sub-server"
     mainClass = "io.github.vinicreis.pubsub.server.java.app.MainKt"
 }
 

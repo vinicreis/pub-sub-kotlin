@@ -1,10 +1,37 @@
+version: '3.8'
 services:
+  server:
+    image: pub-sub-server:latest
+    container_name: pub-sub-server
+    build: .
+    ports:
+      - "10090:10090"
+    working_dir: /app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - ORG_GRADLE_PROJECT_databaseProtocol = postgresql
+      - ORG_GRADLE_PROJECT_databaseDomain = db
+      - ORG_GRADLE_PROJECT_databaseDriver = org.postgresql.Driver
+      - ORG_GRADLE_PROJECT_databaseName = pubsub
+      - ORG_GRADLE_PROJECT_databaseUser = student
+      - ORG_GRADLE_PROJECT_databasePassword = Ufabc@123
+      - ORG_GRADLE_PROJECT_databasePort = 5432
   db:
     image: postgres:latest
+    restart: always
+    container_name: pub-sub-db
     environment:
       POSTGRES_DB: pubsub
       POSTGRES_USER: student
       POSTGRES_PASSWORD: Ufabc@123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
     volumes:
       - ./pgdata:/var/lib/postgresql/data
     ports:

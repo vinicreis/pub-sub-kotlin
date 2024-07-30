@@ -7,7 +7,7 @@ message Channel {
   string code = 2;
   string name = 3;
   Channel.Type type = 4;
-  optional int32 pendingMessagesCount = 5;
+  optional int64 pendingMessagesCount = 5;
 
   enum Type {
     SIMPLE = 0;

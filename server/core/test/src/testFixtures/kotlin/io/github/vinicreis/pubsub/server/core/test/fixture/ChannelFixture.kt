@@ -15,7 +15,7 @@ object ChannelFixture {
         code: String = code(),
         name: String = "Channel 1",
         type: Channel.Type = Channel.Type.SIMPLE,
-        pendingMessagesCount: Int = 0, // Random.nextInt(1000),
+        pendingMessagesCount: Long = 0L, // Random.nextInt(1000),
     ) = Channel(
         id = id,
         code = code,

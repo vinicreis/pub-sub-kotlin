@@ -7,7 +7,7 @@ data class Channel(
     val code: String,
     val name: String = code,
     val type: Type,
-    var pendingMessagesCount: Int = 0,
+    var pendingMessagesCount: Long = 0,
 ) {
     enum class Type {
         SIMPLE,

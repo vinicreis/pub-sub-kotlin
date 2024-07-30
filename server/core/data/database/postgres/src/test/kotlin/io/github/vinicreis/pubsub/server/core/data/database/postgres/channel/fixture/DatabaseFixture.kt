@@ -2,7 +2,6 @@ package io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.fi
 
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.migration.createMissingTablesAndObjects
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.model.Credentials
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.script.setLogger
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -23,8 +22,6 @@ internal object DatabaseFixture {
             user = H2Credentials.USER,
             password = H2Credentials.PASSWORD
         )
-
-        transaction { setLogger() }
     }
 
     fun up() {

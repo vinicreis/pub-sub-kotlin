@@ -1,11 +1,10 @@
 package io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.mapper
 
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.entity.Channels
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.entity.Messages
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.entity.pendingMessagesCount
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Transaction
-import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.statements.UpdateBuilder
 
 internal val Channel.Type.toEntity: Channels.Type
@@ -34,5 +33,5 @@ val ResultRow.asDomainChannel: Channel get() = Channel(
     code = this[Channels.code],
     name = this[Channels.name],
     type = this[Channels.type].asDomain,
-    pendingMessagesCount = this[Messages.id.count()].toInt()
+    pendingMessagesCount = this[Channels.pendingMessagesCount]
 )

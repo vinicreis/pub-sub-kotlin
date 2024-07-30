@@ -6,5 +6,5 @@ fun <E> Collection<E>.randomItem(): E = takeIf { it.isNotEmpty() }?.elementAt(Ra
     ?: error("List can not be empty to get a random element")
 
 fun <E> Collection<E>.randomSlice(size: Int = this.size): List<E> = takeIf { it.isNotEmpty() }?.let {
-    buildList { repeat(Random.nextInt(size)) { add(this@randomSlice.randomItem()) } }
+    buildList { repeat(size) { add(this@randomSlice.randomItem()) } }
 } ?: error("List can not be empty to get a random element")

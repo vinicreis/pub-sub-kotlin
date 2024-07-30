@@ -2,9 +2,13 @@ package io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.re
 
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.fixture.DatabaseFixture
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
+import io.github.vinicreis.pubsub.server.core.test.extension.asMessage
+import io.github.vinicreis.pubsub.server.core.test.extension.randomSlice
 import io.github.vinicreis.pubsub.server.core.test.fixture.ChannelFixture
 import io.github.vinicreis.pubsub.server.core.test.fixture.ChannelFixture.id
+import io.github.vinicreis.pubsub.server.core.test.fixture.MessageFixture
 import io.github.vinicreis.pubsub.server.data.repository.ChannelRepository
+import io.github.vinicreis.pubsub.server.data.repository.MessageRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -17,6 +21,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
+import kotlin.random.Random
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @TestMethodOrder(value = MethodOrderer.MethodName::class)
@@ -103,7 +108,27 @@ class ChannelRepositoryDatabaseTests {
     }
 
     @Test
-    fun `6 - Should get all channels properly`() = runTest(testDispatcher) {
+    fun `6 - Should count pending messages properly`() = runTest(testDispatcher) {
+        val messageCount = Random.nextLong(1L, 100L)
+        val messages = MessageFixture.EXAMPLES.randomSlice(messageCount.toInt()).map { it.asMessage }
+
+        when (messageRepository.addAll(validChannel, messages)) {
+            is MessageRepository.Result.Add.Error -> fail("Should not fail by generic error to add messages to valid channel")
+            MessageRepository.Result.Add.QueueNotFound -> fail("Should not fail to find valid channel")
+            MessageRepository.Result.Add.Success -> Unit
+        }
+
+        sut.getById(validChannel.id).also {
+            when (it) {
+                is ChannelRepository.Result.GetById.Error -> fail("Failed to get channel $validChannel from database")
+                ChannelRepository.Result.GetById.NotFound -> fail("Channel $validChannel should exist on database")
+                is ChannelRepository.Result.GetById.Success -> assertEquals(messageCount, it.channel.pendingMessagesCount)
+            }
+        }
+    }
+
+    @Test
+    fun `7 - Should get all channels properly`() = runTest(testDispatcher) {
         sut.getAll().also {
             when (it) {
                 is ChannelRepository.Result.GetAll.Error -> fail("Add should not fail with generic error")
@@ -113,7 +138,13 @@ class ChannelRepositoryDatabaseTests {
     }
 
     @Test
-    fun `7 - Should remove a existing channel successfully`() = runTest(testDispatcher) {
+    fun `8 - Should remove a existing channel successfully`() = runTest(testDispatcher) {
+        when(messageRepository.remove(validChannel)) {
+            is MessageRepository.Result.Remove.Error -> fail("Should not fail to remove messages from valid channel")
+            MessageRepository.Result.Remove.QueueNotFound -> fail("Should not fail to find valid channel message queue")
+            MessageRepository.Result.Remove.Success -> Unit
+        }
+
         sut.removeByCode(validChannel.code).also {
             when (it) {
                 is ChannelRepository.Result.Remove.Error -> fail("Remove should not fail with generic error")
@@ -133,6 +164,7 @@ class ChannelRepositoryDatabaseTests {
     companion object {
         private val testDispatcher = UnconfinedTestDispatcher()
         private lateinit var sut: ChannelRepositoryDatabase
+        private lateinit var messageRepository: MessageRepositoryDatabase
         private val validChannel = ChannelFixture.instance()
 
         @BeforeAll
@@ -141,6 +173,7 @@ class ChannelRepositoryDatabaseTests {
             DatabaseFixture.up()
 
             sut = ChannelRepositoryDatabase()
+            messageRepository = MessageRepositoryDatabase(sut, testDispatcher)
         }
 
         @AfterEach

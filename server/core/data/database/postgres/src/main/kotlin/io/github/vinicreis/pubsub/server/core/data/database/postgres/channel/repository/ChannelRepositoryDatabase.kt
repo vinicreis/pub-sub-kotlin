@@ -2,13 +2,13 @@ package io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.re
 
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.entity.Channels
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.entity.Messages
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.entity.pendingMessagesCount
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.mapper.asDomainChannel
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.mapper.from
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
 import io.github.vinicreis.pubsub.server.data.repository.ChannelRepository
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.Transaction
-import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.exists
 import org.jetbrains.exposed.sql.insert
@@ -29,7 +29,7 @@ class ChannelRepositoryDatabase(
     context(Transaction)
     private fun selectAllChannels() =
         (Channels leftJoin Messages)
-            .select(Channels.id, Channels.code, Channels.name, Channels.type, Messages.id.count())
+            .select(Channels.id, Channels.code, Channels.name, Channels.type, Channels.pendingMessagesCount)
             .groupBy(Channels.id, Channels.code, Channels.name, Channels.type)
 
     override suspend fun exists(channel: Channel): Boolean = transaction {
@@ -59,12 +59,13 @@ class ChannelRepositoryDatabase(
 
     override suspend fun remove(channel: Channel): ChannelRepository.Result.Remove = try {
         transaction {
-            selectAllChannels().where { Channels.id eq channel.id }.map { it.asDomainChannel }.firstOrNull()?.let {
-                Channels.deleteWhere { id eq channel.id }
-
-                ChannelRepository.Result.Remove.Success(it)
-            } ?: ChannelRepository.Result.Remove.NotFound
-        }
+            selectAllChannels()
+                .where { Channels.id eq channel.id }
+                .map { it.asDomainChannel }
+                .firstOrNull()
+                ?.also { Channels.deleteWhere { id eq channel.id } }
+        }?.let { ChannelRepository.Result.Remove.Success(it) }
+            ?: ChannelRepository.Result.Remove.NotFound
     } catch (e: Exception) {
         logger.severe("Failed to remove channel ${channel.id}")
         e.printStackTrace()
@@ -74,12 +75,12 @@ class ChannelRepositoryDatabase(
 
     override suspend fun removeById(id: UUID): ChannelRepository.Result.Remove = try {
         transaction {
-            selectAllChannels().where { Channels.id eq id }.map { it.asDomainChannel }.firstOrNull()?.let {
-                Channels.deleteWhere { this.id eq id }
-
-                ChannelRepository.Result.Remove.Success(it)
-            } ?: ChannelRepository.Result.Remove.NotFound
-        }
+            selectAllChannels()
+                .where { Channels.id eq id }
+                .map { it.asDomainChannel }
+                .firstOrNull()?.also { Channels.deleteWhere { this.id eq id } }
+        }?.let { removedChannel -> ChannelRepository.Result.Remove.Success(removedChannel) }
+            ?: ChannelRepository.Result.Remove.NotFound
     } catch (e: Exception) {
         logger.severe("Failed to remove channel $id")
         e.printStackTrace()
@@ -89,12 +90,13 @@ class ChannelRepositoryDatabase(
 
     override suspend fun removeByCode(code: String): ChannelRepository.Result.Remove = try {
         transaction {
-            selectAllChannels().where { Channels.code eq code }.firstOrNull()?.asDomainChannel?.let { removedChannel ->
-                Channels.deleteWhere { this.code eq code }.takeIf { it > 0 }?.let {
-                    ChannelRepository.Result.Remove.Success(removedChannel)
-                } ?: ChannelRepository.Result.Remove.NotFound
-            } ?: ChannelRepository.Result.Remove.NotFound
-        }
+            selectAllChannels()
+                .where { Channels.code eq code }
+                .firstOrNull()
+                ?.asDomainChannel
+                ?.also { Channels.deleteWhere { this.code eq code }.takeIf { it > 0 } }
+        }?.let { removedChannel -> ChannelRepository.Result.Remove.Success(removedChannel) }
+            ?: ChannelRepository.Result.Remove.NotFound
     } catch (e: Exception) {
         logger.severe("Failed to remove channel with code $code")
         e.printStackTrace()
@@ -105,9 +107,7 @@ class ChannelRepositoryDatabase(
     override suspend fun getAll(): ChannelRepository.Result.GetAll = try {
         transaction {
             selectAllChannels().map { it.asDomainChannel }
-        }.let { channels ->
-            ChannelRepository.Result.GetAll.Success(channels)
-        }
+        }.let { channels -> ChannelRepository.Result.GetAll.Success(channels) }
     } catch (e: Exception) {
         logger.severe("Failed to get all channels")
         e.printStackTrace()
@@ -125,7 +125,7 @@ class ChannelRepositoryDatabase(
             ChannelRepository.Result.GetById.Success(channel)
         } ?: ChannelRepository.Result.GetById.NotFound
     } catch (e: Exception) {
-        logger.severe("Failed to get all channels")
+        logger.severe("Failed to get channel by id")
         e.printStackTrace()
 
         ChannelRepository.Result.GetById.Error(e)

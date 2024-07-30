@@ -1,8 +1,11 @@
 package io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.mapper
 
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.entity.Channels
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.channel.entity.Messages
 import io.github.vinicreis.pubsub.server.core.model.data.Channel
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.Transaction
+import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.statements.UpdateBuilder
 
 internal val Channel.Type.toEntity: Channels.Type
@@ -25,9 +28,11 @@ internal val Channels.Type.asDomain: Channel.Type
         Channels.Type.MULTIPLE -> Channel.Type.MULTIPLE
     }
 
+context(Transaction)
 val ResultRow.asDomainChannel: Channel get() = Channel(
     id = this[Channels.id].value,
     code = this[Channels.code],
     name = this[Channels.name],
     type = this[Channels.type].asDomain,
+    pendingMessagesCount = this[Messages.id.count()].toInt()
 )

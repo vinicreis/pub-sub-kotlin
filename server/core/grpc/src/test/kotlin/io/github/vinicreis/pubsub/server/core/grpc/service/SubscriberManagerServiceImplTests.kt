@@ -4,6 +4,7 @@ import io.github.vinicreis.pubsub.server.core.model.data.Queue
 import io.github.vinicreis.pubsub.server.core.model.data.TextMessage
 import io.github.vinicreis.pubsub.server.core.test.extension.asTextMessage
 import io.github.vinicreis.pubsub.server.core.test.fixture.QueueFixture
+import io.github.vinicreis.pubsub.server.data.repository.EventsRepository
 import io.github.vinicreis.pubsub.server.data.repository.TextMessageRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -26,32 +27,17 @@ import kotlin.random.Random
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SubscriberManagerServiceImplTests {
-    private val textMessageRepository = mockk<TextMessageRepository>()
+    private val eventsRepository = mockk<EventsRepository>()
     private val testDispatcher = UnconfinedTestDispatcher()
     private val sut = SubscriberManagerImpl(
-        textMessageRepository = textMessageRepository,
+        eventsRepository = eventsRepository,
         coroutineContext = testDispatcher,
         logger = Logger.getLogger("SubscriberManagerImplTests")
     )
 
     @Test
-    fun `Should close queue when the queue message queue is not found`() = runTest {
-        coEvery { textMessageRepository.subscribe(any()) } returns TextMessageRepository.Result.Subscribe.QueueNotFound
-
-        val textMessages = mutableListOf<TextMessage>()
-        val queue = QueueFixture.instance()
-        val subscriber = sut.subscribe(queue)
-
-        launch { assertThrows<IllegalStateException> { subscriber.toList(textMessages) } }
-        advanceUntilIdle()
-
-        coVerify(exactly = 2) { textMessageRepository.subscribe(queue) }
-        assertTrue(textMessages.isEmpty())
-    }
-
-    @Test
     fun `Should close queue when some error happens to fetch message queue`() = runTest {
-        coEvery { textMessageRepository.subscribe(any()) } returns
+        coEvery { eventsRepository.consume() } returns
                 TextMessageRepository.Result.Subscribe.Error(IllegalArgumentException("Error"))
 
         val textMessages = mutableListOf<TextMessage>()
@@ -61,7 +47,7 @@ class SubscriberManagerServiceImplTests {
         launch { assertThrows<RuntimeException> { subscriber.toList(textMessages) } }
         advanceUntilIdle()
 
-        coVerify(exactly = 2) { textMessageRepository.subscribe(queue) }
+        coVerify(exactly = 2) { eventsRepository.consume() }
         assertTrue(textMessages.isEmpty())
     }
 
@@ -72,7 +58,7 @@ class SubscriberManagerServiceImplTests {
         val queue = QueueFixture.instance(type = Queue.Type.SIMPLE)
         val messagesEmitted = Random.nextInt(10)
 
-        coEvery { textMessageRepository.subscribe(any()) } returns
+        coEvery { eventsRepository.consume() } returns
                 TextMessageRepository.Result.Subscribe.Success(textMessageChannel.receiveAsFlow())
 
         val subscriber = sut.subscribe(queue)
@@ -86,7 +72,7 @@ class SubscriberManagerServiceImplTests {
 
         advanceUntilIdle()
 
-        coVerify(exactly = 2) { textMessageRepository.subscribe(queue) }
+        coVerify(exactly = 2) { eventsRepository.consume(queue) }
         assertEquals(messagesEmitted, textMessages.size)
     }
 
@@ -100,7 +86,7 @@ class SubscriberManagerServiceImplTests {
         val messages3 = mutableListOf<TextMessage>()
         val messages4 = mutableListOf<TextMessage>()
 
-        coEvery { textMessageRepository.subscribe(any()) } returns
+        coEvery { eventsRepository.consume() } returns
                 TextMessageRepository.Result.Subscribe.Success(textMessageChannel.receiveAsFlow())
 
         val subscriber1 = sut.subscribe(queue)
@@ -121,7 +107,7 @@ class SubscriberManagerServiceImplTests {
 
         advanceUntilIdle()
 
-        coVerify(exactly = 5) { textMessageRepository.subscribe(queue) }
+        coVerify(exactly = 5) { eventsRepository.consume(queue) }
         assertEquals(messagesEmitted, messages1.size + messages2.size + messages3.size + messages4.size)
     }
 
@@ -139,7 +125,7 @@ class SubscriberManagerServiceImplTests {
             }
         }
 
-        coEvery { textMessageRepository.subscribe(any()) } returns
+        coEvery { eventsRepository.consume() } returns
                 TextMessageRepository.Result.Subscribe.Success(textMessageChannel.receiveAsFlow())
 
         val subscriber1 = sut.subscribe(queue)
@@ -160,7 +146,7 @@ class SubscriberManagerServiceImplTests {
 
         advanceUntilIdle()
 
-        coVerify(exactly = 5) { textMessageRepository.subscribe(queue) }
+        coVerify(exactly = 5) { eventsRepository.consume(queue) }
         assertEquals(messagesEmitted, messages1)
         assertEquals(messagesEmitted, messages2)
         assertEquals(messagesEmitted, messages3)
@@ -174,7 +160,7 @@ class SubscriberManagerServiceImplTests {
         val messagesEmitted = Random.nextInt(10)
         val textMessages = mutableListOf<TextMessage>()
 
-        coEvery { textMessageRepository.subscribe(any()) } returns
+        coEvery { eventsRepository.consume() } returns
                 TextMessageRepository.Result.Subscribe.Success(textMessageChannel.receiveAsFlow())
 
         val subscriber = sut.subscribe(queue)
@@ -192,9 +178,8 @@ class SubscriberManagerServiceImplTests {
 
         advanceUntilIdle()
 
-        coVerify(exactly = 2) { textMessageRepository.subscribe(queue) }
+        coVerify(exactly = 2) { eventsRepository.consume() }
         assertEquals(messagesEmitted, textMessages.size)
-        assertEquals(0, sut.subscribersCount(queue))
         println("Validating cancellation...")
         assertTrue(listJob.isCancelled)
     }

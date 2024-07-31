@@ -1,6 +1,7 @@
 package io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.repository
 
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.fixture.DatabaseFixture
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.repository.QueueRepositoryDatabase
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
 import io.github.vinicreis.pubsub.server.core.test.extension.asTextMessage
 import io.github.vinicreis.pubsub.server.core.test.extension.randomSlice
@@ -112,9 +113,8 @@ class QueueRepositoryDatabaseTests {
         val messageCount = Random.nextLong(1L, 100L)
         val messages = TextMessageFixture.EXAMPLES.randomSlice(messageCount.toInt()).map { it.asTextMessage }
 
-        when (messageRepository.addAll(validQueue, messages)) {
+        when (messageRepository.add(validQueue, messages)) {
             is TextMessageRepository.Result.Add.Error -> fail("Should not fail by generic error to add messages to valid queue")
-            TextMessageRepository.Result.Add.QueueNotFound -> fail("Should not fail to find valid queue")
             TextMessageRepository.Result.Add.Success -> Unit
         }
 
@@ -141,7 +141,6 @@ class QueueRepositoryDatabaseTests {
     fun `8 - Should remove a existing queue successfully`() = runTest(testDispatcher) {
         when(messageRepository.remove(validQueue)) {
             is TextMessageRepository.Result.Remove.Error -> fail("Should not fail to remove messages from valid queue")
-            TextMessageRepository.Result.Remove.QueueNotFound -> fail("Should not fail to find valid queue message queue")
             TextMessageRepository.Result.Remove.Success -> Unit
         }
 
@@ -173,7 +172,7 @@ class QueueRepositoryDatabaseTests {
             DatabaseFixture.up()
 
             sut = QueueRepositoryDatabase()
-            messageRepository = TextMessageRepositoryDatabase(sut, testDispatcher)
+            messageRepository = TextMessageRepositoryDatabase(testDispatcher)
         }
 
         @AfterEach

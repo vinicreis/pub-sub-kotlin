@@ -240,25 +240,6 @@ class QueueServiceGrpcTests {
         }
 
         @Test
-        fun `Should return error response if the removed queue message queue is not found`() =
-            runTest(testDispatcher) {
-                val id = QueueFixture.id()
-                val request = removeRequest { this.id = id.toString() }
-                val queue = QueueFixture.instance()
-
-                coEvery { queueRepositoryMock.removeById(id) } returns QueueFixture.Repository.Remove.success(queue)
-                coEvery { textMessageRepositoryMock.remove(queue) } returns TextMessageFixture.Repository.Remove.notFound()
-
-                val response = sut.remove(request)
-
-                coVerify(exactly = 1) { queueRepositoryMock.removeById(id) }
-                coVerify(exactly = 1) { textMessageRepositoryMock.remove(queue) }
-                assertEquals(ResultOuterClass.Result.ERROR, response.result)
-                assertEquals(RemoteQueue.getDefaultInstance(), response.queue)
-                assertTrue(response.message.contains("message queue not found"))
-            }
-
-        @Test
         fun `Should return error with exception message when its thrown while removing queue`() =
             runTest(testDispatcher) {
                 val id = QueueFixture.id()
@@ -437,13 +418,13 @@ class QueueServiceGrpcTests {
 
                     coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.success(queue)
                     coEvery {
-                        textMessageRepositoryMock.addAll(queue, any())
+                        textMessageRepositoryMock.add(queue, any())
                     } returns TextMessageFixture.Repository.Add.success()
 
                     val response = sut.postMultiple(request)
 
                     coVerify(exactly = 1) { queueRepositoryMock.getById(id) }
-                    coVerify(exactly = 1) { textMessageRepositoryMock.addAll(queue, any()) }
+                    coVerify(exactly = 1) { textMessageRepositoryMock.add(queue, any()) }
                     assertEquals(ResultOuterClass.Result.SUCCESS, response.result)
                     assertEquals(queue.asRemote, response.queue)
                     assertTrue(response.message.isEmpty())
@@ -461,7 +442,7 @@ class QueueServiceGrpcTests {
 
                 coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.notFound()
                 coEvery {
-                    textMessageRepositoryMock.addAll(queue, any())
+                    textMessageRepositoryMock.add(queue, any())
                 } answers { fail("Should not be called if queue is not found") }
 
                 val response = sut.postMultiple(request)
@@ -486,13 +467,13 @@ class QueueServiceGrpcTests {
 
                     coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.success(queue)
                     coEvery {
-                        textMessageRepositoryMock.addAll(queue, any())
+                        textMessageRepositoryMock.add(queue, any())
                     } throws RuntimeException(TextMessageFixture.any())
 
                     val response = sut.postMultiple(request)
 
                     coVerify(exactly = 1) { queueRepositoryMock.getById(id) }
-                    coVerify(exactly = 1) { textMessageRepositoryMock.addAll(queue, any()) }
+                    coVerify(exactly = 1) { textMessageRepositoryMock.add(queue, any()) }
                     assertEquals(ResultOuterClass.Result.ERROR, response.result)
                     assertEquals(RemoteQueue.getDefaultInstance(), response.queue)
                     assertEquals(GENERIC_ERROR_MESSAGE, response.message)

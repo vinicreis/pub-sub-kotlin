@@ -1,8 +1,10 @@
 package io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.repository
 
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.entity.Messages
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.entity.TextMessages
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.mapper.asDomainTextMessage
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.fixture.DatabaseFixture
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.mapper.asDomainTextMessage
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.repository.QueueRepositoryDatabase
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.repository.TextMessageRepositoryDatabase
 import io.github.vinicreis.pubsub.server.core.model.data.TextMessage
 import io.github.vinicreis.pubsub.server.core.test.extension.asTextMessage
 import io.github.vinicreis.pubsub.server.core.test.extension.randomSlice
@@ -38,19 +40,7 @@ import kotlin.random.Random
 @TestMethodOrder(MethodOrderer.DisplayName::class)
 class TextMessageRepositoryDatabaseTests {
     @Test
-    fun `01 - Should fail to add a message to a non-existent queue`() = runTest(testDispatcher) {
-        val queue = QueueFixture.instance(code = "non-existent-queue")
-        val message = TextMessageFixture.any().asTextMessage
-
-        when (val result = sut.add(queue, message)) {
-            is TextMessageRepository.Result.Add.Error -> fail("Should not fail with generic error", result.e)
-            TextMessageRepository.Result.Add.Success -> fail("Should not add a message to a non-existent queue")
-            TextMessageRepository.Result.Add.QueueNotFound -> Unit
-        }
-    }
-
-    @Test
-    fun `02 - Should fail to add an invalid message to a valid queue`() = runTest(testDispatcher) {
+    fun `01 - Should fail to add an invalid message to a valid queue`() = runTest(testDispatcher) {
         val queue = QueueFixture.instance(id = validQueueId)
 
         if (queueRepository.add(queue) !is QueueRepository.Result.Add.Success) {
@@ -59,9 +49,8 @@ class TextMessageRepositoryDatabaseTests {
 
         val message = "    ".asTextMessage
 
-        when (val result = sut.add(queue, message)) {
+        when (val result = sut.add(queue, listOf(message))) {
             TextMessageRepository.Result.Add.Success -> fail("Should not add a message to a non-existent queue")
-            TextMessageRepository.Result.Add.QueueNotFound -> fail("Should not fail with queue not found")
             is TextMessageRepository.Result.Add.Error -> {
                 assertInstanceOf(IllegalArgumentException::class.java, result.e)
                 assertNotNull(result.e.message)
@@ -72,18 +61,16 @@ class TextMessageRepositoryDatabaseTests {
     }
 
     @Test
-    fun `03 - Should add a valid message to a valid queue successfully`() = runTest(testDispatcher) {
+    fun `02 - Should add a valid message to a valid queue successfully`() = runTest(testDispatcher) {
         val queue = QueueFixture.instance(id = validQueueId)
         val message = TextMessageFixture.any().asTextMessage
 
-        when (val result = sut.add(queue, message)) {
+        when (val result = sut.add(queue, listOf(message))) {
             is TextMessageRepository.Result.Add.Error -> fail("Should not fail to add message", result.e)
-            TextMessageRepository.Result.Add.QueueNotFound -> fail("Should not fail with queue not found")
             TextMessageRepository.Result.Add.Success -> Unit
         }
 
         when (val result = sut.subscribe(queue)) {
-            TextMessageRepository.Result.Subscribe.QueueNotFound -> fail("Should not fail with queue not found")
             is TextMessageRepository.Result.Subscribe.Error -> fail("Should not fail to poll message")
             is TextMessageRepository.Result.Subscribe.Success -> result.messages.first().also { receivedMessage ->
                 assertEquals(message, receivedMessage)
@@ -92,28 +79,26 @@ class TextMessageRepositoryDatabaseTests {
     }
 
     @Test
-    fun `04 - Should add multiple messages to a valid queue successfully`() = runTest(testDispatcher) {
+    fun `03 - Should add multiple messages to a valid queue successfully`() = runTest(testDispatcher) {
         val queue = QueueFixture.instance(id = validQueueId)
         val messages = TextMessageFixture.EXAMPLES.randomSlice(5).map { it.asTextMessage }
 
-        when (val result = sut.addAll(queue, messages)) {
+        when (val result = sut.add(queue, messages)) {
             is TextMessageRepository.Result.Add.Error -> fail(
                 "Should not add a message to a non-existent queue",
                 result.e
             )
 
-            TextMessageRepository.Result.Add.QueueNotFound -> fail("Should not fail with queue not found")
             TextMessageRepository.Result.Add.Success -> Unit
         }
     }
 
     @Test
-    fun `05 - Should fail when message does not match constraints`() = runTest(testDispatcher) {
+    fun `04 - Should fail when message does not match constraints`() = runTest(testDispatcher) {
         val queue = QueueFixture.instance(id = validQueueId)
         val tooLongMessage = "aaaaa".repeat(10_000)
 
-        when (val result = sut.add(queue, tooLongMessage.asTextMessage)) {
-            TextMessageRepository.Result.Add.QueueNotFound -> fail("Should not fail with queue not found")
+        when (val result = sut.add(queue, listOf(tooLongMessage.asTextMessage))) {
             is TextMessageRepository.Result.Add.Success -> fail("Should not poll a message longer than limit")
             is TextMessageRepository.Result.Add.Error -> {
                 assertInstanceOf(IllegalArgumentException::class.java, result.e)
@@ -125,8 +110,7 @@ class TextMessageRepositoryDatabaseTests {
 
         val blankMessage = "   "
 
-        when (val result = sut.add(queue, blankMessage.asTextMessage)) {
-            TextMessageRepository.Result.Add.QueueNotFound -> fail("Should not fail with queue not found")
+        when (val result = sut.add(queue, listOf(blankMessage.asTextMessage))) {
             is TextMessageRepository.Result.Add.Success -> fail("Should not poll a message longer than limit")
             is TextMessageRepository.Result.Add.Error -> {
                 assertNotNull(result.e.message)
@@ -136,65 +120,51 @@ class TextMessageRepositoryDatabaseTests {
     }
 
     @Test
-    fun `06 - Should add message on database if no subscriber exists for queue`() = runTest(testDispatcher) {
+    fun `05 - Should add message on database if no subscriber exists for queue`() = runTest(testDispatcher) {
         val queue = QueueFixture.instance(id = validQueueId)
         val message = TextMessageFixture.any().asTextMessage
 
-        when (val result = sut.add(queue, message)) {
+        when (val result = sut.add(queue, listOf(message))) {
             is TextMessageRepository.Result.Add.Error -> fail("Should not fail to add message", result.e)
-            TextMessageRepository.Result.Add.QueueNotFound -> fail("Should not fail with queue not found")
             TextMessageRepository.Result.Add.Success -> Unit
         }
 
         val foundMessages = transaction {
-            Messages.selectAll().where { Messages.id eq message.id }.map { it.asDomainTextMessage }
+            TextMessages.selectAll().where { TextMessages.id eq message.id }.map { it.asDomainTextMessage }
         }
 
-        assertEquals(1, foundMessages.size)
-        assertEquals(message.id, foundMessages.last().id)
-        assertEquals(message.content, foundMessages.last().content)
+        assertEquals(1, foundTextMessages.size)
+        assertEquals(message.id, foundTextMessages.last().id)
+        assertEquals(message.content, foundTextMessages.last().content)
     }
 
     @Test
-    fun `07 - Should fail to subscribe to a non-existent queue`() = runTest(testDispatcher) {
-        val invalidQueue = QueueFixture.instance()
-
-        when (sut.subscribe(invalidQueue)) {
-            is TextMessageRepository.Result.Subscribe.Error -> fail("Should not fail by generic error")
-            is TextMessageRepository.Result.Subscribe.Success -> fail("Should not succeed to remove non-existing queue")
-            TextMessageRepository.Result.Subscribe.QueueNotFound -> Unit
-        }
-    }
-
-    @Test
-    fun `08 - Should subscribe to a valid queue successfully`() = runTest(testDispatcher) {
+    fun `06 - Should subscribe to a valid queue successfully`() = runTest(testDispatcher) {
         val queue = QueueFixture.instance(id = validQueueId)
 
         when (sut.subscribe(queue)) {
             is TextMessageRepository.Result.Subscribe.Error -> fail("Should not fail by generic error")
-            TextMessageRepository.Result.Subscribe.QueueNotFound -> fail("Should find valid queue $validQueueId")
             is TextMessageRepository.Result.Subscribe.Success -> Unit
         }
     }
 
     @Test
-    fun `09 - Should receive messages from a subscribed queue in order`() = runTest(testDispatcher) {
+    fun `07 - Should receive messages from a subscribed queue in order`() = runTest(testDispatcher) {
         val queue = QueueFixture.instance(id = validQueueId)
         val receivedTextMessages = mutableListOf<TextMessage>()
         val pendingMessages = transaction {
-            Messages.selectAll()
-                .where { Messages.queueId eq queue.id }
-                .orderBy(Messages.createdAt, SortOrder.ASC)
+            TextMessages.selectAll()
+                .where { TextMessages.queueId eq queue.id }
+                .orderBy(TextMessages.createdAt, SortOrder.ASC)
                 .map { it.asDomainTextMessage }
         }
 
         when (val result = sut.subscribe(queue)) {
             is TextMessageRepository.Result.Subscribe.Error -> fail("Should fail to subscribe to queue $queue")
-            TextMessageRepository.Result.Subscribe.QueueNotFound -> fail("The queue $validQueueId is valid and should've been found")
             is TextMessageRepository.Result.Subscribe.Success -> {
                 backgroundScope.launch {
                     result.messages
-                        .takeWhile { receivedTextMessages.size < pendingMessages.size }
+                        .takeWhile { receivedTextTextMessages.size < pendingTextMessages.size }
                         .toList(receivedTextMessages)
                 }
             }
@@ -204,31 +174,19 @@ class TextMessageRepositoryDatabaseTests {
     }
 
     @Test
-    fun `10 - Should delete message from database after sending`() {
-        transaction { Messages.selectAll().count() }.also {
+    fun `08 - Should delete message from database after sending`() {
+        transaction { TextMessages.selectAll().count() }.also {
             assertEquals(0, it)
         }
     }
 
     @Test
-    fun `11 - Should fail to remove a non-existing queue`() = runTest(testDispatcher) {
-        val invalidQueue = QueueFixture.instance()
-
-        when (sut.remove(invalidQueue)) {
-            is TextMessageRepository.Result.Remove.Error -> fail("Should not fail by generic error")
-            is TextMessageRepository.Result.Remove.Success -> fail("Should not succeed to remove non-existing queue")
-            TextMessageRepository.Result.Remove.QueueNotFound -> Unit
-        }
-    }
-
-    @Test
-    fun `12 - Should remove existing queue successfully closing all subscribers`() = runTest(testDispatcher) {
+    fun `09 - Should remove existing queue successfully closing all subscribers`() = runTest(testDispatcher) {
         val queue = QueueFixture.instance(id = validQueueId)
         val subscribers: List<Flow<TextMessage>> = buildList {
             repeat(Random.nextInt(400, 500)) {
                 when (val result = sut.subscribe(queue)) {
                     is TextMessageRepository.Result.Subscribe.Error -> fail("Should not fail by generic error")
-                    TextMessageRepository.Result.Subscribe.QueueNotFound -> fail("Should find valid queue $validQueueId")
                     is TextMessageRepository.Result.Subscribe.Success -> add(result.messages)
                 }
             }
@@ -240,7 +198,6 @@ class TextMessageRepositoryDatabaseTests {
 
         when (sut.remove(queue)) {
             is TextMessageRepository.Result.Remove.Error -> fail("Should not fail by generic error")
-            TextMessageRepository.Result.Remove.QueueNotFound -> fail("The queue $validQueueId is valid and should've been found")
             is TextMessageRepository.Result.Remove.Success -> Unit
         }
 
@@ -260,7 +217,6 @@ class TextMessageRepositoryDatabaseTests {
 
             queueRepository = QueueRepositoryDatabase()
             sut = TextMessageRepositoryDatabase(
-                queueRepository = queueRepository,
                 coroutineContext = testDispatcher,
                 logger = Logger.getLogger(TextMessageRepositoryDatabaseTests::class.simpleName)
             )

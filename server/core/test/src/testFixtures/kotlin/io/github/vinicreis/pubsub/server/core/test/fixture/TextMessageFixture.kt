@@ -20,7 +20,6 @@ object TextMessageFixture {
 
         object Remove {
             fun success() = TextMessageRepository.Result.Remove.Success
-            fun notFound() = TextMessageRepository.Result.Remove.QueueNotFound
             fun error(message: String = "Failed to add") =
                 TextMessageRepository.Result.Remove.Error(RuntimeException(message))
         }

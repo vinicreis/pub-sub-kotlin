@@ -5,12 +5,12 @@ import io.github.vinicreis.pubsub.client.java.app.ui.cli.resource.StringResource
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.config.getServerInfo
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.menu.ClientMenuOptions
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.menu.selectMenuOption
-import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.common.withChannelList
+import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.common.withQueueList
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.list.print
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.getMessage
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.print
-import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.selectChannel
-import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.publish.getChannelData
+import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.selectQueue
+import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.publish.getQueueData
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.publish.print
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.remove.print
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.subscribe.collectAndPrint
@@ -34,25 +34,25 @@ fun main() {
         while (notFinished) {
             try {
                 when(selectMenuOption()) {
-                    ClientMenuOptions.LIST_CHANNELS -> service.list().print()
-                    ClientMenuOptions.PUBLISH_CHANNEL -> service.publish(getChannelData()).print()
-                    ClientMenuOptions.POST_MESSAGE -> service.withChannelList { availableChannels ->
-                        availableChannels.selectChannel { selectedChannel ->
-                            service.post(selectedChannel.id.toString(), getMessage()).print()
+                    ClientMenuOptions.LIST_QUEUES -> service.list().print()
+                    ClientMenuOptions.PUBLISH_QUEUE -> service.publish(getQueueData()).print()
+                    ClientMenuOptions.POST_MESSAGE -> service.withQueueList { queues ->
+                        queues.selectQueue { selectedQueue ->
+                            service.post(selectedQueue.id.toString(), getMessage()).print()
                         }
                     }
 
-                    ClientMenuOptions.SUBSCRIBE_CHANNEL -> service.withChannelList { availableChannels ->
-                        availableChannels.selectChannel { selectedChannel ->
+                    ClientMenuOptions.SUBSCRIBE_QUEUE -> service.withQueueList { queues ->
+                        queues.selectQueue { selectedQueue ->
                             uiScope.launch {
-                                service.subscribe(selectedChannel.id.toString()).collectAndPrint()
+                                service.subscribe(selectedQueue.id.toString()).collectAndPrint()
                             }.also { job -> subscriberJobs.add(job) }
                         }
                     }
 
-                    ClientMenuOptions.REMOVE_CHANNEL -> service.withChannelList { availableChannels ->
-                        availableChannels.selectChannel { selectedChannel ->
-                            service.remove(selectedChannel.id.toString()).print()
+                    ClientMenuOptions.REMOVE_QUEUE -> service.withQueueList { queues ->
+                        queues.selectQueue { selectedQueue ->
+                            service.remove(selectedQueue.id.toString()).print()
                         }
                     }
 

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+import "io/github/vinicreis/pubsub/server/core/model/data/result.proto";
+import "io/github/vinicreis/pubsub/server/core/model/data/queue.proto";
+
+option java_package = "io.github.vinicreis.domain.server.core.model.response";
+
+message ListResponse {
+  Result result = 1;
+  repeated Queue queues = 2;
+  optional string message = 3;
+}

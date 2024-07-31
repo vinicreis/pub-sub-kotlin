@@ -1,10 +1,10 @@
 package io.github.vinicreis.pubsub.server.core.service
 
-import io.github.vinicreis.pubsub.server.core.model.data.Channel
-import io.github.vinicreis.pubsub.server.core.model.data.Message
+import io.github.vinicreis.pubsub.server.core.model.data.Queue
+import io.github.vinicreis.pubsub.server.core.model.data.TextMessage
 import kotlinx.coroutines.flow.Flow
 
 interface SubscriberManagerService {
-    fun subscribersCount(channel: Channel): Int
-    fun subscribe(channel: Channel): Flow<Message>
+    fun subscribersCount(queue: Queue): Int
+    fun subscribe(queue: Queue): Flow<TextMessage>
 }

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option java_package = "io.github.vinicreis.domain.server.core.model.data";
+
+message Queue {
+  optional string id = 1;
+  string code = 2;
+  string name = 3;
+  Queue.Type type = 4;
+  optional int64 pendingMessagesCount = 5;
+
+  enum Type {
+    SIMPLE = 0;
+    MULTIPLE = 1;
+  }
+}

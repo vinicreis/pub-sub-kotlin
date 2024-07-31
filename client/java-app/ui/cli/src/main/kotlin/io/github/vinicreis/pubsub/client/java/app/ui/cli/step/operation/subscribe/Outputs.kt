@@ -6,10 +6,10 @@ import kotlinx.coroutines.flow.Flow
 
 fun SubscriptionEvent.print() {
     when(this) {
-        SubscriptionEvent.Processing -> println(StringResource.Channel.Message.PROCESSING_SUBSCRIPTION)
-        is SubscriptionEvent.Active -> println(String.format(StringResource.Channel.Message.SUBSCRIPTION_ACTIVE, channel.name))
-        is SubscriptionEvent.Update -> println(String.format(StringResource.Channel.Message.MESSAGE_RECEIVED, channel.name, message.content))
-        is SubscriptionEvent.Finished -> println(String.format(StringResource.Channel.Message.SUBSCRIPTION_FINISHED, message))
+        SubscriptionEvent.Processing -> println(StringResource.Queue.Message.PROCESSING_SUBSCRIPTION)
+        is SubscriptionEvent.Active -> println(String.format(StringResource.Queue.Message.SUBSCRIPTION_ACTIVE, queue.name))
+        is SubscriptionEvent.Update -> println(String.format(StringResource.Queue.Message.MESSAGE_RECEIVED, queue.name, textMessage.content))
+        is SubscriptionEvent.Finished -> println(String.format(StringResource.Queue.Message.SUBSCRIPTION_FINISHED, message))
     }
 }
 

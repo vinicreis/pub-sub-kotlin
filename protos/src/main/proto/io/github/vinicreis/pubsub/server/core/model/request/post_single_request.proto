@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+import "io/github/vinicreis/pubsub/server/core/model/data/text_message.proto";
+
+option java_package = "io.github.vinicreis.domain.server.core.model.request";
+
+message PostSingleRequest {
+  string queueId = 1;
+  TextMessage content = 2;
+}

@@ -9,6 +9,7 @@ dependencies {
     api(projects.protos)
     implementation(projects.server.core.model)
     implementation(projects.server.core.service)
+    implementation(projects.server.core.util)
     implementation(projects.server.core.data.repository)
 
     testImplementation(testFixtures(projects.server.core.test))

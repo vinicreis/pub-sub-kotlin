@@ -1,25 +1,25 @@
 package io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post
 
-import io.github.vinicreis.pubsub.client.core.model.Channel
-import io.github.vinicreis.pubsub.client.core.model.Message
+import io.github.vinicreis.pubsub.client.core.model.Queue
+import io.github.vinicreis.pubsub.client.core.model.TextMessage
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.components.getInputOrNull
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.components.notNullable
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.components.selectOption
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.resource.StringResource
 
-suspend fun List<Channel>.selectChannel(
-    onChannelSelected: suspend (Channel) -> Unit
+suspend fun List<Queue>.selectQueue(
+    onQueueSelected: suspend (Queue) -> Unit
 ) {
     selectOption(
-        message = StringResource.Channel.Input.Message.SELECT_AVAILABLE_CHANNELS,
+        message = StringResource.Queue.Input.Message.SELECT_AVAILABLE_QUEUES,
         options = this.map { it.name },
-    )?.let { onChannelSelected(get(it)) } ?: error("Channel not selected")
+    )?.let { onQueueSelected(get(it)) } ?: error("Queue not selected")
 }
 
-suspend fun getMessage(): Message {
+suspend fun getMessage(): TextMessage {
     val content = getInputOrNull(StringResource.Message.Input.ENTER_CONTENT).notNullable {
         StringResource.Message.Validation.EMPTY_CONTENT
     }
 
-    return Message(content)
+    return TextMessage(content)
 }

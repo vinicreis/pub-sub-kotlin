@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "io/github/vinicreis/pubsub/server/core/model/data/queue.proto";
+import "io/github/vinicreis/pubsub/server/core/model/data/subscription_event.proto";
+import "io/github/vinicreis/pubsub/server/core/model/data/text_message.proto";
+
+option java_package = "io.github.vinicreis.domain.server.core.model.response";
+
+message SubscribeResponse {
+  SubscriptionEvent event = 1;
+  optional Queue queue = 2;
+  optional TextMessage content = 3;
+  optional string message = 4;
+}

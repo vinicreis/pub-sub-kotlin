@@ -1,6 +1,6 @@
 package io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.publish
 
-import io.github.vinicreis.pubsub.client.core.model.Channel
+import io.github.vinicreis.pubsub.client.core.model.Queue
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.components.getInput
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.components.getInputOrNull
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.components.notNullable
@@ -8,21 +8,21 @@ import io.github.vinicreis.pubsub.client.java.app.ui.cli.components.selectOption
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.resource.StringResource
 import java.util.*
 
-suspend fun getChannelData(): Channel {
-    val code: String = getInputOrNull(message = StringResource.Channel.Input.Message.ENTER_CODE).notNullable {
-        StringResource.Channel.Input.Validation.EMPTY_CODE
+suspend fun getQueueData(): Queue {
+    val code: String = getInputOrNull(message = StringResource.Queue.Input.Message.ENTER_CODE).notNullable {
+        StringResource.Queue.Input.Validation.EMPTY_CODE
     }
 
-    val name: String = getInput(StringResource.Channel.Input.Message.ENTER_NAME, code)
+    val name: String = getInput(StringResource.Queue.Input.Message.ENTER_NAME, code)
 
-    val type: Channel.Type = selectOption(
-        StringResource.Channel.Input.Message.SELECT_CHANNEL_TYPE,
-        Channel.Type.entries.map { StringResource.Channel.Type.name(it) }
+    val type: Queue.Type = selectOption(
+        StringResource.Queue.Input.Message.SELECT_QUEUE_TYPE,
+        Queue.Type.entries.map { StringResource.Queue.Type.name(it) }
     ).notNullable {
-        StringResource.Channel.Input.Validation.INVALID_TYPE
-    }.let { Channel.Type.fromOrdinal(it) ?: error(StringResource.Channel.Input.Validation.INVALID_TYPE) }
+        StringResource.Queue.Input.Validation.INVALID_TYPE
+    }.let { Queue.Type.fromOrdinal(it) ?: error(StringResource.Queue.Input.Validation.INVALID_TYPE) }
 
-    return Channel(
+    return Queue(
         id = UUID.randomUUID(),
         code = code,
         name = name,

@@ -3,11 +3,11 @@ package io.github.vinicreis.pubsub.client.java.app.ui.cli.step.menu
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.components.selectOption
 
 enum class ClientMenuOptions(val message: String) {
-    LIST_CHANNELS("List channels"),
-    PUBLISH_CHANNEL("Publish a channel"),
-    POST_MESSAGE("Post a message on channel"),
-    SUBSCRIBE_CHANNEL("Subscribe to a channel"),
-    REMOVE_CHANNEL("Remove a channel"),
+    LIST_QUEUES("List queues"),
+    PUBLISH_QUEUE("Publish queue"),
+    POST_MESSAGE("Post a message on queue"),
+    SUBSCRIBE_QUEUE("Subscribe to queue"),
+    REMOVE_QUEUE("Remove queue"),
     EXIT("Exit");
 
     companion object {

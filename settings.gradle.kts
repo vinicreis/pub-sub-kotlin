@@ -30,6 +30,7 @@ include("client")
 
 include("server:core")
 include("server:core:model")
+include("server:core:util")
 include("server:core:service")
 include("server:core:grpc")
 include("server:core:data")

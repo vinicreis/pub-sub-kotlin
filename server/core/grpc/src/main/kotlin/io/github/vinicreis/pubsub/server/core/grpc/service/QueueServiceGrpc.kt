@@ -141,11 +141,6 @@ class QueueServiceGrpc(
                                 message = messageCloseResult.e.message ?: "Something went wrong..."
                             }
 
-                            TextMessageRepository.Result.Remove.QueueNotFound -> removeResponse {
-                                this.result = ResultOuterClass.Result.ERROR
-                                message = "Queue ${request.id} message queue not found"
-                            }
-
                             is TextMessageRepository.Result.Remove.Success -> removeResponse {
                                 this.result = ResultOuterClass.Result.SUCCESS
                                 this.queue = result.queue.asRemote
@@ -164,11 +159,6 @@ class QueueServiceGrpc(
     }
 
     private fun TextMessageRepository.Result.Add.toPostResponse(queue: Queue) = when (this) {
-        is TextMessageRepository.Result.Add.QueueNotFound -> postResponse {
-            this.result = ResultOuterClass.Result.ERROR
-            message = "Queue ${queue.id} message queue not found"
-        }
-
         is TextMessageRepository.Result.Add.Error -> postResponse {
             this.result = ResultOuterClass.Result.ERROR
             message = e.message ?: "Something went wrong..."
@@ -197,7 +187,7 @@ class QueueServiceGrpc(
                     is QueueRepository.Result.GetById.Success ->
                         textMessageRepository.add(
                             queue = result.queue,
-                            textMessage = request.content.asDomain
+                            textMessages = listOf(request.content.asDomain)
                         ).toPostResponse(result.queue)
                 }
             }
@@ -227,7 +217,7 @@ class QueueServiceGrpc(
                     }
 
                     is QueueRepository.Result.GetById.Success ->
-                        textMessageRepository.addAll(
+                        textMessageRepository.add(
                             queue = result.queue,
                             textMessages = request.contentList.map(TextMessageOuterClass.TextMessage::asDomain)
                         ).toPostResponse(result.queue)

@@ -35,6 +35,7 @@ class KotlinJvmPlugin : Plugin<Project> {
     private fun Project.dependencies() {
         dependencies {
             implementation(libs.findLibrary(Libraries.KOTLINX_COROUTINES_CORE).get())
+            implementation(libs.findLibrary(Libraries.KOTLINX_DATETIME).get())
         }
     }
 
@@ -51,6 +52,7 @@ class KotlinJvmPlugin : Plugin<Project> {
 
         private object Libraries {
             const val KOTLINX_COROUTINES_CORE = "kotlinx.coroutines.core"
+            const val KOTLINX_DATETIME = "kotlinx.datetime"
             const val KOTLINX_COROUTINES_TEST = "kotlinx.coroutines.test"
         }
     }

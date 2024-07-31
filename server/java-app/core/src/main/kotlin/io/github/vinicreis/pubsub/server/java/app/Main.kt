@@ -1,7 +1,8 @@
 package io.github.vinicreis.pubsub.server.java.app
 
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.repository.QueueRepositoryDatabase
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.repository.TextMessageRepositoryDatabase
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.repository.EventRepositoryDatabase
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.repository.QueueRepositoryDatabase
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.repository.TextMessageRepositoryDatabase
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.script.initializePostgres
 import io.github.vinicreis.pubsub.server.core.grpc.service.QueueServiceGrpc
 import io.github.vinicreis.pubsub.server.core.grpc.service.SubscriberManagerImpl
@@ -18,13 +19,17 @@ fun main(args: Array<String>) {
 
     val port = args.firstOrNull()?.toIntOrNull() ?: run { onError(); return }
     val queueRepository = QueueRepositoryDatabase()
-    val textMessageRepository = TextMessageRepositoryDatabase(queueRepository, Dispatchers.Default)
+    val eventsRepository = EventRepositoryDatabase()
+    val textMessageRepository = TextMessageRepositoryDatabase(Dispatchers.Default, eventsRepository)
     val service = QueueServiceGrpc(
         port = port,
         coroutineContext = Dispatchers.IO,
         queueRepository = queueRepository,
         textMessageRepository = textMessageRepository,
-        subscriberManagerService = SubscriberManagerImpl(textMessageRepository, Dispatchers.Default)
+        subscriberManagerService = SubscriberManagerImpl(
+            coroutineContext = Dispatchers.Default,
+            eventsRepository = eventsRepository,
+        )
     )
 
     service.start()

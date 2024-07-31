@@ -5,6 +5,5 @@ import io.github.vinicreis.pubsub.server.core.model.data.TextMessage
 import kotlinx.coroutines.flow.Flow
 
 interface SubscriberManagerService {
-    fun subscribersCount(queue: Queue): Int
     fun subscribe(queue: Queue): Flow<TextMessage>
 }

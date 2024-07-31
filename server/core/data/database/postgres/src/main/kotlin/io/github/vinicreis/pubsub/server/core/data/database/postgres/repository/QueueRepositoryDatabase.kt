@@ -1,10 +1,9 @@
-package io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.repository
+package io.github.vinicreis.pubsub.server.core.data.database.postgres.repository
 
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.entity.Messages
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.entity.Queues
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.entity.pendingMessagesCount
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.mapper.asDomainQueue
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.mapper.from
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.entity.Queues
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.entity.TextMessages
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.mapper.asDomainQueue
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.mapper.from
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
 import io.github.vinicreis.pubsub.server.data.repository.QueueRepository
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -28,7 +27,7 @@ class QueueRepositoryDatabase(
 
     context(Transaction)
     private fun selectAllQueues() =
-        (Queues leftJoin Messages)
+        (Queues leftJoin TextMessages)
             .select(Queues.id, Queues.code, Queues.name, Queues.type, Queues.pendingMessagesCount)
             .groupBy(Queues.id, Queues.code, Queues.name, Queues.type)
 

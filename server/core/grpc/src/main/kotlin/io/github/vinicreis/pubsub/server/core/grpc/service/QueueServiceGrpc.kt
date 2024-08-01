@@ -2,7 +2,6 @@ package io.github.vinicreis.pubsub.server.core.grpc.service
 
 import io.github.vinicreis.domain.server.core.model.data.ResultOuterClass
 import io.github.vinicreis.domain.server.core.model.data.SubscriptionEventOuterClass.SubscriptionEvent
-import io.github.vinicreis.domain.server.core.model.data.TextMessageOuterClass
 import io.github.vinicreis.domain.server.core.model.request.ListRequestOuterClass.ListRequest
 import io.github.vinicreis.domain.server.core.model.request.PollRequestOuterClass.PollRequest
 import io.github.vinicreis.domain.server.core.model.request.PostMultipleRequestOuterClass.PostMultipleRequest
@@ -27,7 +26,7 @@ import io.github.vinicreis.pubsub.server.core.extension.asUuid
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asDomain
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asRemote
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
-import io.github.vinicreis.pubsub.server.core.model.data.TextMessageReceivedEvent
+import io.github.vinicreis.pubsub.server.core.model.data.event.TextMessageReceivedEvent
 import io.github.vinicreis.pubsub.server.core.service.QueueService
 import io.github.vinicreis.pubsub.server.core.service.SubscriberManagerService
 import io.github.vinicreis.pubsub.server.data.repository.QueueRepository
@@ -37,6 +36,7 @@ import io.grpc.InsecureServerCredentials
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
@@ -188,7 +188,7 @@ class QueueServiceGrpc(
                     is QueueRepository.Result.GetById.Success ->
                         textMessageRepository.add(
                             queue = result.queue,
-                            textMessages = listOf(request.content.asDomain)
+                            textMessages = listOf(request.content.asDomain(result.queue))
                         ).toPostResponse(result.queue)
                 }
             }
@@ -220,7 +220,7 @@ class QueueServiceGrpc(
                     is QueueRepository.Result.GetById.Success ->
                         textMessageRepository.add(
                             queue = result.queue,
-                            textMessages = request.contentList.map(TextMessageOuterClass.TextMessage::asDomain)
+                            textMessages = request.contentList.map { it.asDomain(queue = result.queue) }
                         ).toPostResponse(result.queue)
                 }
             }
@@ -299,7 +299,8 @@ class QueueServiceGrpc(
                         try {
                             withTimeout(timeout.seconds) {
                                 subscriberManagerService.subscribe(result.queue)
-                                    .first { it is TextMessageReceivedEvent }
+                                    .filter { it is TextMessageReceivedEvent }
+                                    .first()
                                     .let { event ->
                                         pollResponse {
                                             this.result = ResultOuterClass.Result.SUCCESS
@@ -307,6 +308,12 @@ class QueueServiceGrpc(
                                             this.content = (event as TextMessageReceivedEvent).textMessage.asRemote
                                         }
                                     }
+                            }
+                        } catch (e: NoSuchElementException) {
+                            pollResponse {
+                                this.result = ResultOuterClass.Result.ERROR
+                                this.queue = result.queue.asRemote
+                                this.message = "Peek last message timeout"
                             }
                         } catch (e: TimeoutCancellationException) {
                             pollResponse {

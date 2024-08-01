@@ -5,7 +5,7 @@ import io.github.vinicreis.pubsub.server.core.data.database.postgres.extensions.
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.mapper.from
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
 import io.github.vinicreis.pubsub.server.core.model.data.TextMessage
-import io.github.vinicreis.pubsub.server.core.model.data.TextMessageReceivedEvent
+import io.github.vinicreis.pubsub.server.core.model.data.event.TextMessageReceivedEvent
 import io.github.vinicreis.pubsub.server.data.repository.EventsRepository
 import io.github.vinicreis.pubsub.server.data.repository.TextMessageRepository
 import kotlinx.coroutines.CoroutineScope
@@ -40,7 +40,7 @@ class TextMessageRepositoryDatabase(
         error(e)
     } catch (e: Exception) {
         logger.fine(e.message)
-        error(RuntimeException(GENERIC_ERROR_MESSAGE))
+        error(RuntimeException(GENERIC_ERROR_MESSAGE, e))
     }
 
     override suspend fun add(queue: Queue, textMessages: List<TextMessage>): TextMessageRepository.Result.Add {
@@ -52,7 +52,7 @@ class TextMessageRepositoryDatabase(
                 withExposedTransaction {
                     textMessages.forEach { textMessage ->
                         TextMessages.insert { it from textMessage }
-                        eventsRepository.notify(TextMessageReceivedEvent(queue = queue, textMessage = textMessage))
+                        eventsRepository.notify(TextMessageReceivedEvent(textMessage = textMessage))
                     }
                 }.let { TextMessageRepository.Result.Add.Success }
             }

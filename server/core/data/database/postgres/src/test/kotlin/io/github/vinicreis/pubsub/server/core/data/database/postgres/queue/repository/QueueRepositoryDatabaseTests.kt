@@ -1,13 +1,19 @@
 package io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.repository
 
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.queue.fixture.DatabaseFixture
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.repository.EventRepositoryDatabase
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.repository.QueueRepositoryDatabase
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.repository.TextMessageRepositoryDatabase
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
+import io.github.vinicreis.pubsub.server.core.model.data.event.QueueAddedEvent
+import io.github.vinicreis.pubsub.server.core.model.data.event.QueueRemovedEvent
+import io.github.vinicreis.pubsub.server.core.model.data.event.TextMessageReceivedEvent
 import io.github.vinicreis.pubsub.server.core.test.extension.asTextMessage
 import io.github.vinicreis.pubsub.server.core.test.extension.randomSlice
 import io.github.vinicreis.pubsub.server.core.test.fixture.QueueFixture
 import io.github.vinicreis.pubsub.server.core.test.fixture.QueueFixture.id
 import io.github.vinicreis.pubsub.server.core.test.fixture.TextMessageFixture
+import io.github.vinicreis.pubsub.server.data.repository.EventsRepository
 import io.github.vinicreis.pubsub.server.data.repository.QueueRepository
 import io.github.vinicreis.pubsub.server.data.repository.TextMessageRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,6 +46,16 @@ class QueueRepositoryDatabaseTests {
                     assertEquals(1, it.queues.size)
                     assertEquals(validQueue, it.queues.first())
                 }
+            }
+        }
+
+        when (val event = eventsRepository.consume(validQueue.id)) {
+            is QueueRemovedEvent,
+            is TextMessageReceivedEvent,
+            null -> fail("Should have emitted queue added event")
+
+            is QueueAddedEvent -> {
+                assertEquals(validQueue, event.queue)
             }
         }
     }
@@ -111,19 +127,18 @@ class QueueRepositoryDatabaseTests {
     @Test
     fun `6 - Should count pending messages properly`() = runTest(testDispatcher) {
         val messageCount = Random.nextLong(1L, 100L)
-        val messages = TextMessageFixture.EXAMPLES.randomSlice(messageCount.toInt()).map { it.asTextMessage }
+        val messages = TextMessageFixture.EXAMPLES.randomSlice(messageCount.toInt()).map { it.asTextMessage(validQueue) }
 
-        when (messageRepository.add(validQueue, messages)) {
-            is TextMessageRepository.Result.Add.Error -> fail("Should not fail by generic error to add messages to valid queue")
+        when (val result = messageRepository.add(validQueue, messages)) {
+            is TextMessageRepository.Result.Add.Error -> fail("Should not fail by generic error to add messages to valid queue", result.e)
             TextMessageRepository.Result.Add.Success -> Unit
         }
 
-        sut.getById(validQueue.id).also {
-            when (it) {
-                is QueueRepository.Result.GetById.Error -> fail("Failed to get queue $validQueue from database")
-                QueueRepository.Result.GetById.NotFound -> fail("Queue $validQueue should exist on database")
-                is QueueRepository.Result.GetById.Success -> assertEquals(messageCount, it.queue.pendingMessagesCount)
-            }
+        when (val result = sut.getById(validQueue.id)) {
+            is QueueRepository.Result.GetById.Error -> fail("Failed to get queue $validQueue from database", result.e)
+            QueueRepository.Result.GetById.NotFound -> fail("Queue $validQueue should exist on database")
+            is QueueRepository.Result.GetById.Success -> assertEquals(messageCount, result.queue.pendingMessagesCount)
+
         }
     }
 
@@ -139,7 +154,7 @@ class QueueRepositoryDatabaseTests {
 
     @Test
     fun `8 - Should remove a existing queue successfully`() = runTest(testDispatcher) {
-        when(messageRepository.remove(validQueue)) {
+        when (messageRepository.removeAll(validQueue)) {
             is TextMessageRepository.Result.Remove.Error -> fail("Should not fail to remove messages from valid queue")
             TextMessageRepository.Result.Remove.Success -> Unit
         }
@@ -163,6 +178,7 @@ class QueueRepositoryDatabaseTests {
     companion object {
         private val testDispatcher = UnconfinedTestDispatcher()
         private lateinit var sut: QueueRepositoryDatabase
+        private lateinit var eventsRepository: EventsRepository
         private lateinit var messageRepository: TextMessageRepositoryDatabase
         private val validQueue = QueueFixture.instance()
 
@@ -171,8 +187,12 @@ class QueueRepositoryDatabaseTests {
         fun setup() {
             DatabaseFixture.up()
 
-            sut = QueueRepositoryDatabase()
-            messageRepository = TextMessageRepositoryDatabase(testDispatcher)
+            eventsRepository = EventRepositoryDatabase()
+            sut = QueueRepositoryDatabase(eventsRepository = eventsRepository)
+            messageRepository = TextMessageRepositoryDatabase(
+                coroutineContext = testDispatcher,
+                eventsRepository = eventsRepository
+            )
         }
 
         @AfterEach

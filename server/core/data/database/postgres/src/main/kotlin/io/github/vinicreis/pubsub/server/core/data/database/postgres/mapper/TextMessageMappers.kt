@@ -9,11 +9,13 @@ import org.jetbrains.exposed.sql.statements.UpdateBuilder
 context(Transaction)
 val ResultRow.asDomainTextMessage: TextMessage get() = TextMessage(
     id = this[TextMessages.id].value,
-    content = this[TextMessages.content]
+    content = this[TextMessages.content],
+    queue = this.asDomainQueue
 )
 
 context(TextMessages)
 infix fun UpdateBuilder<Number>.from(textMessage: TextMessage) {
     this[id] = textMessage.id
     this[content] = textMessage.content
+    this[queueId] = textMessage.queue.id
 }

@@ -13,7 +13,8 @@ import io.github.vinicreis.pubsub.server.core.grpc.extension.asRemoteMessage
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asDomain
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asRemote
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
-import io.github.vinicreis.pubsub.server.core.model.data.TextMessageReceivedEvent
+import io.github.vinicreis.pubsub.server.core.model.data.event.HeartbeatEvent
+import io.github.vinicreis.pubsub.server.core.model.data.event.TextMessageReceivedEvent
 import io.github.vinicreis.pubsub.server.core.service.SubscriberManagerService
 import io.github.vinicreis.pubsub.server.core.test.extension.asTextMessage
 import io.github.vinicreis.pubsub.server.core.test.extension.randomItem
@@ -600,8 +601,7 @@ class QueueServiceGrpcTests {
             val responses = mutableListOf<SubscribeResponse>()
             val emittedMessages = TextMessageFixture.EXAMPLES.randomSlice().map {
                 TextMessageReceivedEvent(
-                    queue = queue,
-                    textMessage = it.asTextMessage
+                    textMessage = it.asTextMessage(queue),
                 )
             }
 
@@ -630,7 +630,7 @@ class QueueServiceGrpcTests {
             emittedMessages.forEachIndexed { index, message ->
                 assertEquals(RemoteSubscriptionEvent.UPDATE, responses[index + 2].event)
                 assertEquals(queue, responses[index + 2].queue.asDomain)
-                assertEquals(message, responses[index + 2].content.content)
+                assertEquals(message.textMessage.content, responses[index + 2].content.content)
                 assertTrue(responses[index + 2].message.isEmpty())
             }
 
@@ -654,8 +654,7 @@ class QueueServiceGrpcTests {
             val request = pollRequest { this.queueId = id.toString() }
             val message = TextMessageFixture.EXAMPLES.randomItem().let {
                 TextMessageReceivedEvent(
-                    queue = queue,
-                    textMessage = it.asTextMessage
+                    textMessage = it.asTextMessage(queue)
                 )
             }
 
@@ -671,7 +670,7 @@ class QueueServiceGrpcTests {
             verify(exactly = 1) { subscriberManagerServiceMock.subscribe(queue) }
 
             assertEquals(ResultOuterClass.Result.SUCCESS, response.result)
-            assertEquals(message, response.content.content)
+            assertEquals(message.textMessage.content, response.content.content)
             assertEquals(queue, response.queue.asDomain)
             assertTrue(response.message.isEmpty())
         }
@@ -732,7 +731,13 @@ class QueueServiceGrpcTests {
                 }
 
                 coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.success(queue)
-                every { subscriberManagerServiceMock.subscribe(queue) } returns flowOf()
+                every { subscriberManagerServiceMock.subscribe(queue) } returns flow {
+                    while (true) {
+                        delay(1.seconds)
+
+                        emit(HeartbeatEvent)
+                    }
+                }
 
                 val response = backgroundScope.async(dispatcher) { sut.poll(request) }.await()
 
@@ -756,8 +761,7 @@ class QueueServiceGrpcTests {
                 val waitTime = Random.nextLong(1_000)
                 val messages = TextMessageFixture.EXAMPLES.randomSlice().map {
                     TextMessageReceivedEvent(
-                        queue = queue,
-                        textMessage = it.asTextMessage
+                        textMessage = it.asTextMessage(queue)
                     )
                 }
 
@@ -776,7 +780,7 @@ class QueueServiceGrpcTests {
 
                 assertEquals(waitTime, currentTime)
                 assertEquals(ResultOuterClass.Result.SUCCESS, response.result)
-                assertEquals(messages.first(), response.content.content)
+                assertEquals(messages.first().textMessage.content, response.content.content)
                 assertEquals(queue, response.queue.asDomain)
                 assertTrue(response.message.isEmpty())
             }

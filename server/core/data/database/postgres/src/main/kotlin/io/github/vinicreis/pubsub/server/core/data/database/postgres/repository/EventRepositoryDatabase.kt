@@ -5,10 +5,13 @@ import io.github.vinicreis.pubsub.server.core.data.database.postgres.entity.Queu
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.entity.TextMessages
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.mapper.asDomainEvent
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.mapper.from
-import io.github.vinicreis.pubsub.server.core.model.data.Event
+import io.github.vinicreis.pubsub.server.core.model.data.event.Event
+import io.github.vinicreis.pubsub.server.core.model.data.event.TextMessageReceivedEvent
 import io.github.vinicreis.pubsub.server.data.model.Transaction
 import io.github.vinicreis.pubsub.server.data.repository.EventsRepository
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -19,24 +22,30 @@ class EventRepositoryDatabase(
     private val logger: Logger = Logger.getLogger(EventRepositoryDatabase::class.simpleName)
 ) : EventsRepository {
     context(T)
-    override fun <T : Transaction> notify(event: Event) {
+    override fun <T : Transaction> notify(event: Event.Saveable) {
         Events.insert { it from event }
     }
 
-    override suspend fun consume(queueId: UUID): EventsRepository.Result.Consume =
-        try {
-            transaction {
-                ((Events leftJoin Queues) leftJoin TextMessages)
-                    .selectAll()
-                    .where { Queues.id eq queueId }
-                    .orderBy(Events.createdAt, SortOrder.ASC)
-                    .firstOrNull()
-                    ?.asDomainEvent
-            }?.let { EventsRepository.Result.Consume.Success(it) }
-                ?: EventsRepository.Result.Consume.None
-        } catch (e: Exception) {
-            logger.severe("Failed to consume next event")
-            e.printStackTrace()
-            EventsRepository.Result.Consume.Fail(e)
+    override suspend fun consume(queueId: UUID): Event.Saveable? = try {
+        transaction {
+            ((Events leftJoin Queues) leftJoin TextMessages)
+                .selectAll()
+                .where { Events.queueId eq queueId }
+                .groupBy(Events.id, Queues.id, TextMessages.id)
+                .orderBy(Events.createdAt, SortOrder.ASC)
+                .firstOrNull()
+                ?.also { result -> Events.deleteWhere { id eq result[id] } }
+                ?.asDomainEvent
+                ?.also { event ->
+                    if(event is TextMessageReceivedEvent) {
+                        TextMessages.deleteWhere { id eq event.textMessage.id }.also {
+                            logger.info("Deleted $it message ${event.textMessage.id}")
+                        }
+                    }
+                }
         }
+    } catch (e: Exception) {
+        logger.severe("Failed to query latest queue $queueId event")
+        null
+    }
 }

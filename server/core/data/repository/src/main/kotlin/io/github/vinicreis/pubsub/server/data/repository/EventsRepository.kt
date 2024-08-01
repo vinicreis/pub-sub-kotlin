@@ -2,6 +2,7 @@ package io.github.vinicreis.pubsub.server.data.repository
 
 import io.github.vinicreis.pubsub.server.core.model.data.Event
 import io.github.vinicreis.pubsub.server.data.model.Transaction
+import java.util.*
 
 interface EventsRepository {
     sealed interface Result {
@@ -14,5 +15,5 @@ interface EventsRepository {
 
     context(T)
     fun <T : Transaction> notify(event: Event)
-    suspend fun consume(): Result.Consume
+    suspend fun consume(queueId: UUID): Result.Consume
 }

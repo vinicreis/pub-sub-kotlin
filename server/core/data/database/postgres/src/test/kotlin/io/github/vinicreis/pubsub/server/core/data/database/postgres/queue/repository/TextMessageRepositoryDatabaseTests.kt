@@ -196,7 +196,7 @@ class TextMessageRepositoryDatabaseTests {
             backgroundScope.launch { subscriber.collect { } }
         }
 
-        when (sut.remove(queue)) {
+        when (sut.removeAll(queue)) {
             is TextMessageRepository.Result.Remove.Error -> fail("Should not fail by generic error")
             is TextMessageRepository.Result.Remove.Success -> Unit
         }

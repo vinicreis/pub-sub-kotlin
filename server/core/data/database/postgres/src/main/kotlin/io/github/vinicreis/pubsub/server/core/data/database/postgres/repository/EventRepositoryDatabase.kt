@@ -12,6 +12,7 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.util.*
 import java.util.logging.Logger
 
 class EventRepositoryDatabase(
@@ -22,11 +23,12 @@ class EventRepositoryDatabase(
         Events.insert { it from event }
     }
 
-    override suspend fun consume(): EventsRepository.Result.Consume =
+    override suspend fun consume(queueId: UUID): EventsRepository.Result.Consume =
         try {
             transaction {
                 ((Events leftJoin Queues) leftJoin TextMessages)
                     .selectAll()
+                    .where { Queues.id eq queueId }
                     .orderBy(Events.createdAt, SortOrder.ASC)
                     .firstOrNull()
                     ?.asDomainEvent

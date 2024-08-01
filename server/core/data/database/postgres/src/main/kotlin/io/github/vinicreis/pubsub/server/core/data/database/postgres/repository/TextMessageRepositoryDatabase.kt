@@ -59,11 +59,22 @@ class TextMessageRepositoryDatabase(
         )
     }
 
-    override suspend fun remove(queue: Queue): TextMessageRepository.Result.Remove {
+    override suspend fun removeAll(queue: Queue): TextMessageRepository.Result.Remove {
         return runCatchingErrors(
             error = { e -> TextMessageRepository.Result.Remove.Error(e) },
             block = {
                 transaction { TextMessages.deleteWhere { queueId eq queue.id } }
+
+                TextMessageRepository.Result.Remove.Success
+            }
+        )
+    }
+
+    override suspend fun remove(textMessage: TextMessage): TextMessageRepository.Result.Remove {
+        return runCatchingErrors(
+            error = { e -> TextMessageRepository.Result.Remove.Error(e) },
+            block = {
+                transaction { TextMessages.deleteWhere { id eq textMessage.id } }
 
                 TextMessageRepository.Result.Remove.Success
             }

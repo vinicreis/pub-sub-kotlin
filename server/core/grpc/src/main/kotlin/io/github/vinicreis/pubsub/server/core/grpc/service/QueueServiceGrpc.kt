@@ -27,6 +27,7 @@ import io.github.vinicreis.pubsub.server.core.extension.asUuid
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asDomain
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asRemote
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
+import io.github.vinicreis.pubsub.server.core.model.data.TextMessageReceivedEvent
 import io.github.vinicreis.pubsub.server.core.service.QueueService
 import io.github.vinicreis.pubsub.server.core.service.SubscriberManagerService
 import io.github.vinicreis.pubsub.server.data.repository.QueueRepository
@@ -135,7 +136,7 @@ class QueueServiceGrpc(
                     }
 
                     is QueueRepository.Result.Remove.Success -> {
-                        when (val messageCloseResult = textMessageRepository.remove(queue = result.queue)) {
+                        when (val messageCloseResult = textMessageRepository.removeAll(queue = result.queue)) {
                             is TextMessageRepository.Result.Remove.Error -> removeResponse {
                                 this.result = ResultOuterClass.Result.ERROR
                                 message = messageCloseResult.e.message ?: "Something went wrong..."
@@ -264,12 +265,14 @@ class QueueServiceGrpc(
                                     event = SubscriptionEvent.FINISHED
                                     queue = result.queue.asRemote
                                 }.also { send(it); close() }
-                            }.collect { pendingMessage ->
-                                subscribeResponse {
-                                    event = SubscriptionEvent.UPDATE
-                                    queue = result.queue.asRemote
-                                    content = pendingMessage.asRemote
-                                }.also { send(it) }
+                            }.collect { event ->
+                                if (event is TextMessageReceivedEvent) {
+                                    subscribeResponse {
+                                        this.event = SubscriptionEvent.UPDATE
+                                        queue = result.queue.asRemote
+                                        content = event.textMessage.asRemote
+                                    }.also { send(it) }
+                                }
                             }
                 }
             }
@@ -295,13 +298,15 @@ class QueueServiceGrpc(
 
                         try {
                             withTimeout(timeout.seconds) {
-                                subscriberManagerService.subscribe(result.queue).first().let { pendingMessage ->
-                                    pollResponse {
-                                        this.result = ResultOuterClass.Result.SUCCESS
-                                        this.queue = result.queue.asRemote
-                                        this.content = pendingMessage.asRemote
+                                subscriberManagerService.subscribe(result.queue)
+                                    .first { it is TextMessageReceivedEvent }
+                                    .let { event ->
+                                        pollResponse {
+                                            this.result = ResultOuterClass.Result.SUCCESS
+                                            this.queue = result.queue.asRemote
+                                            this.content = (event as TextMessageReceivedEvent).textMessage.asRemote
+                                        }
                                     }
-                                }
                             }
                         } catch (e: TimeoutCancellationException) {
                             pollResponse {

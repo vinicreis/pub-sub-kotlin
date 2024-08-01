@@ -13,7 +13,7 @@ import io.github.vinicreis.pubsub.server.core.grpc.extension.asRemoteMessage
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asDomain
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asRemote
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
-import io.github.vinicreis.pubsub.server.core.model.data.TextMessage
+import io.github.vinicreis.pubsub.server.core.model.data.TextMessageReceivedEvent
 import io.github.vinicreis.pubsub.server.core.service.SubscriberManagerService
 import io.github.vinicreis.pubsub.server.core.test.extension.asTextMessage
 import io.github.vinicreis.pubsub.server.core.test.extension.randomItem
@@ -29,10 +29,10 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -208,12 +208,12 @@ class QueueServiceGrpcTests {
                 val queue = QueueFixture.instance(id = id)
 
                 coEvery { queueRepositoryMock.removeById(id) } returns QueueFixture.Repository.Remove.success(queue)
-                coEvery { textMessageRepositoryMock.remove(queue) } returns TextMessageFixture.Repository.Remove.success()
+                coEvery { textMessageRepositoryMock.removeAll(queue) } returns TextMessageFixture.Repository.Remove.success()
 
                 val response = sut.remove(request)
 
                 coVerify(exactly = 1) { queueRepositoryMock.removeById(id) }
-                coVerify(exactly = 1) { textMessageRepositoryMock.remove(queue) }
+                coVerify(exactly = 1) { textMessageRepositoryMock.removeAll(queue) }
                 assertEquals(ResultOuterClass.Result.SUCCESS, response.result)
                 assertEquals(queue.asRemote, response.queue)
                 assertTrue(response.message.isEmpty())
@@ -226,14 +226,14 @@ class QueueServiceGrpcTests {
             val queue = QueueFixture.instance(id)
 
             coEvery { queueRepositoryMock.removeById(id) } returns QueueFixture.Repository.Remove.notFound()
-            coEvery { textMessageRepositoryMock.remove(queue) } answers {
+            coEvery { textMessageRepositoryMock.removeAll(queue) } answers {
                 fail("Should not call message repository remove if queue is not found")
             }
 
             val response = sut.remove(request)
 
             coVerify(exactly = 1) { queueRepositoryMock.removeById(id) }
-            coVerify(exactly = 0) { textMessageRepositoryMock.remove(queue) }
+            coVerify(exactly = 0) { textMessageRepositoryMock.removeAll(queue) }
             assertEquals(ResultOuterClass.Result.ERROR, response.result)
             assertEquals(RemoteQueue.getDefaultInstance(), response.queue)
             assertTrue(response.message.contains("not found"))
@@ -247,14 +247,14 @@ class QueueServiceGrpcTests {
 
                 coEvery { queueRepositoryMock.removeById(id) } returns
                         QueueFixture.Repository.Remove.error("Failed by some reason")
-                coEvery { textMessageRepositoryMock.remove(any()) } answers {
+                coEvery { textMessageRepositoryMock.removeAll(any()) } answers {
                     fail("Should not be called if queue is not found")
                 }
 
                 val response = sut.remove(request)
 
                 coVerify(exactly = 1) { queueRepositoryMock.removeById(id) }
-                coVerify(exactly = 0) { textMessageRepositoryMock.remove(any()) }
+                coVerify(exactly = 0) { textMessageRepositoryMock.removeAll(any()) }
                 assertEquals(ResultOuterClass.Result.ERROR, response.result)
                 assertEquals(RemoteQueue.getDefaultInstance(), response.queue)
                 assertEquals("Failed by some reason", response.message)
@@ -268,12 +268,12 @@ class QueueServiceGrpcTests {
                 val queue = QueueFixture.instance()
 
                 coEvery { queueRepositoryMock.removeById(id) } returns QueueFixture.Repository.Remove.success(queue)
-                coEvery { textMessageRepositoryMock.remove(queue) } throws RuntimeException("Any error happened!")
+                coEvery { textMessageRepositoryMock.removeAll(queue) } throws RuntimeException("Any error happened!")
 
                 val response = sut.remove(request)
 
                 coVerify(exactly = 1) { queueRepositoryMock.removeById(id) }
-                coVerify(exactly = 1) { textMessageRepositoryMock.remove(queue) }
+                coVerify(exactly = 1) { textMessageRepositoryMock.removeAll(queue) }
                 assertEquals(ResultOuterClass.Result.ERROR, response.result)
                 assertEquals(RemoteQueue.getDefaultInstance(), response.queue)
                 assertEquals(GENERIC_ERROR_MESSAGE, response.message)
@@ -287,12 +287,12 @@ class QueueServiceGrpcTests {
                 val queue = QueueFixture.instance()
 
                 coEvery { queueRepositoryMock.removeById(id) } returns QueueFixture.Repository.Remove.success(queue)
-                coEvery { textMessageRepositoryMock.remove(queue) } returns TextMessageFixture.Repository.Remove.error("Didn't remove!")
+                coEvery { textMessageRepositoryMock.removeAll(queue) } returns TextMessageFixture.Repository.Remove.error("Didn't remove!")
 
                 val response = sut.remove(request)
 
                 coVerify(exactly = 1) { queueRepositoryMock.removeById(id) }
-                coVerify(exactly = 1) { textMessageRepositoryMock.remove(queue) }
+                coVerify(exactly = 1) { textMessageRepositoryMock.removeAll(queue) }
                 assertEquals(ResultOuterClass.Result.ERROR, response.result)
                 assertEquals(RemoteQueue.getDefaultInstance(), response.queue)
                 assertEquals("Didn't remove!", response.message)
@@ -488,11 +488,10 @@ class QueueServiceGrpcTests {
         fun `Should emit processing when queue processing starts`() = runTest(testDispatcher) {
             val id = QueueFixture.id()
             val queue = QueueFixture.instance(id)
-            val kotlinChannel = Channel<TextMessage>(Channel.UNLIMITED)
             val request = subscribeRequest { this.queueId = id.toString() }
 
             coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.success(queue)
-            every { subscriberManagerServiceMock.subscribe(queue) } returns kotlinChannel.receiveAsFlow()
+            every { subscriberManagerServiceMock.subscribe(queue) } returns flowOf()
 
             val subscriber = sut.subscribe(request)
             val response = subscriber.first()
@@ -571,10 +570,9 @@ class QueueServiceGrpcTests {
             val queue = QueueFixture.instance(id)
             val request = subscribeRequest { this.queueId = id.toString() }
             val responses = mutableListOf<SubscribeResponse>()
-            val kotlinChannel = Channel<TextMessage>(Channel.UNLIMITED)
 
             coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.success(queue)
-            every { subscriberManagerServiceMock.subscribe(queue) } returns kotlinChannel.receiveAsFlow()
+            every { subscriberManagerServiceMock.subscribe(queue) } returns flowOf()
 
             val subscriber = sut.subscribe(request)
 
@@ -600,17 +598,21 @@ class QueueServiceGrpcTests {
             val queue = QueueFixture.instance(id)
             val request = subscribeRequest { this.queueId = id.toString() }
             val responses = mutableListOf<SubscribeResponse>()
-            val kotlinChannel = Channel<TextMessage>(Channel.UNLIMITED)
-            val emittedMessages = TextMessageFixture.EXAMPLES.randomSlice()
+            val emittedMessages = TextMessageFixture.EXAMPLES.randomSlice().map {
+                TextMessageReceivedEvent(
+                    queue = queue,
+                    textMessage = it.asTextMessage
+                )
+            }
 
             coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.success(queue)
-            every { subscriberManagerServiceMock.subscribe(queue) } returns kotlinChannel.receiveAsFlow()
+            every { subscriberManagerServiceMock.subscribe(queue) } returns flow {
+                emittedMessages.forEach { emit(it) }
+            }
 
             val subscriber = sut.subscribe(request)
 
             backgroundScope.launch { subscriber.toList(responses) }
-
-            emittedMessages.forEach { kotlinChannel.send(it.asTextMessage) }
 
             coVerify(exactly = 1) { queueRepositoryMock.getById(id) }
             verify(exactly = 1) { subscriberManagerServiceMock.subscribe(queue) }
@@ -632,8 +634,6 @@ class QueueServiceGrpcTests {
                 assertTrue(responses[index + 2].message.isEmpty())
             }
 
-            kotlinChannel.close()
-
             assertEquals(RemoteSubscriptionEvent.FINISHED, responses.last().event)
             assertEquals(queue, responses.last().queue.asDomain)
             assertEquals(RemoteTextMessage.getDefaultInstance(), responses.last().content)
@@ -652,15 +652,17 @@ class QueueServiceGrpcTests {
             val id = QueueFixture.id()
             val queue = QueueFixture.instance(id)
             val request = pollRequest { this.queueId = id.toString() }
-            val message = TextMessageFixture.EXAMPLES.randomItem()
-            val kotlinChannel = Channel<TextMessage>(Channel.UNLIMITED)
+            val message = TextMessageFixture.EXAMPLES.randomItem().let {
+                TextMessageReceivedEvent(
+                    queue = queue,
+                    textMessage = it.asTextMessage
+                )
+            }
 
             coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.success(queue)
-            every { subscriberManagerServiceMock.subscribe(queue) } returns kotlinChannel.receiveAsFlow()
-
-            backgroundScope.launch(dispatcher) {
+            every { subscriberManagerServiceMock.subscribe(queue) } returns flow {
                 delay(1.seconds)
-                kotlinChannel.send(message.asTextMessage)
+                emit(message)
             }
 
             val response = backgroundScope.async(dispatcher) { sut.poll(request) }.await()
@@ -728,10 +730,9 @@ class QueueServiceGrpcTests {
                     this.queueId = id.toString()
                     this.timeoutSeconds = timeout
                 }
-                val kotlinChannel = Channel<TextMessage>(Channel.UNLIMITED)
 
                 coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.success(queue)
-                every { subscriberManagerServiceMock.subscribe(queue) } returns kotlinChannel.receiveAsFlow()
+                every { subscriberManagerServiceMock.subscribe(queue) } returns flowOf()
 
                 val response = backgroundScope.async(dispatcher) { sut.poll(request) }.await()
 
@@ -752,17 +753,19 @@ class QueueServiceGrpcTests {
                 val id = QueueFixture.id()
                 val queue = QueueFixture.instance(id)
                 val request = pollRequest { this.queueId = id.toString() }
-                val messages = TextMessageFixture.EXAMPLES.randomSlice()
-                val kotlinChannel = Channel<TextMessage>(Channel.UNLIMITED)
                 val waitTime = Random.nextLong(1_000)
+                val messages = TextMessageFixture.EXAMPLES.randomSlice().map {
+                    TextMessageReceivedEvent(
+                        queue = queue,
+                        textMessage = it.asTextMessage
+                    )
+                }
 
                 coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.success(queue)
-                every { subscriberManagerServiceMock.subscribe(queue) } returns kotlinChannel.receiveAsFlow()
-
-                backgroundScope.launch(dispatcher) {
+                every { subscriberManagerServiceMock.subscribe(queue) } returns flow {
                     messages.forEach { message ->
                         delay(waitTime)
-                        kotlinChannel.send(message.asTextMessage)
+                        emit(message)
                     }
                 }
 

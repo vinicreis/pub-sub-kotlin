@@ -2,92 +2,101 @@ package io.github.vinicreis.pubsub.server.core.grpc.service
 
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
 import io.github.vinicreis.pubsub.server.core.model.data.TextMessage
+import io.github.vinicreis.pubsub.server.core.model.data.TextMessageReceivedEvent
 import io.github.vinicreis.pubsub.server.core.test.extension.asTextMessage
+import io.github.vinicreis.pubsub.server.core.test.extension.randomSlice
 import io.github.vinicreis.pubsub.server.core.test.fixture.QueueFixture
+import io.github.vinicreis.pubsub.server.core.test.fixture.TextMessageFixture
 import io.github.vinicreis.pubsub.server.data.repository.EventsRepository
-import io.github.vinicreis.pubsub.server.data.repository.TextMessageRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.util.logging.Logger
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SubscriberManagerServiceImplTests {
     private val eventsRepository = mockk<EventsRepository>()
-    private val testDispatcher = UnconfinedTestDispatcher()
-    private val sut = SubscriberManagerImpl(
-        eventsRepository = eventsRepository,
-        coroutineContext = testDispatcher,
-        logger = Logger.getLogger("SubscriberManagerImplTests")
-    )
+    private val testDispatcher = StandardTestDispatcher()
+    private lateinit var sut: SubscriberManagerImpl
 
     @Test
-    fun `Should close queue when some error happens to fetch message queue`() = runTest {
+    fun `Should close queue when some error happens to fetch message queue`() = runTest(testDispatcher) {
         coEvery { eventsRepository.consume() } returns
-                TextMessageRepository.Result.Subscribe.Error(IllegalArgumentException("Error"))
+                EventsRepository.Result.Consume.Fail(IllegalArgumentException("Error")) andThen
+                EventsRepository.Result.Consume.None
 
         val textMessages = mutableListOf<TextMessage>()
         val queue = QueueFixture.instance()
-        val subscriber = sut.subscribe(queue)
+        sut = SubscriberManagerImpl(
+            eventsRepository = eventsRepository,
+            coroutineContext = testDispatcher,
+            logger = Logger.getLogger("SubscriberManagerImplTests"),
+        )
 
-        launch { assertThrows<RuntimeException> { subscriber.toList(textMessages) } }
-        advanceUntilIdle()
+//        backgroundScope.launch { sut.subscribe(queue).toList(textMessages) }
+//        advanceTimeBy(1.seconds)
 
-        coVerify(exactly = 2) { eventsRepository.consume() }
+        assertEquals(30.seconds.inWholeMilliseconds, currentTime)
+        coVerify(atLeast = 30) { eventsRepository.consume() }
         assertTrue(textMessages.isEmpty())
     }
 
     @Test
     fun `Should return a valid queue flow for subscriber when the queue is found`() = runTest {
-        val textMessageChannel = Channel<TextMessage>(Channel.UNLIMITED)
         val textMessages = mutableListOf<TextMessage>()
         val queue = QueueFixture.instance(type = Queue.Type.SIMPLE)
-        val messagesEmitted = Random.nextInt(10)
+        val messagesEmitted = TextMessageFixture.EXAMPLES.randomSlice(Random.nextInt(100)).map { it.asTextMessage }
+        val events = messagesEmitted.map {
+            EventsRepository.Result.Consume.Success(
+                TextMessageReceivedEvent(
+                    queue = queue,
+                    textMessage = messagesEmitted.first()
+                )
+            )
+        }
 
-        coEvery { eventsRepository.consume() } returns
-                TextMessageRepository.Result.Subscribe.Success(textMessageChannel.receiveAsFlow())
+        (coEvery { eventsRepository.consume() } returns events.first()).apply {
+            events.drop(1).forEach { event -> this andThen event }
+        }
 
         val subscriber = sut.subscribe(queue)
 
         backgroundScope.launch(testDispatcher) { subscriber.toList(textMessages) }
-        launch {
-            repeat(messagesEmitted) { i ->
-                textMessageChannel.send("Message $i".asTextMessage)
-            }
-        }
 
-        advanceUntilIdle()
-
-        coVerify(exactly = 2) { eventsRepository.consume(queue) }
-        assertEquals(messagesEmitted, textMessages.size)
+        assertEquals(messagesEmitted, textMessages)
     }
 
     @Test
     fun `Should send message to only one subscriber when some message is posted on a simple queue`() = runTest {
-        val textMessageChannel = Channel<TextMessage>(Channel.UNLIMITED)
         val queue = QueueFixture.instance(type = Queue.Type.SIMPLE)
-        val messagesEmitted = Random.nextInt(10)
         val messages1 = mutableListOf<TextMessage>()
         val messages2 = mutableListOf<TextMessage>()
         val messages3 = mutableListOf<TextMessage>()
         val messages4 = mutableListOf<TextMessage>()
+        val messagesEmitted = TextMessageFixture.EXAMPLES.randomSlice(Random.nextInt(100)).map { it.asTextMessage }
+        val events = messagesEmitted.map {
+            EventsRepository.Result.Consume.Success(
+                TextMessageReceivedEvent(
+                    queue = queue,
+                    textMessage = messagesEmitted.first()
+                )
+            )
+        }
 
-        coEvery { eventsRepository.consume() } returns
-                TextMessageRepository.Result.Subscribe.Success(textMessageChannel.receiveAsFlow())
+        (coEvery { eventsRepository.consume() } returns events.first()).apply {
+            events.drop(1).forEach { event -> this andThen event }
+        }
 
         val subscriber1 = sut.subscribe(queue)
         val subscriber2 = sut.subscribe(queue)
@@ -99,34 +108,29 @@ class SubscriberManagerServiceImplTests {
         backgroundScope.launch(testDispatcher) { subscriber3.toList(messages3) }
         backgroundScope.launch(testDispatcher) { subscriber4.toList(messages4) }
 
-        launch {
-            repeat(messagesEmitted) { i ->
-                textMessageChannel.send("Message $i".asTextMessage)
-            }
-        }
-
-        advanceUntilIdle()
-
-        coVerify(exactly = 5) { eventsRepository.consume(queue) }
         assertEquals(messagesEmitted, messages1.size + messages2.size + messages3.size + messages4.size)
     }
 
     @Test
     fun `Should send message to all subscribers when some message is posted on a multiple queue`() = runTest {
-        val textMessageChannel = Channel<TextMessage>(Channel.UNLIMITED)
         val queue = QueueFixture.instance(type = Queue.Type.MULTIPLE)
         val messages1 = mutableListOf<TextMessage>()
         val messages2 = mutableListOf<TextMessage>()
         val messages3 = mutableListOf<TextMessage>()
         val messages4 = mutableListOf<TextMessage>()
-        val messagesEmitted = buildList {
-            repeat(Random.nextInt(10)) { i ->
-                add("Message $i".asTextMessage)
-            }
+        val messagesEmitted = TextMessageFixture.EXAMPLES.randomSlice(Random.nextInt(100)).map { it.asTextMessage }
+        val events = messagesEmitted.map {
+            EventsRepository.Result.Consume.Success(
+                TextMessageReceivedEvent(
+                    queue = queue,
+                    textMessage = messagesEmitted.first()
+                )
+            )
         }
 
-        coEvery { eventsRepository.consume() } returns
-                TextMessageRepository.Result.Subscribe.Success(textMessageChannel.receiveAsFlow())
+        (coEvery { eventsRepository.consume() } returns events.first()).apply {
+            events.drop(1).forEach { event -> this andThen event }
+        }
 
         val subscriber1 = sut.subscribe(queue)
         val subscriber2 = sut.subscribe(queue)
@@ -138,15 +142,6 @@ class SubscriberManagerServiceImplTests {
         backgroundScope.launch(testDispatcher) { subscriber3.toList(messages3) }
         backgroundScope.launch(testDispatcher) { subscriber4.toList(messages4) }
 
-        launch {
-            messagesEmitted.forEach { message ->
-                textMessageChannel.send(message)
-            }
-        }
-
-        advanceUntilIdle()
-
-        coVerify(exactly = 5) { eventsRepository.consume(queue) }
         assertEquals(messagesEmitted, messages1)
         assertEquals(messagesEmitted, messages2)
         assertEquals(messagesEmitted, messages3)
@@ -155,32 +150,26 @@ class SubscriberManagerServiceImplTests {
 
     @Test
     fun `Should close queue if the queue is removed from message queue`() = runTest {
-        val textMessageChannel = Channel<TextMessage>(Channel.UNLIMITED)
         val queue = QueueFixture.instance(type = Queue.Type.MULTIPLE)
-        val messagesEmitted = Random.nextInt(10)
         val textMessages = mutableListOf<TextMessage>()
-
-        coEvery { eventsRepository.consume() } returns
-                TextMessageRepository.Result.Subscribe.Success(textMessageChannel.receiveAsFlow())
-
-        val subscriber = sut.subscribe(queue)
-
-        val listJob = launch(testDispatcher) { subscriber.toList(textMessages) }
-
-        launch {
-            repeat(messagesEmitted) { i ->
-                textMessageChannel.send("Message $i".asTextMessage)
-            }
-
-            textMessageChannel.close(CancellationException("Queue removed!"))
-            println("Queue removed!")
+        val messagesEmitted = TextMessageFixture.EXAMPLES.randomSlice(Random.nextInt(100)).map { it.asTextMessage }
+        val events = messagesEmitted.map {
+            EventsRepository.Result.Consume.Success(
+                TextMessageReceivedEvent(
+                    queue = queue,
+                    textMessage = messagesEmitted.first()
+                )
+            )
         }
 
-        advanceUntilIdle()
+        (coEvery { eventsRepository.consume() } returns events.first()).apply {
+            events.drop(1).forEach { event -> this andThen event }
+        }
 
-        coVerify(exactly = 2) { eventsRepository.consume() }
+        val subscriber = sut.subscribe(queue)
+        val listJob = launch(testDispatcher) { subscriber.toList(textMessages) }
+
         assertEquals(messagesEmitted, textMessages.size)
-        println("Validating cancellation...")
         assertTrue(listJob.isCancelled)
     }
 }

@@ -7,7 +7,7 @@ plugins {
 
 application {
     applicationName = "Pub Sub Client"
-    mainClass = "io.github.vinicreis.pubsub.client.MainKt"
+    mainClass = "io.github.vinicreis.pubsub.client.java.app.MainKt"
 }
 
 dependencies {

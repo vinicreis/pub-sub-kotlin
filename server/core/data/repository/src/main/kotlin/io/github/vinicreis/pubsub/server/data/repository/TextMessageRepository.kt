@@ -18,5 +18,4 @@ interface TextMessageRepository {
 
     suspend fun add(queue: Queue, textMessages: List<TextMessage>): Result.Add
     suspend fun removeAll(queue: Queue): Result.Remove
-    suspend fun remove(textMessage: TextMessage): Result.Remove
 }

@@ -18,9 +18,9 @@ fun main(args: Array<String>) {
     Database.initializePostgres()
 
     val port = args.firstOrNull()?.toIntOrNull() ?: run { onError(); return }
-    val eventsRepository = EventRepositoryDatabase()
-    val queueRepository = QueueRepositoryDatabase(eventsRepository)
-    val textMessageRepository = TextMessageRepositoryDatabase(Dispatchers.Default, eventsRepository)
+    val eventsRepository = EventRepositoryDatabase(Dispatchers.IO)
+    val queueRepository = QueueRepositoryDatabase(Dispatchers.IO, eventsRepository)
+    val textMessageRepository = TextMessageRepositoryDatabase(Dispatchers.IO, eventsRepository)
     val service = QueueServiceGrpc(
         port = port,
         coroutineContext = Dispatchers.IO,

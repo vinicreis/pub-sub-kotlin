@@ -140,7 +140,7 @@ class SubscriberManagerServiceImplTests {
                 add(null)
             }
 
-            add(QueueRemovedEvent(queue = queue))
+            add(QueueRemovedEvent(queueId = queue.id))
         }
 
         println(events)

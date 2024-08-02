@@ -187,8 +187,8 @@ class QueueRepositoryDatabaseTests {
         fun setup() {
             DatabaseFixture.up()
 
-            eventsRepository = EventRepositoryDatabase()
-            sut = QueueRepositoryDatabase(eventsRepository = eventsRepository)
+            eventsRepository = EventRepositoryDatabase(coroutineContext = testDispatcher)
+            sut = QueueRepositoryDatabase(coroutineContext = testDispatcher, eventsRepository = eventsRepository)
             messageRepository = TextMessageRepositoryDatabase(
                 coroutineContext = testDispatcher,
                 eventsRepository = eventsRepository

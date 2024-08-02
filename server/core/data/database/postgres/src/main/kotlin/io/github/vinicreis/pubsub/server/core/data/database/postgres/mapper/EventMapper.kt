@@ -35,7 +35,7 @@ context(Events)
 private infix fun UpdateBuilder<Number>.from(event: QueueRemovedEvent) {
     this[id] = event.id
     this[Events.type] = Events.Type.QUEUE_REMOVED
-    this[queueId] = event.queue.id
+    this[queueId] = event.queueId
 }
 
 context(Transaction)
@@ -66,6 +66,6 @@ context(Transaction)
 private val ResultRow.asQueueRemovedEvent: QueueRemovedEvent
     get() = QueueRemovedEvent(
         id = this[Events.id].value,
-        queue = this.asDomainQueue,
+        queueId = this[Events.queueId],
         createdAt = this[Events.createdAt]
     )

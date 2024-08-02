@@ -177,8 +177,7 @@ class TextMessageRepositoryDatabaseTests {
             lastEvent?.also { receivedTextMessages.add(it.textMessage) }
         } while (lastEvent != null)
 
-        assertEquals(pendingMessages.size, receivedTextMessages.size)
-        assertEquals(pendingMessages, receivedTextMessages)
+        assertEquals(pendingMessages.map { it.id }, receivedTextMessages.map { it.id })
     }
 
     @Test
@@ -200,8 +199,8 @@ class TextMessageRepositoryDatabaseTests {
         fun setup() {
             DatabaseFixture.up()
 
-            eventsRepository = EventRepositoryDatabase()
-            queueRepository = QueueRepositoryDatabase(eventsRepository)
+            eventsRepository = EventRepositoryDatabase(testDispatcher)
+            queueRepository = QueueRepositoryDatabase(testDispatcher, eventsRepository)
             sut = TextMessageRepositoryDatabase(
                 coroutineContext = testDispatcher,
                 eventsRepository = eventsRepository,

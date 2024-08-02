@@ -70,17 +70,6 @@ class TextMessageRepositoryDatabase(
         )
     }
 
-    override suspend fun remove(textMessage: TextMessage): TextMessageRepository.Result.Remove {
-        return runCatchingErrors(
-            error = { e -> TextMessageRepository.Result.Remove.Error(e) },
-            block = {
-                transaction { TextMessages.deleteWhere { id eq textMessage.id } }
-
-                TextMessageRepository.Result.Remove.Success
-            }
-        )
-    }
-
     companion object {
         private const val GENERIC_ERROR_MESSAGE = "Something went wrong while processing database operation"
     }

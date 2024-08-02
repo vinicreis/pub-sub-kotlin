@@ -16,8 +16,8 @@ object Events : IdTable<UUID>() {
 
     override val id: Column<EntityID<UUID>> = uuid("id").entityId()
     val type: Column<Type> = enumerationByName("type", 50, Type::class)
-    val queueId: Column<UUID> = uuid("queue_id").references(Queues.id, onDelete = ReferenceOption.CASCADE)
-    val textMessageId: Column<UUID?> = uuid("text_message_id").references(TextMessages.id, onDelete = ReferenceOption.CASCADE).nullable()
+    val queueId: Column<UUID> = uuid("queue_id")
+    val textMessageId: Column<EntityID<UUID>?> = optReference("text_message_id", TextMessages.id, onDelete = ReferenceOption.CASCADE)
     val createdAt: Column<LocalDateTime> = datetime("created_at").clientDefault {
         Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
     }

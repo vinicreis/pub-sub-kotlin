@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+import "proto/io/github/vinicreis/pubsub/server/core/model/request/publish_request.proto";
+import "proto/io/github/vinicreis/pubsub/server/core/model/response/publish_response.proto";
+import "proto/io/github/vinicreis/pubsub/server/core/model/request/list_request.proto";
+import "proto/io/github/vinicreis/pubsub/server/core/model/response/list_response.proto";
+import "proto/io/github/vinicreis/pubsub/server/core/model/request/remove_request.proto";
+import "proto/io/github/vinicreis/pubsub/server/core/model/response/remove_response.proto";
+import "proto/io/github/vinicreis/pubsub/server/core/model/request/post_single_request.proto";
+import "proto/io/github/vinicreis/pubsub/server/core/model/request/post_multiple_request.proto";
+import "proto/io/github/vinicreis/pubsub/server/core/model/response/post_response.proto";
+import "proto/io/github/vinicreis/pubsub/server/core/model/request/subscribe_request.proto";
+import "proto/io/github/vinicreis/pubsub/server/core/model/response/subscribe_response.proto";
+import "proto/io/github/vinicreis/pubsub/server/core/model/request/poll_request.proto";
+import "proto/io/github/vinicreis/pubsub/server/core/model/response/poll_response.proto";
+
+option java_package = "io.github.vinicreis.domain.server.core.service";
+
+service QueueService {
+  rpc publish (PublishRequest) returns (PublishResponse) {}
+  rpc list (ListRequest) returns (ListResponse) {}
+  rpc remove (RemoveRequest) returns (RemoveResponse) {}
+  rpc postSingle (PostSingleRequest) returns (PostResponse) {}
+  rpc postMultiple (PostMultipleRequest) returns (PostResponse) {}
+  rpc subscribe (SubscribeRequest) returns (stream SubscribeResponse) {}
+  rpc poll (PollRequest) returns (PollResponse) {}
+}

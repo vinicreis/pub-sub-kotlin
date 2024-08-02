@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "io/github/vinicreis/pubsub/server/core/model/data/queue.proto";
+import "proto/io/github/vinicreis/pubsub/server/core/model/data/queue.proto";
 
 option java_package = "io.github.vinicreis.domain.server.core.model.request";
 

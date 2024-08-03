@@ -2,7 +2,7 @@ from core.model.queue import Queue as DomainQueue
 from proto.io.github.vinicreis.pubsub.server.core.model.data.queue_pb2 import Queue as RemoteQueue
 
 
-def to_domain(remote_queue: RemoteQueue) -> DomainQueue:
+def queue_to_domain(remote_queue: RemoteQueue) -> DomainQueue:
     return DomainQueue(
         uuid=remote_queue.id,
         code=remote_queue.code,
@@ -11,7 +11,7 @@ def to_domain(remote_queue: RemoteQueue) -> DomainQueue:
     )
 
 
-def to_remote(queue: DomainQueue) -> RemoteQueue:
+def queue_to_remote(queue: DomainQueue) -> RemoteQueue:
     return RemoteQueue(
         id=queue.uuid,
         code=queue.code,

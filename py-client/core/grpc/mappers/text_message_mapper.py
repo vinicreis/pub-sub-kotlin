@@ -6,3 +6,9 @@ def text_message_to_domain(text_message: RemoteTextMessage) -> DomainTextMessage
     return DomainTextMessage(
         content=text_message.content,
     )
+
+
+def text_message_to_remote(text_message: DomainTextMessage) -> RemoteTextMessage:
+    return RemoteTextMessage(
+        content=text_message.content,
+    )

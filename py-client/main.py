@@ -1,4 +1,5 @@
 import argparse
+import traceback
 
 from core.grpc.client import Client
 from core.grpc.response import Response
@@ -16,8 +17,8 @@ parser.add_argument("-a", "--address", type=str, default="localhost", help="Serv
 parser.add_argument("-p", "--port", type=int, default="10090", help="Server port")
 
 
-def select_queue(self) -> Queue | None:
-    list_response = self.list()
+def select_queue(client: Client) -> Queue | None:
+    list_response = client.list()
     if list_response.result == Response.Result.FAIL:
         print(f"Failed to list queues: {list_response.error}")
         return None
@@ -98,4 +99,5 @@ if __name__ == '__main__':
             print(f"Failed to process the selected option: {e}")
         except Exception as e:
             print(f"Unknown error: {e}")
+            traceback.print_exc()
             exit(-1)

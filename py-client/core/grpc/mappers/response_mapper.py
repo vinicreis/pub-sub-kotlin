@@ -18,7 +18,7 @@ def list_response_to_domain(remote_response: ListResponse) -> Response:
     if remote_response.result == Result.SUCCESS:
         return Response(
             result=Response.Result.SUCCESS,
-            data=map(queue_to_domain, remote_response.queues),
+            data=list(map(queue_to_domain, remote_response.queues)),
         )
     elif remote_response.result == Result.ERROR:
         return Response(

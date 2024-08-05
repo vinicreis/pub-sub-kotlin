@@ -31,4 +31,4 @@ def read_int(prompt: str) -> int:
 def read_int_or_none(prompt: str) -> int | None:
     value = input(prompt)
 
-    return value if value else None
+    return int(value) if value else None

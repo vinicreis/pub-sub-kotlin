@@ -91,8 +91,11 @@ if __name__ == '__main__':
                 print(f"Unknown option read: {selectedOption}")
                 print("Exiting...")
                 exit(-1)
+        except KeyboardInterrupt as e:
+            print("\nExiting...")
+            exit(0)
         except ValueError as e:
             print(f"Failed to process the selected option: {e}")
-        else:
-            print("Unknown error")
+        except Exception as e:
+            print(f"Unknown error: {e}")
             exit(-1)

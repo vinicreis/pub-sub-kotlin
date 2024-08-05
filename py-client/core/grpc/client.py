@@ -27,7 +27,7 @@ class Client:
     def publish(self, queue: Queue) -> Response:
         return publish_response_to_domain(self.stub.publish(PublishRequest(queue=queue_to_remote(queue))))
 
-    def post(self, queue: Queue, text_messages: list[TextMessage]) -> Response:
+    def post(self, queue: Queue, text_messages: [TextMessage]) -> Response:
         if len(text_messages) > 1:
             return post_response_to_domain(
                 self.stub.postMultiple(

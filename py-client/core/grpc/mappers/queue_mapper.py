@@ -13,7 +13,7 @@ def queue_to_domain(remote_queue: RemoteQueue) -> DomainQueue:
 
 def queue_to_remote(queue: DomainQueue) -> RemoteQueue:
     return RemoteQueue(
-        id=queue.uuid,
+        id=queue.guid,
         code=queue.code,
         name=queue.name,
         pendingMessagesCount=queue.pendingMessagesCount,

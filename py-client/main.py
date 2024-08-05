@@ -16,8 +16,8 @@ parser.add_argument("-a", "--address", type=str, default="localhost", help="Serv
 parser.add_argument("-p", "--port", type=int, default="10090", help="Server port")
 
 
-def select_queue(client: Client) -> Queue | None:
-    list_response = client.list()
+def select_queue(self) -> Queue | None:
+    list_response = self.list()
     if list_response.result == Response.Result.FAIL:
         print(f"Failed to list queues: {list_response.error}")
         return None
@@ -68,7 +68,14 @@ if __name__ == '__main__':
                 else:
                     print(f"Polled message: {response.data}")
             elif selectedOption == MenuOption.SUBSCRIBE_QUEUE:
-                raise NotImplementedError("Subscribe not implemented")
+                try:
+                    print("Press Ctrl+C to stop the subscription")
+
+                    for subscription_event in client.subscribe(select_queue(client)):
+                        print(subscription_event)
+                except KeyboardInterrupt:
+                    print("Finoshing subscription...")
+                    continue
             elif selectedOption == MenuOption.REMOVE_QUEUE:
                 queue = select_queue(client)
                 response = client.remove(queue)

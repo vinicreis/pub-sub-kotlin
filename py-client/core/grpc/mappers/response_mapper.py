@@ -1,8 +1,10 @@
 from core.grpc.mappers.queue_mapper import queue_to_domain
 from core.grpc.mappers.text_message_mapper import text_message_to_domain
 from core.grpc.response import Response, SubscribeResponse
-from core.grpc.subscribe_event import SubscribeEvent
+from core.grpc.subscribe_event import SubscriptionEvent
 from proto.io.github.vinicreis.pubsub.server.core.model.data.result_pb2 import Result
+from proto.io.github.vinicreis.pubsub.server.core.model.data.subscription_event_pb2 import SubscriptionEvent \
+    as RemoteSubscriptionEvent
 from proto.io.github.vinicreis.pubsub.server.core.model.response.list_response_pb2 import ListResponse
 from proto.io.github.vinicreis.pubsub.server.core.model.response.poll_response_pb2 import PollResponse
 from proto.io.github.vinicreis.pubsub.server.core.model.response.post_response_pb2 import PostResponse
@@ -92,9 +94,22 @@ def poll_response_to_domain(remote_response: PollResponse) -> Response:
         raise ValueError(f"Unknown response: {remote_response}")
 
 
+def event_to_domain(remove_event: RemoteSubscriptionEvent) -> SubscriptionEvent:
+    if remove_event == RemoteSubscriptionEvent.PROCESSING:
+        return SubscriptionEvent.PROCESSING
+    elif remove_event == RemoteSubscriptionEvent.ACTIVE:
+        return SubscriptionEvent.ACTIVE
+    elif remove_event == RemoteSubscriptionEvent.UPDATE:
+        return SubscriptionEvent.UPDATE
+    elif remove_event == RemoteSubscriptionEvent.FINISHED:
+        return SubscriptionEvent.FINISHED
+    else:
+        raise ValueError(f"Unknown subscription event: {remove_event}")
+
+
 def subscribe_response_to_domain(remote_response: RemoteSubscribeResponse) -> SubscribeResponse:
     return SubscribeResponse(
-        event=SubscribeEvent.PROCESSING,
+        event=event_to_domain(remote_response.event),
         queue=queue_to_domain(remote_response.queue),
         text_message=text_message_to_domain(remote_response.content),
         message=remote_response.message,

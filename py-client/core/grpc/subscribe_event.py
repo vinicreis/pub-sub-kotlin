@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class SubscribeEvent(Enum):
+class SubscriptionEvent(Enum):
     PROCESSING = 1
     ACTIVE = 2
     UPDATE = 3

@@ -8,6 +8,7 @@ import io.github.vinicreis.pubsub.server.core.model.data.event.QueueRemovedEvent
 import io.github.vinicreis.pubsub.server.core.model.data.event.TextMessageReceivedEvent
 import io.github.vinicreis.pubsub.server.core.service.SubscriberManagerService
 import io.github.vinicreis.pubsub.server.data.repository.EventsRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -44,7 +45,9 @@ class SubscriberManagerImpl(
 
         awaitClose {
             subscribers[queue.id]?.remove(this)
-            subscribers[queue.id]?.ifEmpty { jobs[queue.id]?.cancel() }
+            subscribers[queue.id]?.ifEmpty {
+                jobs.remove(queue.id)?.cancel()
+            }
         }
     }.catch { logger.severe("Something went wrong while collecting subscriber event") }
 
@@ -58,19 +61,27 @@ class SubscriberManagerImpl(
     private suspend fun Queue.collect() {
         jobs.getOrPut(id) {
             coroutineScope.launch {
-                while (true) {
-                    val event = eventsRepository.consume(queueId = id)
+                try {
+                    logger.info("Starting collecting events for queue: $id")
 
-                    withChosenSubscriber {
-                        when (event) {
-                            is TextMessageReceivedEvent -> send(event)
-                            is QueueRemovedEvent -> close()
-                            is QueueAddedEvent -> error("This queue should be added already!")
-                            null -> send(HeartbeatEvent)
+                    while (true) {
+                        val event = eventsRepository.consume(queueId = id)
+
+                        logger.fine("Event received from queue $id: $event")
+
+                        withChosenSubscriber {
+                            when (event) {
+                                is TextMessageReceivedEvent -> send(event)
+                                is QueueRemovedEvent -> close()
+                                is QueueAddedEvent -> send(event)
+                                null -> send(HeartbeatEvent)
+                            }
                         }
-                    }
 
-                    delay(checkInterval)
+                        delay(checkInterval)
+                    }
+                } catch (e: CancellationException) {
+                    logger.info("Events from queue $id collection was cancelled")
                 }
             }
         }

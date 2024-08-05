@@ -313,13 +313,13 @@ class QueueServiceGrpc(
                             pollResponse {
                                 this.result = ResultOuterClass.Result.ERROR
                                 this.queue = result.queue.asRemote
-                                this.message = "Peek last message timeout"
+                                this.message = "Poll last message timeout"
                             }
                         } catch (e: TimeoutCancellationException) {
                             pollResponse {
                                 this.result = ResultOuterClass.Result.ERROR
                                 this.queue = result.queue.asRemote
-                                this.message = "Peek last message timeout"
+                                this.message = "Poll last message timeout"
                             }
                         }
                     }

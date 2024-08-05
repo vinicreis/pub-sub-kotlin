@@ -41,7 +41,6 @@ class EventRepositoryDatabase(
                     .withTextMessages()
                     .selectAll()
                     .where { Events.queueId eq queueId }
-                    .groupBy(Events.id, Queues.id, TextMessages.id)
                     .orderBy(Events.createdAt, SortOrder.ASC)
                     .firstOrNull()
                     ?.asDomainEvent

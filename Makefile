@@ -6,17 +6,40 @@ PROTOS_ROOT_PATH=proto/io/github/vinicreis/pubsub/server/core
 
 .PHONY: server
 
-server: deploy_server
+server: server_deploy
 
-build: server_build py_client_build
+build: server_build client_clean py_client_build
+
+clean: server_clean client_clean
 
 server_build:
 	@echo "Building server..."
-	@./gradlew -q assembleDist
+	@./gradlew -q server:java-app:core:assembleDist
 
-deploy_server: server_build
+server_deploy: server_build
 	@echo "Starting server..."
 	docker compose -f $(DOCKER_COMPOSE_FILE) up -d --build
+
+server_clean:
+	@echo "Stopping server..."
+	@docker compose -f $(DOCKER_COMPOSE_FILE) down
+	@echo "Cleaning up server Gradle projects"
+	@./gradlew -q server:java-app:core:clean
+
+client_build: client_clean
+	@echo "Building client..."
+	@./gradlew -q client:java-app:core:assembleDist
+	@echo "Moving ang unpacking client executable..."
+	@mkdir -p bin
+	@cp client/java-app/core/build/distributions/*.tar bin/client.tar
+	@tar -xf bin/client.tar -C bin
+	@rm bin/*.tar
+	@mv bin/pub-sub-client* bin/pub-sub-client
+
+client_clean:
+	@rm -rf bin
+	@echo "Cleaning up client Gradle projects"
+	@./gradlew -q client:java-app:core:clean
 
 py_client_build:
 	@echo "Removing previous generated gRPC Python files..."

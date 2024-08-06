@@ -8,7 +8,7 @@ def select_from_list[T](options: list[T], default_index: int = 0) -> T:
         print(f"\t{i + 1} - {option}")
 
     read_option = input("Selected: ")
-    selected_option = int(read_option) - 1 if read_option is not None else default_index
+    selected_option = int(read_option) - 1 if read_option else default_index
 
     if selected_option is None:
         return options[default_index]

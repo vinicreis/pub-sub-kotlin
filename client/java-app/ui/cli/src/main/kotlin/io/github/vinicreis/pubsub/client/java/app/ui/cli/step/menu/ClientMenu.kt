@@ -6,6 +6,7 @@ enum class ClientMenuOptions(val message: String) {
     LIST_QUEUES("List queues"),
     PUBLISH_QUEUE("Publish queue"),
     POST_MESSAGE("Post a message on queue"),
+    POLL_QUEUE("Poll last message from queue"),
     SUBSCRIBE_QUEUE("Subscribe to queue"),
     REMOVE_QUEUE("Remove queue"),
     EXIT("Exit");

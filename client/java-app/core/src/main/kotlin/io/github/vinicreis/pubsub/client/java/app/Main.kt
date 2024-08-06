@@ -7,6 +7,7 @@ import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.menu.ClientMenuOpt
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.menu.selectMenuOption
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.common.withQueueList
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.list.print
+import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.poll.print
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.getMessage
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.print
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.selectQueue
@@ -39,6 +40,12 @@ fun main() {
                     ClientMenuOptions.POST_MESSAGE -> service.withQueueList { queues ->
                         queues.selectQueue { selectedQueue ->
                             service.post(selectedQueue.id.toString(), getMessage()).print()
+                        }
+                    }
+
+                    ClientMenuOptions.POLL_QUEUE -> service.withQueueList { queues ->
+                        queues.selectQueue { selectedQueue ->
+                            service.poll(selectedQueue.id.toString()).print()
                         }
                     }
 

@@ -14,7 +14,7 @@ class JavaApplicationDatabasePlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             ensureIsJavaApplication()
-            configureDatabase()
+//            configureDatabase()
             applyDatabaseDependencies()
         }
     }

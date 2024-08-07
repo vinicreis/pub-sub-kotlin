@@ -17,6 +17,7 @@ fun main(args: Array<String>) {
 
     Database.initializePostgres()
 
+    println(args.toList())
     val port = args.firstOrNull()?.toIntOrNull() ?: run { onError(); return }
     val eventsRepository = EventRepositoryDatabase(Dispatchers.IO)
     val queueRepository = QueueRepositoryDatabase(Dispatchers.IO, eventsRepository)

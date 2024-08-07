@@ -2,29 +2,31 @@ services:
   server:
     image: pub-sub-server:latest
     container_name: pub-sub-server
-    build: .
+    env_file:
+      - .env
+    build:
+      context: server
+      args:
+        SERVER_PORT: ${SERVER_PORT}
     ports:
-      - "10090:10090"
+      - "${SERVER_PORT}:${SERVER_PORT}"
     working_dir: /app
     depends_on:
       db:
         condition: service_healthy
     environment:
-      - ORG_GRADLE_PROJECT_databaseProtocol = postgresql
-      - ORG_GRADLE_PROJECT_databaseDomain = db
-      - ORG_GRADLE_PROJECT_databaseDriver = org.postgresql.Driver
-      - ORG_GRADLE_PROJECT_databaseName = pubsub
-      - ORG_GRADLE_PROJECT_databaseUser = student
-      - ORG_GRADLE_PROJECT_databasePassword = Ufabc@123
-      - ORG_GRADLE_PROJECT_databasePort = 5432
+      - DB_NAME = ${DB_NAME}
+      - DB_USER = ${DB_USER}
+      - DB_PASSWORD = ${DB_PASSWORD}
+      - DB_PORT = ${DB_PORT}
   db:
     image: postgres:latest
     restart: always
     container_name: pub-sub-db
     environment:
-      POSTGRES_DB: pubsub
-      POSTGRES_USER: student
-      POSTGRES_PASSWORD: Ufabc@123
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready"]
       interval: 10s
@@ -34,6 +36,6 @@ services:
     volumes:
       - pubsubdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:${DB_PORT}"
 volumes:
   pubsubdata:

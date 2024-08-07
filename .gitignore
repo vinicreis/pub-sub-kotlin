@@ -40,3 +40,4 @@ bin/
 
 ## Python Protobuf/gRPC generated files
 py-client/proto/**
+.env

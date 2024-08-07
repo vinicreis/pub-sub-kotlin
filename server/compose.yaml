@@ -2,9 +2,12 @@ services:
   server:
     image: pub-sub-server:latest
     container_name: pub-sub-server
-    build: .
+    build:
+      context: .
+      args:
+        - PORT=${PORT}
     ports:
-      - "10090:10090"
+      - "${PORT}:${PORT}"
     working_dir: /app
     depends_on:
       db:

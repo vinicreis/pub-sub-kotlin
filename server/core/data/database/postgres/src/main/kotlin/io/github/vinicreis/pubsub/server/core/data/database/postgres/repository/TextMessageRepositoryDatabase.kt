@@ -1,8 +1,8 @@
 package io.github.vinicreis.pubsub.server.core.data.database.postgres.repository
 
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.entity.TextMessages
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.extensions.withExposedTransaction
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.mapper.from
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.table.TextMessages
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
 import io.github.vinicreis.pubsub.server.core.model.data.TextMessage
 import io.github.vinicreis.pubsub.server.core.model.data.event.TextMessageReceivedEvent

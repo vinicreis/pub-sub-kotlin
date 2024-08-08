@@ -4,5 +4,5 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.server.core.model)
+    implementation(projects.server.core.domain)
 }

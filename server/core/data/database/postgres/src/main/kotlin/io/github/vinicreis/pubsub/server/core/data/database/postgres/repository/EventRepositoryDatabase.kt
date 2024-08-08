@@ -1,10 +1,10 @@
 package io.github.vinicreis.pubsub.server.core.data.database.postgres.repository
 
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.entity.Events
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.entity.Queues
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.entity.TextMessages
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.mapper.asDomainEvent
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.mapper.from
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.table.Events
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.table.Queues
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.table.TextMessages
 import io.github.vinicreis.pubsub.server.core.model.data.event.Event
 import io.github.vinicreis.pubsub.server.core.model.data.event.QueueAddedEvent
 import io.github.vinicreis.pubsub.server.core.model.data.event.QueueRemovedEvent

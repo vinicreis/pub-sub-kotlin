@@ -32,7 +32,7 @@ if __name__ == '__main__':
     port = args.port
     print(f"Connecting to server on {address}:{port}...")
 
-    client = Client('localhost', 10090)
+    client = Client(address, port)
 
     while True:
         try:

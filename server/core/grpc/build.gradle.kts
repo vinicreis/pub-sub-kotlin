@@ -7,7 +7,7 @@ plugins {
 
 dependencies {
     api(projects.protos)
-    implementation(projects.server.core.model)
+    implementation(projects.server.core.domain)
     implementation(projects.server.core.service)
     implementation(projects.server.core.util)
     implementation(projects.server.core.data.repository)

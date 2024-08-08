@@ -1,7 +1,7 @@
 package io.github.vinicreis.pubsub.server.core.data.database.postgres.mapper
 
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.entity.Queues
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.entity.TextMessages
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.table.Queues
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.table.TextMessages
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.statements.UpdateBuilder

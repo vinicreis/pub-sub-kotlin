@@ -4,7 +4,8 @@ PY_CLIENT_GENERATED_PATH=$(PY_CLIENT_ROOT_PATH)/proto
 PROTOS_PATH=protos/src/main/proto/proto/io/github/vinicreis/pubsub/server/core
 PROTOS_ROOT_PATH=proto/io/github/vinicreis/pubsub/server/core
 
-.PHONY: server
+.PHONY: server client py_client
+
 build: server_build client_clean py_client_build
 clean: server_clean client_clean
 
@@ -41,6 +42,10 @@ client_clean:
 	@rm -rf bin
 	@echo "Cleaning up client Gradle projects"
 	@./gradlew -q client:java-app:core:clean
+
+py_client: py_client_build
+	@echo "Running Python client..."
+	@python $(PY_CLIENT_ROOT_PATH)/main.py
 
 py_client_build: py_client_clean
 	@echo "Generating gRPC Python files..."

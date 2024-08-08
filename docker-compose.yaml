@@ -3,7 +3,7 @@ services:
     image: pub-sub-server:latest
     container_name: pub-sub-server
     env_file:
-      - .env
+      - .env-sample
     build:
       context: server
       args:

@@ -1,4 +1,4 @@
-package io.github.vinicreis.pubsub.server.core.data.database.postgres.entity
+package io.github.vinicreis.pubsub.server.core.data.database.postgres.table
 
 import io.github.vinicreis.pubsub.server.core.model.data.TextMessage
 import kotlinx.datetime.Clock

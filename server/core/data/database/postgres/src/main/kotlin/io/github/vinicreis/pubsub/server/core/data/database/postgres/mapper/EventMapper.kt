@@ -1,6 +1,6 @@
 package io.github.vinicreis.pubsub.server.core.data.database.postgres.mapper
 
-import io.github.vinicreis.pubsub.server.core.data.database.postgres.entity.Events
+import io.github.vinicreis.pubsub.server.core.data.database.postgres.table.Events
 import io.github.vinicreis.pubsub.server.core.model.data.event.Event
 import io.github.vinicreis.pubsub.server.core.model.data.event.QueueAddedEvent
 import io.github.vinicreis.pubsub.server.core.model.data.event.QueueRemovedEvent

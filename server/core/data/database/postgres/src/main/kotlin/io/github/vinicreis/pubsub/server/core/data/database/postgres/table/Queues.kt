@@ -1,4 +1,4 @@
-package io.github.vinicreis.pubsub.server.core.data.database.postgres.entity
+package io.github.vinicreis.pubsub.server.core.data.database.postgres.table
 
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IdTable

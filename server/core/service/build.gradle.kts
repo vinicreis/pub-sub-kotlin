@@ -5,5 +5,5 @@ plugins {
 
 dependencies {
     implementation(projects.protos)
-    implementation(projects.server.core.model)
+    implementation(projects.server.core.domain)
 }

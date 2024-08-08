@@ -7,7 +7,7 @@ import io.github.vinicreis.pubsub.server.core.data.database.postgres.table.Queue
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
 import io.github.vinicreis.pubsub.server.core.model.data.event.QueueAddedEvent
 import io.github.vinicreis.pubsub.server.core.model.data.event.QueueRemovedEvent
-import io.github.vinicreis.pubsub.server.data.repository.EventsRepository
+import io.github.vinicreis.pubsub.server.data.repository.EventRepository
 import io.github.vinicreis.pubsub.server.data.repository.QueueRepository
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -23,7 +23,7 @@ import kotlin.coroutines.CoroutineContext
 
 class QueueRepositoryDatabase(
     private val coroutineContext: CoroutineContext,
-    private val eventsRepository: EventsRepository,
+    private val eventRepository: EventRepository,
     private val logger: Logger = Logger.getLogger(QueueRepositoryDatabase::class.java.simpleName)
 ) : QueueRepository {
     init {
@@ -53,7 +53,7 @@ class QueueRepositoryDatabase(
 
             withExposedTransaction {
                 Queues.insert { it from queue }
-                eventsRepository.notify(QueueAddedEvent(queue = queue))
+                eventRepository.notify(QueueAddedEvent(queue = queue))
             }
 
             QueueRepository.Result.Add.Success(queue)
@@ -74,7 +74,7 @@ class QueueRepositoryDatabase(
                     .firstOrNull()
                     ?.also {
                         Queues.deleteWhere { id eq queue.id }
-                        eventsRepository.notify(QueueRemovedEvent(queueId = queue.id))
+                        eventRepository.notify(QueueRemovedEvent(queueId = queue.id))
                     }
             }?.let { QueueRepository.Result.Remove.Success(it) }
                 ?: QueueRepository.Result.Remove.NotFound
@@ -94,7 +94,7 @@ class QueueRepositoryDatabase(
                     .map { it.asDomainQueue }
                     .firstOrNull()?.also {
                         Queues.deleteWhere { this.id eq id }
-                        eventsRepository.notify(QueueRemovedEvent(queueId = id))
+                        eventRepository.notify(QueueRemovedEvent(queueId = id))
                     }
             }?.let { removedQueue -> QueueRepository.Result.Remove.Success(removedQueue) }
                 ?: QueueRepository.Result.Remove.NotFound
@@ -114,7 +114,7 @@ class QueueRepositoryDatabase(
                     .firstOrNull()
                     ?.asDomainQueue
                     ?.also { removedQueue ->
-                        eventsRepository.notify(QueueRemovedEvent(queueId = removedQueue.id))
+                        eventRepository.notify(QueueRemovedEvent(queueId = removedQueue.id))
                         Queues.deleteWhere { this.code eq code }.takeIf { it > 0 }
                     }
             }?.let { removedQueue -> QueueRepository.Result.Remove.Success(removedQueue) }

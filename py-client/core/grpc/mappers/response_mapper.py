@@ -1,7 +1,7 @@
+from core.domain.subscribe_event import SubscriptionEvent
 from core.grpc.mappers.queue_mapper import queue_to_domain
 from core.grpc.mappers.text_message_mapper import text_message_to_domain
-from core.grpc.response import Response, SubscribeResponse
-from core.grpc.subscribe_event import SubscriptionEvent
+from core.service.model.response import Response, SubscribeResponse
 from proto.io.github.vinicreis.pubsub.server.core.model.data.result_pb2 import Result
 from proto.io.github.vinicreis.pubsub.server.core.model.data.subscription_event_pb2 import SubscriptionEvent \
     as RemoteSubscriptionEvent

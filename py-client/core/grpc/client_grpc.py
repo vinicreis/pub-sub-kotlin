@@ -1,11 +1,12 @@
 import grpc
 
+from core.domain.queue import Queue
 from core.grpc.mappers.queue_mapper import queue_to_remote
 from core.grpc.mappers.response_mapper import publish_response_to_domain, list_response_to_domain, \
     post_response_to_domain, poll_response_to_domain, remove_response_to_domain, subscribe_response_to_domain
 from core.grpc.mappers.text_message_mapper import text_message_to_remote
-from core.grpc.response import Response
-from core.model.queue import Queue
+from core.service.client import Client
+from core.service.model.response import Response
 from proto.io.github.vinicreis.pubsub.server.core.model.request.list_request_pb2 import ListRequest
 from proto.io.github.vinicreis.pubsub.server.core.model.request.poll_request_pb2 import PollRequest
 from proto.io.github.vinicreis.pubsub.server.core.model.request.post_multiple_request_pb2 import PostMultipleRequest
@@ -16,8 +17,9 @@ from proto.io.github.vinicreis.pubsub.server.core.model.request.subscribe_reques
 from proto.io.github.vinicreis.pubsub.server.core.service.queue_service_pb2_grpc import QueueServiceStub
 
 
-class Client:
+class ClientGrpc(Client):
     def __init__(self, address: str, port: int):
+        super().__init__(address, port)
         self.channel = grpc.insecure_channel(f'{address}:{port}')
         self.stub = QueueServiceStub(self.channel)
 

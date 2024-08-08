@@ -1,4 +1,4 @@
-from core.model.text_message import TextMessage as DomainTextMessage
+from core.domain.text_message import TextMessage as DomainTextMessage
 from proto.io.github.vinicreis.pubsub.server.core.model.data.text_message_pb2 import TextMessage as RemoteTextMessage
 
 

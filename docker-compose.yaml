@@ -3,7 +3,7 @@ services:
     image: pub-sub-server:latest
     container_name: pub-sub-server
     env_file:
-      - .env-sample
+      - ".env-sample"
     build:
       context: server
       args:
@@ -21,6 +21,8 @@ services:
       - DB_PORT = ${DB_PORT}
   db:
     image: postgres:latest
+    env_file:
+      - ".env-sample"
     restart: always
     container_name: pub-sub-db
     environment:

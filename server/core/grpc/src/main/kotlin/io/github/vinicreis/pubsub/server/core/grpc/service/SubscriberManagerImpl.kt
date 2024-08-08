@@ -7,7 +7,7 @@ import io.github.vinicreis.pubsub.server.core.model.data.event.QueueAddedEvent
 import io.github.vinicreis.pubsub.server.core.model.data.event.QueueRemovedEvent
 import io.github.vinicreis.pubsub.server.core.model.data.event.TextMessageReceivedEvent
 import io.github.vinicreis.pubsub.server.core.service.SubscriberManagerService
-import io.github.vinicreis.pubsub.server.data.repository.EventsRepository
+import io.github.vinicreis.pubsub.server.data.repository.EventRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -30,7 +30,7 @@ import kotlin.time.Duration.Companion.seconds
 class SubscriberManagerImpl(
     coroutineContext: CoroutineContext,
     private val checkInterval: Duration = 1.seconds,
-    private val eventsRepository: EventsRepository,
+    private val eventRepository: EventRepository,
     private val logger: Logger = Logger.getLogger(SubscriberManagerImpl::class.java.simpleName)
 ) : SubscriberManagerService {
     private val coroutineScope = CoroutineScope(SupervisorJob() + coroutineContext)
@@ -40,7 +40,7 @@ class SubscriberManagerImpl(
     override fun subscribe(queue: Queue): Flow<Event> = channelFlow {
         subscribers.getOrPut(queue.id) { mutableListOf() }.add(this)
 
-        queue.collect()
+        queue.launchCollection()
         yield()
 
         awaitClose {
@@ -58,14 +58,14 @@ class SubscriberManagerImpl(
         }
     }
 
-    private suspend fun Queue.collect() {
+    private fun Queue.launchCollection() {
         jobs.getOrPut(id) {
             coroutineScope.launch {
                 try {
                     logger.info("Starting collecting events for queue: $id")
 
                     while (true) {
-                        val event = eventsRepository.consume(queueId = id)
+                        val event = eventRepository.consume(queueId = id)
 
                         logger.fine("Event received from queue $id: $event")
 

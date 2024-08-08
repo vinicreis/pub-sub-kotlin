@@ -13,7 +13,7 @@ import io.github.vinicreis.pubsub.server.core.test.extension.randomSlice
 import io.github.vinicreis.pubsub.server.core.test.fixture.QueueFixture
 import io.github.vinicreis.pubsub.server.core.test.fixture.QueueFixture.id
 import io.github.vinicreis.pubsub.server.core.test.fixture.TextMessageFixture
-import io.github.vinicreis.pubsub.server.data.repository.EventsRepository
+import io.github.vinicreis.pubsub.server.data.repository.EventRepository
 import io.github.vinicreis.pubsub.server.data.repository.QueueRepository
 import io.github.vinicreis.pubsub.server.data.repository.TextMessageRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -49,7 +49,7 @@ class QueueRepositoryDatabaseTests {
             }
         }
 
-        when (val event = eventsRepository.consume(validQueue.id)) {
+        when (val event = eventRepository.consume(validQueue.id)) {
             is QueueRemovedEvent,
             is TextMessageReceivedEvent,
             null -> fail("Should have emitted queue added event")
@@ -178,7 +178,7 @@ class QueueRepositoryDatabaseTests {
     companion object {
         private val testDispatcher = UnconfinedTestDispatcher()
         private lateinit var sut: QueueRepositoryDatabase
-        private lateinit var eventsRepository: EventsRepository
+        private lateinit var eventRepository: EventRepository
         private lateinit var messageRepository: TextMessageRepositoryDatabase
         private val validQueue = QueueFixture.instance()
 
@@ -187,11 +187,11 @@ class QueueRepositoryDatabaseTests {
         fun setup() {
             DatabaseFixture.up()
 
-            eventsRepository = EventRepositoryDatabase(coroutineContext = testDispatcher)
-            sut = QueueRepositoryDatabase(coroutineContext = testDispatcher, eventsRepository = eventsRepository)
+            eventRepository = EventRepositoryDatabase(coroutineContext = testDispatcher)
+            sut = QueueRepositoryDatabase(coroutineContext = testDispatcher, eventRepository = eventRepository)
             messageRepository = TextMessageRepositoryDatabase(
                 coroutineContext = testDispatcher,
-                eventsRepository = eventsRepository
+                eventRepository = eventRepository
             )
         }
 

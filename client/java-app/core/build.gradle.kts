@@ -12,7 +12,7 @@ application {
 
 dependencies {
     implementation(projects.protos)
-    implementation(projects.client.core.model)
+    implementation(projects.client.core.domain)
     implementation(projects.client.core.service)
     implementation(projects.client.core.grpc)
     implementation(projects.client.javaApp.ui.cli)

@@ -1,10 +1,11 @@
 import argparse
 import traceback
 
-from core.grpc.client import Client
-from core.grpc.response import Response
-from core.model.queue import Queue
-from core.model.text_message import TextMessage
+from core.domain.queue import Queue
+from core.domain.text_message import TextMessage
+from core.grpc.client_grpc import ClientGrpc
+from core.service.client import Client
+from core.service.model.response import Response
 from ui.cli.component.components import select_from_list, read_text, read_int_or_none
 from ui.cli.menu.menu import MenuOption
 
@@ -25,14 +26,13 @@ def select_queue(client: Client) -> Queue | None:
 
     return select_from_list(list_response.data)
 
-
 if __name__ == '__main__':
     args = parser.parse_args()
     address = args.address
     port = args.port
     print(f"Connecting to server on {address}:{port}...")
 
-    client = Client(address, port)
+    client = ClientGrpc(address, port)
 
     while True:
         try:

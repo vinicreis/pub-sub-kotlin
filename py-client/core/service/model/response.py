@@ -1,8 +1,8 @@
 from enum import Enum
 
-from core.grpc.subscribe_event import SubscriptionEvent
-from core.model.queue import Queue
-from core.model.text_message import TextMessage
+from core.domain.queue import Queue
+from core.domain.subscribe_event import SubscriptionEvent
+from core.domain.text_message import TextMessage
 
 
 class Response[T]:

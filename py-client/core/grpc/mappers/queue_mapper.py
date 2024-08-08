@@ -1,4 +1,4 @@
-from core.model.queue import Queue as DomainQueue
+from core.domain.queue import Queue as DomainQueue
 from proto.io.github.vinicreis.pubsub.server.core.model.data.queue_pb2 import Queue as RemoteQueue
 
 

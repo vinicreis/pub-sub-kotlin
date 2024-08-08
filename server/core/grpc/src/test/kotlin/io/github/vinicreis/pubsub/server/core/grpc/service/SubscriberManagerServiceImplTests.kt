@@ -4,7 +4,7 @@ import io.github.vinicreis.pubsub.server.core.model.data.Queue
 import io.github.vinicreis.pubsub.server.core.model.data.event.Event
 import io.github.vinicreis.pubsub.server.core.model.data.event.QueueRemovedEvent
 import io.github.vinicreis.pubsub.server.core.test.fixture.QueueFixture
-import io.github.vinicreis.pubsub.server.data.repository.EventsRepository
+import io.github.vinicreis.pubsub.server.data.repository.EventRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -27,13 +27,13 @@ import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SubscriberManagerServiceImplTests {
-    private val eventsRepository = mockk<EventsRepository>()
+    private val eventRepository = mockk<EventRepository>()
     private val testDispatcher = UnconfinedTestDispatcher()
     private val logger = Logger.getLogger("SubscriberManagerImplTests")
     private val sut: SubscriberManagerImpl = SubscriberManagerImpl(
         coroutineContext = testDispatcher,
         logger = logger,
-        eventsRepository = eventsRepository,
+        eventRepository = eventRepository,
     )
 
     @Test
@@ -43,13 +43,13 @@ class SubscriberManagerServiceImplTests {
         val queue = QueueFixture.instance(type = Queue.Type.SIMPLE)
         val events = mutableListOf<Event>()
 
-        coEvery { eventsRepository.consume(queue.id) } returns null
+        coEvery { eventRepository.consume(queue.id) } returns null
 
         launch(dispatcher) { sut.subscribe(queue).takeWhile { events.size < time }.toList(events) }
         advanceTimeBy((time * 2).seconds)
 
         assertEquals((time.seconds * 2).inWholeMilliseconds, currentTime)
-        coVerify(exactly = time + 1) { eventsRepository.consume(queue.id) }
+        coVerify(exactly = time + 1) { eventRepository.consume(queue.id) }
         assertEquals(time, events.size)
     }
 
@@ -64,7 +64,7 @@ class SubscriberManagerServiceImplTests {
             repeat(subscribersCount) { add(mutableListOf<Event>()) }
         }
 
-        coEvery { eventsRepository.consume(queue.id) } returns null
+        coEvery { eventRepository.consume(queue.id) } returns null
 
         repeat(subscribersCount) { index ->
             launch(dispatcher) {
@@ -77,7 +77,7 @@ class SubscriberManagerServiceImplTests {
         advanceTimeBy((time * 2).seconds)
 
         assertEquals((time.seconds * 2).inWholeMilliseconds, currentTime)
-        coVerify(atLeast = time) { eventsRepository.consume(queue.id) }
+        coVerify(atLeast = time) { eventRepository.consume(queue.id) }
         assertEquals(events.size, subscribers.sumOf { it.size })
     }
 
@@ -92,7 +92,7 @@ class SubscriberManagerServiceImplTests {
                 repeat(subscribersCount) { add(mutableListOf<Event>()) }
             }
 
-            coEvery { eventsRepository.consume(queue.id) } returns null
+            coEvery { eventRepository.consume(queue.id) } returns null
 
             repeat(subscribersCount) { index ->
                 launch(dispatcher) {
@@ -104,7 +104,7 @@ class SubscriberManagerServiceImplTests {
             advanceTimeBy((time * 2).seconds)
 
             assertEquals((time.seconds * 2).inWholeMilliseconds, currentTime)
-            coVerify(atLeast = time) { eventsRepository.consume(queue.id) }
+            coVerify(atLeast = time) { eventRepository.consume(queue.id) }
             subscribers.forEach { subscriber -> assertEquals(time, subscriber.size) }
         }
 
@@ -115,7 +115,7 @@ class SubscriberManagerServiceImplTests {
         val subscribersCount = Random.nextInt(50, 100)
         val time = 60.seconds
 
-        coEvery { eventsRepository.consume(queue.id) } returns null
+        coEvery { eventRepository.consume(queue.id) } returns null
 
         val jobs = buildList {
             repeat(subscribersCount) {
@@ -126,7 +126,7 @@ class SubscriberManagerServiceImplTests {
         jobs.forEach { it.cancel() }
 
         assertEquals(time.inWholeMilliseconds, currentTime)
-        coVerify(exactly = time.inWholeSeconds.toInt()) { eventsRepository.consume(queue.id) }
+        coVerify(exactly = time.inWholeSeconds.toInt()) { eventRepository.consume(queue.id) }
     }
 
     @Test
@@ -145,7 +145,7 @@ class SubscriberManagerServiceImplTests {
 
         println(events)
 
-        coEvery { eventsRepository.consume(queue.id) } returnsMany events
+        coEvery { eventRepository.consume(queue.id) } returnsMany events
 
         repeat(subscribersCount) {
             launch(dispatcher) { sut.subscribe(queue).collect { } }
@@ -153,6 +153,6 @@ class SubscriberManagerServiceImplTests {
         advanceUntilIdle()
 
         assertEquals((subscribersCount + secondsToClose - 1).seconds.inWholeMilliseconds, currentTime)
-        coVerify(exactly = subscribersCount + secondsToClose) { eventsRepository.consume(queue.id) }
+        coVerify(exactly = subscribersCount + secondsToClose) { eventRepository.consume(queue.id) }
     }
 }

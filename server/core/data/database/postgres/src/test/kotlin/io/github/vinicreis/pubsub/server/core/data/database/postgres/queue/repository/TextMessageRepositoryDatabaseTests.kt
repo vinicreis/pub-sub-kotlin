@@ -16,7 +16,7 @@ import io.github.vinicreis.pubsub.server.core.test.extension.asTextMessage
 import io.github.vinicreis.pubsub.server.core.test.extension.randomSlice
 import io.github.vinicreis.pubsub.server.core.test.fixture.QueueFixture
 import io.github.vinicreis.pubsub.server.core.test.fixture.TextMessageFixture
-import io.github.vinicreis.pubsub.server.data.repository.EventsRepository
+import io.github.vinicreis.pubsub.server.data.repository.EventRepository
 import io.github.vinicreis.pubsub.server.data.repository.QueueRepository
 import io.github.vinicreis.pubsub.server.data.repository.TextMessageRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -59,7 +59,7 @@ class TextMessageRepositoryDatabaseTests {
             }
         }
 
-        when (val event = eventsRepository.consume(queue.id)) {
+        when (val event = eventRepository.consume(queue.id)) {
             null,
             is TextMessageReceivedEvent,
             is QueueRemovedEvent -> fail("Should not fail to poll message")
@@ -82,7 +82,7 @@ class TextMessageRepositoryDatabaseTests {
             TextMessageRepository.Result.Add.Success -> Unit
         }
 
-        when (val event = eventsRepository.consume(queue.id)) {
+        when (val event = eventRepository.consume(queue.id)) {
             null,
             is QueueAddedEvent,
             is QueueRemovedEvent -> fail("Should not fail to poll message")
@@ -143,7 +143,7 @@ class TextMessageRepositoryDatabaseTests {
     fun `05 - Should subscribe to a valid queue successfully`() = runTest(testDispatcher) {
         val queue = QueueFixture.instance(id = validQueueId)
 
-        when (val event = eventsRepository.consume(queue.id)) {
+        when (val event = eventRepository.consume(queue.id)) {
             null,
             is QueueAddedEvent,
             is QueueRemovedEvent -> fail("Should not fail to poll message")
@@ -173,7 +173,7 @@ class TextMessageRepositoryDatabaseTests {
 
         var lastEvent: TextMessageReceivedEvent?
         do {
-            lastEvent = eventsRepository.consume(queue.id) as? TextMessageReceivedEvent
+            lastEvent = eventRepository.consume(queue.id) as? TextMessageReceivedEvent
             lastEvent?.also { receivedTextMessages.add(it.textMessage) }
         } while (lastEvent != null)
 
@@ -189,7 +189,7 @@ class TextMessageRepositoryDatabaseTests {
 
     companion object {
         private val testDispatcher = UnconfinedTestDispatcher()
-        private lateinit var eventsRepository: EventsRepository
+        private lateinit var eventRepository: EventRepository
         private lateinit var queueRepository: QueueRepository
         private lateinit var sut: TextMessageRepositoryDatabase
         private val validQueueId = QueueFixture.id()
@@ -199,11 +199,11 @@ class TextMessageRepositoryDatabaseTests {
         fun setup() {
             DatabaseFixture.up()
 
-            eventsRepository = EventRepositoryDatabase(testDispatcher)
-            queueRepository = QueueRepositoryDatabase(testDispatcher, eventsRepository)
+            eventRepository = EventRepositoryDatabase(testDispatcher)
+            queueRepository = QueueRepositoryDatabase(testDispatcher, eventRepository)
             sut = TextMessageRepositoryDatabase(
                 coroutineContext = testDispatcher,
-                eventsRepository = eventsRepository,
+                eventRepository = eventRepository,
             )
         }
 

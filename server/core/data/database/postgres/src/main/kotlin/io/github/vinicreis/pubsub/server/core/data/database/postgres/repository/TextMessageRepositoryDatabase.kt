@@ -6,7 +6,7 @@ import io.github.vinicreis.pubsub.server.core.data.database.postgres.table.TextM
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
 import io.github.vinicreis.pubsub.server.core.model.data.TextMessage
 import io.github.vinicreis.pubsub.server.core.model.data.event.TextMessageReceivedEvent
-import io.github.vinicreis.pubsub.server.data.repository.EventsRepository
+import io.github.vinicreis.pubsub.server.data.repository.EventRepository
 import io.github.vinicreis.pubsub.server.data.repository.TextMessageRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
@@ -19,7 +19,7 @@ import kotlin.coroutines.CoroutineContext
 
 class TextMessageRepositoryDatabase(
     private val coroutineContext: CoroutineContext,
-    private val eventsRepository: EventsRepository,
+    private val eventRepository: EventRepository,
     private val logger: Logger = Logger.getLogger(TextMessageRepositoryDatabase::class.java.simpleName)
 ) : TextMessageRepository {
 
@@ -52,7 +52,7 @@ class TextMessageRepositoryDatabase(
                 withExposedTransaction {
                     textMessages.forEach { textMessage ->
                         TextMessages.insert { it from textMessage }
-                        eventsRepository.notify(TextMessageReceivedEvent(textMessage = textMessage))
+                        eventRepository.notify(TextMessageReceivedEvent(textMessage = textMessage))
                     }
                 }.let { TextMessageRepository.Result.Add.Success }
             }

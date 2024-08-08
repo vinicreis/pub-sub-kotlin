@@ -10,7 +10,7 @@ import io.github.vinicreis.pubsub.server.core.model.data.event.QueueAddedEvent
 import io.github.vinicreis.pubsub.server.core.model.data.event.QueueRemovedEvent
 import io.github.vinicreis.pubsub.server.core.model.data.event.TextMessageReceivedEvent
 import io.github.vinicreis.pubsub.server.data.model.Transaction
-import io.github.vinicreis.pubsub.server.data.repository.EventsRepository
+import io.github.vinicreis.pubsub.server.data.repository.EventRepository
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.Join
 import org.jetbrains.exposed.sql.JoinType
@@ -27,7 +27,7 @@ import kotlin.coroutines.CoroutineContext
 class EventRepositoryDatabase(
     private val coroutineContext: CoroutineContext,
     private val logger: Logger = Logger.getLogger(EventRepositoryDatabase::class.simpleName)
-) : EventsRepository {
+) : EventRepository {
     context(T)
     override fun <T : Transaction> notify(event: Event.Saveable) {
         Events.insert { it from event }

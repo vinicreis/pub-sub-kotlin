@@ -11,6 +11,10 @@ clean: server_clean client_clean
 
 server: server_deploy
 
+server_test:
+	@echo "Running server tests..."
+	@./gradlew test --rerun-tasks
+
 server_build: server_clean
 	@echo "Building server..."
 	@./gradlew -q server:java-app:core:assembleDist
@@ -50,7 +54,6 @@ py_client: py_client_build
 py_client_build: py_client_clean
 	@echo "Generating gRPC Python files..."
 	@mkdir -p $(PY_CLIENT_GENERATED_PATH)
-	@touch $(PY_CLIENT_GENERATED_PATH)/__init__.py
 	@python -m grpc_tools.protoc -I$(PROTOS_ROOT_PATH)=$(PROTOS_PATH) \
  		--python_out=$(PY_CLIENT_ROOT_PATH) \
  		 --pyi_out=$(PY_CLIENT_ROOT_PATH) \

@@ -14,21 +14,18 @@ import io.github.vinicreis.pubsub.client.core.model.Queue
 import io.github.vinicreis.pubsub.client.core.model.ServerInfo
 import io.github.vinicreis.pubsub.client.core.model.SubscriptionEvent
 import io.github.vinicreis.pubsub.client.core.model.TextMessage
-import io.github.vinicreis.pubsub.client.core.service.SubscriberServiceClient
+import io.github.vinicreis.pubsub.client.core.service.QueueServiceClient
 import io.grpc.ManagedChannelBuilder
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import java.util.logging.Logger
 import kotlin.coroutines.CoroutineContext
 
-class SubscriberServiceGRPC(
+class QueueServiceClientGrpc(
     override val serverInfo: ServerInfo,
     private val coroutineContext: CoroutineContext,
-    private val logger: Logger = Logger.getLogger(SubscriberServiceGRPC::class.java.name),
-) : SubscriberServiceClient {
+) : QueueServiceClient {
     private val server by lazy {
-        logger.info("Connecting to server $serverInfo...")
         QueueServiceGrpcKt.QueueServiceCoroutineStub(
             channel = ManagedChannelBuilder
                 .forAddress(serverInfo.address, serverInfo.port)
@@ -37,7 +34,7 @@ class SubscriberServiceGRPC(
         )
     }
 
-    override suspend fun list(): SubscriberServiceClient.Response.ListAll = withContext(coroutineContext) {
+    override suspend fun list(): QueueServiceClient.Response.ListAll = withContext(coroutineContext) {
         server.list(ListRequest.getDefaultInstance()).asDomain
     }
 
@@ -72,7 +69,7 @@ class SubscriberServiceGRPC(
     override suspend fun poll(
         queueId: String,
         timeoutSeconds: Long?
-    ): SubscriberServiceClient.Response.Poll = withContext(coroutineContext) {
+    ): QueueServiceClient.Response.Poll = withContext(coroutineContext) {
         server.poll(
             request = pollRequest {
                 this.queueId = queueId
@@ -81,7 +78,7 @@ class SubscriberServiceGRPC(
         ).asDomain
     }
 
-    override suspend fun remove(queueId: String): SubscriberServiceClient.Response.Remove =
+    override suspend fun remove(queueId: String): QueueServiceClient.Response.Remove =
         withContext(coroutineContext) {
             server.remove(
                 request = removeRequest { this.id = queueId }

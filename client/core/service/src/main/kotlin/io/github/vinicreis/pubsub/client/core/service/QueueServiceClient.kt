@@ -6,7 +6,7 @@ import io.github.vinicreis.pubsub.client.core.model.SubscriptionEvent
 import io.github.vinicreis.pubsub.client.core.model.TextMessage
 import kotlinx.coroutines.flow.Flow
 
-interface SubscriberServiceClient {
+interface QueueServiceClient {
     val serverInfo: ServerInfo
 
     sealed interface Response {

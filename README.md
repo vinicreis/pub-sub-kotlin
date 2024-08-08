@@ -132,7 +132,13 @@ Note que a estratégia para seleção do inscrito no caso de uma fila simples é
 A criação e remoção de filas, assim como a postagem de mensagens, é feita pelos seus devidos repositórios, 
 `QueueRepository` e `TextMessageRepository`. Porém, dado o paradigma adotado para a aplicação,
 estes repositórios recebem uma instância do repositório de eventos. Este repositório foi definido de
-modo que a notificação de eventos precisa ocorrer na mesma transação que a instrução que gera o evento em si. 
+modo que a notificação de eventos precisa ocorrer na mesma transação que a instrução que gera o evento em si.
+
+Vale destacar que, para manter o isolamento de cada domínio, cada domínio da aplicação possui seus próprios modelos
+mapeados através das extensões contidas nos arquivos com sufixo `Mapper`. Por exemplo, existe um mapeamento de 
+modelos de domínio quando há o salvamento de uma fila, tanto do formato de fila do domínio do servidor, quanto para
+o formato de fila do domínio do banco de dados. O mesmo ocorre para a troca entre cliente e servidor, onde os modelos
+são únicos para cada um deles.
 
 Por exemplo, ao postar uma mensagem, ela precisa ser salva no banco para manter a resiliência em caso
 de queda da aplicação do servidor. Tanto o salvamento da mensagem quanto o salvamento do evento a ser notificado
@@ -147,6 +153,15 @@ Dito isso, a relação entre as classes mencionadas acima seria:
 
 ![Arquitetura da solução](./docs/main-classes.png)
 
-### Cliente 
+### Clientes
+
+Os clientes, tanto em Kotlin quanto em Python, possuem uma estrutura de código semelhante. Ambos também utilizam 
+códigos gerados pela biblioteca da gRPC para Kotlin e Python, respectivamente. A diferença entre eles é que os clientes
+utilizam classes destinadas à implementação dos clientes gRPC.
+
+O funcionamento dos clientes é interativo e é feito por uma interface de linha de comando. Os clientes executam em
+num loop até que o usuário selecione uma operação para ser realizada, ou encerre a aplicação. É importante ressaltar
+que os eventos que necessitam de uma fila específica primeiro enviam uma requisição de listagem de filas para 
+que o usuário selecione em qual fila a operação deve ser executada.
 
 ## Cobertura de testes

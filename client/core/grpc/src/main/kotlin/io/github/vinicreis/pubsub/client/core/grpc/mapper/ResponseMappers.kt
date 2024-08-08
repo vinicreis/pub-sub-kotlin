@@ -9,7 +9,7 @@ import io.github.vinicreis.domain.server.core.model.response.RemoveResponseOuter
 import io.github.vinicreis.domain.server.core.model.response.SubscribeResponseOuterClass.SubscribeResponse
 import io.github.vinicreis.pubsub.client.core.grpc.model.ServerResult
 import io.github.vinicreis.pubsub.client.core.model.SubscriptionEvent
-import io.github.vinicreis.pubsub.client.core.service.SubscriberServiceClient
+import io.github.vinicreis.pubsub.client.core.service.QueueServiceClient
 import io.github.vinicreis.domain.server.core.model.data.SubscriptionEventOuterClass.SubscriptionEvent as RemoteSubscriptionEvent
 
 internal val ResultOuterClass.Result?.asDomain: ServerResult
@@ -19,27 +19,27 @@ internal val ResultOuterClass.Result?.asDomain: ServerResult
         ResultOuterClass.Result.SUCCESS -> ServerResult.SUCCESS
     }
 
-internal val ListResponse.asDomain: SubscriberServiceClient.Response.ListAll
+internal val ListResponse.asDomain: QueueServiceClient.Response.ListAll
     get() = when(result.asDomain) {
-        ServerResult.UNKNOWN -> SubscriberServiceClient.Response.ListAll.Fail("Unknown result received")
-        ServerResult.ERROR -> SubscriberServiceClient.Response.ListAll.Fail(message.ifEmpty { null })
-        ServerResult.SUCCESS -> SubscriberServiceClient.Response.ListAll.Success(queuesList.map { it.asDomain })
+        ServerResult.UNKNOWN -> QueueServiceClient.Response.ListAll.Fail("Unknown result received")
+        ServerResult.ERROR -> QueueServiceClient.Response.ListAll.Fail(message.ifEmpty { null })
+        ServerResult.SUCCESS -> QueueServiceClient.Response.ListAll.Success(queuesList.map { it.asDomain })
     }
 
-internal val PublishResponse.asDomain: SubscriberServiceClient.Response.Publish
+internal val PublishResponse.asDomain: QueueServiceClient.Response.Publish
     get() = when(result.asDomain) {
-        ServerResult.UNKNOWN -> SubscriberServiceClient.Response.Publish.Fail("Unknown result received")
-        ServerResult.ERROR -> SubscriberServiceClient.Response.Publish.Fail(message.ifEmpty { null })
-        ServerResult.SUCCESS -> SubscriberServiceClient.Response.Publish.Success(
+        ServerResult.UNKNOWN -> QueueServiceClient.Response.Publish.Fail("Unknown result received")
+        ServerResult.ERROR -> QueueServiceClient.Response.Publish.Fail(message.ifEmpty { null })
+        ServerResult.SUCCESS -> QueueServiceClient.Response.Publish.Success(
             queue = queue.asDomain
         )
     }
 
-internal val PostResponse.asDomain: SubscriberServiceClient.Response.Post
+internal val PostResponse.asDomain: QueueServiceClient.Response.Post
     get() = when(result.asDomain) {
-        ServerResult.UNKNOWN -> SubscriberServiceClient.Response.Post.Fail("Unknown result received")
-        ServerResult.ERROR -> SubscriberServiceClient.Response.Post.Fail(message.ifEmpty { null })
-        ServerResult.SUCCESS -> SubscriberServiceClient.Response.Post.Success(
+        ServerResult.UNKNOWN -> QueueServiceClient.Response.Post.Fail("Unknown result received")
+        ServerResult.ERROR -> QueueServiceClient.Response.Post.Fail(message.ifEmpty { null })
+        ServerResult.SUCCESS -> QueueServiceClient.Response.Post.Success(
             queue = queue.asDomain
         )
     }
@@ -53,21 +53,21 @@ internal val SubscribeResponse.asDomain: SubscriptionEvent
         RemoteSubscriptionEvent.FINISHED -> SubscriptionEvent.Finished(message.ifEmpty { null })
     }
 
-internal val PollResponse.asDomain: SubscriberServiceClient.Response.Poll
+internal val PollResponse.asDomain: QueueServiceClient.Response.Poll
     get() = when(result) {
-        ResultOuterClass.Result.UNRECOGNIZED, null -> SubscriberServiceClient.Response.Poll.Fail("Unknown result received")
-        ResultOuterClass.Result.ERROR -> SubscriberServiceClient.Response.Poll.Fail(message.ifEmpty { null })
-        ResultOuterClass.Result.SUCCESS -> SubscriberServiceClient.Response.Poll.Success(
+        ResultOuterClass.Result.UNRECOGNIZED, null -> QueueServiceClient.Response.Poll.Fail("Unknown result received")
+        ResultOuterClass.Result.ERROR -> QueueServiceClient.Response.Poll.Fail(message.ifEmpty { null })
+        ResultOuterClass.Result.SUCCESS -> QueueServiceClient.Response.Poll.Success(
             queue = queue.asDomain,
             textMessage = content.asDomain
         )
     }
 
-internal val RemoveResponse.asDomain: SubscriberServiceClient.Response.Remove
+internal val RemoveResponse.asDomain: QueueServiceClient.Response.Remove
     get() = when(result) {
-        ResultOuterClass.Result.UNRECOGNIZED, null -> SubscriberServiceClient.Response.Remove.Fail("Unknown result received")
-        ResultOuterClass.Result.ERROR -> SubscriberServiceClient.Response.Remove.Fail(message.ifEmpty { null })
-        ResultOuterClass.Result.SUCCESS -> SubscriberServiceClient.Response.Remove.Success(
+        ResultOuterClass.Result.UNRECOGNIZED, null -> QueueServiceClient.Response.Remove.Fail("Unknown result received")
+        ResultOuterClass.Result.ERROR -> QueueServiceClient.Response.Remove.Fail(message.ifEmpty { null })
+        ResultOuterClass.Result.SUCCESS -> QueueServiceClient.Response.Remove.Success(
             queue = queue.asDomain,
         )
     }

@@ -1,6 +1,6 @@
 package io.github.vinicreis.pubsub.client.java.app
 
-import io.github.vinicreis.pubsub.client.core.grpc.service.SubscriberServiceGRPC
+import io.github.vinicreis.pubsub.client.core.grpc.service.QueueServiceClientGrpc
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.resource.StringResource
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.config.getServerInfo
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.menu.ClientMenuOptions
@@ -24,7 +24,7 @@ import kotlinx.coroutines.runBlocking
 fun main() {
     var notFinished = true
     val serverInfo = runBlocking { getServerInfo() }
-    val service = SubscriberServiceGRPC(
+    val service = QueueServiceClientGrpc(
         serverInfo = serverInfo,
         coroutineContext = Dispatchers.IO,
     )

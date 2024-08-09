@@ -184,7 +184,7 @@ banco de dados.
 
 Dito isso, a relação entre as classes mencionadas acima seria:
 
-![Arquitetura da solução](./docs/main-classes.png)
+![Arquitetura da solução](docs/image/main-classes.png)
 
 ### Clientes
 

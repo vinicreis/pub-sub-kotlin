@@ -27,11 +27,11 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-class SubscriberManagerImpl(
+class SubscriberManagerServiceImpl(
     coroutineContext: CoroutineContext,
     private val checkInterval: Duration = 1.seconds,
     private val eventRepository: EventRepository,
-    private val logger: Logger = Logger.getLogger(SubscriberManagerImpl::class.java.simpleName)
+    private val logger: Logger = Logger.getLogger(SubscriberManagerServiceImpl::class.java.simpleName)
 ) : SubscriberManagerService {
     private val coroutineScope = CoroutineScope(SupervisorJob() + coroutineContext)
     private val subscribers = ConcurrentHashMap<UUID, MutableList<ProducerScope<Event>>>()

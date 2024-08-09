@@ -1,62 +1,102 @@
-\documentclass{article}
+# Publish/Subscribe Service
 
-% Language setting
-% Replace `english' with e.g. `spanish' to change the document language
-\usepackage[english]{babel}
-
-% Set page size and margins
-% Replace `letterpaper' with `a4paper' for UK/EU standard size
-\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
-
-% Useful packages
-\usepackage{amsmath}
-\usepackage{graphicx}
-\usepackage[colorlinks=true, allcolors=blue]{hyperref}
-
-\title{Publish/Subscribe Service}
-\author{Vinícius de Oliveira Campos dos Reis}
-
-\begin{document}
-\maketitle
-
-\section{Introdução}
+## Introdução
 
 Este trabalho visa a implementação de um serviço de filas de mensagens utilizando o protocolo gRPC para comunicação
 entre cliente e servidor. Seus elementos principais são um servidor, que gerencia as filas de mensagens e seus
-inscritos, um cliente desenvolvido em Kotlin e um cliente desenvolvido em Python. O processo de build e gerenciamento de dependências dos módulos em Kotlin são realizados utilizando o Gradle. A publicação do servidor e build dos clientes podem ser realizados utilizando o Docker e através da tarefas declaradas no Makefile na raiz do projeto.
+inscritos, um cliente desenvolvido em Kotlin e um cliente desenvolvido em Python.
+O processo de _build_ e gerenciamento de dependências dos módulos em Kotlin são realizados utilizando o Gradle.
+A publicação do servidor e _build_ dos clientes podem ser realizados utilizando o Docker e através da tarefas
+declaradas no Makefile na raiz do projeto.
 
-\subsection{Dependências}
+## Dependências
 
-\begin{itemize}
-\item JDK 17
-\item Docker e Docker Compose
-\item Comando \textit{make}
-\item Python 3.12
-\end{itemize}
+- JDK 17
+- Docker e Docker Compose
+- Comando `make`
+- Python 3.12
 
-\section{Como executar}
+## Compilação e testes
 
-Todos módulos neste projeto podem ser executados através do Makefile na raiz do projeto, cada um com seu target.
+O processo de compilação da aplicação está concentrado no Makefile na raiz do projeto. Para compilação
+e execução de testes, os comandos abaixo estão disponíveis:
+
+- Servidor:
+  - Execução de testes:
+      - ```shell
+        make server_test
+        ```
+  - Compilação:
+      - ```shell
+        make server_build
+        ```
+  - Limpeza de arquivos:
+      - ```shell
+        make server_clean
+        ```
+  - Deploy:
+      - ```shell
+        make server_deploy
+        ```
+
+- Cliente Kotlin:
+  - Compilação:
+    - ```shell
+      make server_build
+      ```
+  - Limpeza de arquivos:
+    - ```shell
+      make server_clean
+      ```
+
+- Cliente Python:
+  - Geração de arquivos:
+      - ```shell
+        make py_client_build
+        ```
+  - Limpeza de arquivos:
+      - ```shell
+        make py_client_clean
+        ```
+
+## Como executar
+
+Os componentes neste projeto também podem ser executados através do Makefile na raiz do projeto.
 Confira abaixo como cada um deles pode ser executado:
 
-\begin{itemize}
-\item Servidor: \textit{make server}
-\item Cliente Kotlin: \textit{make client}
-\item Cliente Python: \textit{make py\_client}
-\end{itemize}
+- Servidor:
+    - ```shell
+      make server
+      ```
+
+- Cliente Kotlin:
+    - ```shell
+      make client
+      ```
+
+- Cliente Python:
+    - ```shell
+      make py_client
+      ```
 
 Note que o servidor deve ser executado antes dos clientes para o correto funcionamento dos clientes. Para alterar
-a porta em que o servidor será executado, altere a variável \textit{SERVER\_PORT} para o valor desejado no arquivo
-\textit{.env-sample} na raiz do projeto. Neste arquivo também é possível alterar as credenciais do banco de dados, caso desejado.
+a porta em que o servidor será executado, altere a variável `SERVER_PORT` para o valor desejato no arquivo
+`.env-sample` na raiz do projeto.
 
-\section{Arquitetura do projeto}
+O contâiner do servidor é compilado através da imagem gerada pelo `Dockerfile` na raiz do módulo `server`,
+que utiliza as variáveis de ambiente do arquivo `.env-sample` na raiz do projeto. Por ser um projeto acadêmico,
+o arquivo de exemplo foi utilizado para facilitar a execução do projeto.
+
+Neste arquivo `.env-sample` também é possível alterar as credenciais do banco de dados, caso desejado.
+
+## Arquitetura do projeto
 
 Para chegar o mais próximo de uma aplicação de produção, adotamos uma estrutura de multi-módulos para cada um dos
 módulos principais. Vamos detalhar cada um dos principais e de seus submódulos.
 
-\subsection{Servidor}
+### Servidor
 
-O servidor conta com 2 principais submódulos, \textit{core} e \textit{java-app}, onde o primeiro é responsável pela
+O servidor conta com 2 principais submódulos, `core` e `java-app`, onde o primeiro é responsável pela
 implementação da lógica de negócio necessária para que qualquer variante da aplicação funcione. Já o módulo `java-app`
 possui apenas o que é necessário para uma aplicação Java nativa possa importar esta implementação e ser executada.
 
@@ -80,7 +120,7 @@ para testes e utilidades.
 Note que o módulo `java-app` possui apenas um submódulo, `core`, pois nào é necessária nenhuma interação com o
 usuário para termos uma camada de interface de usuário.
 
-\subsection{Clientes}
+### Clientes
 
 Os clientes, também com o intuito de termos aplicações parecidas com as de produção, possuem uma estrutura
 multi-módulos semelhante a do servidor. Elas contam com submódulos `core` e `java-app`, no caso do cliente em Kotlin, e
@@ -94,9 +134,9 @@ aplicação.
 O cliente Python possui os mesmos submódulos do client Kotlin (exceto pelo `util`), pois tem uma implementação muito
 parecida. A única diferença é não termos um módulo específico para a aplicação.
 
-\section{Implementação}
+## Implementação
 
-\subsection{Servidor}
+### Servidor
 
 Todas essas operações do servidor são chamadas por algum processo remoto, acessado utilizando o protocolo gRPC.
 Para isso o ponto de entrada para estes processos está implementado na classe `QueueServiceGrpc`. Esta classe utiliza
@@ -105,7 +145,7 @@ implementa uma classe abstrata que é uma classe em Kotlin gerada pela
 uma parte da implementação por meio de código gerado baseado nas definições do serviço definido no formato  
 de Protocol Buffers.
 
-Estas operações utilizam os repositórios de filas e mensagens para realizar as operações necessárias de salvamento
+As operações do servidor utilizam os repositórios de filas e mensagens para realizar as operações necessárias de salvamento
 ou de remoção. Já as operações de consulta ou inscrição utilizam um repositório de eventos para notificar os inscritos
 e as mensagens recebidas por eles.
 
@@ -114,7 +154,7 @@ adotamos para o funcionamento do mesmo um paradigma de orientação a eventos. I
 para gerenciar os inscritos em uma fila, consulta-se num intervalo de tempo o repositório de eventos (`EventsRepository`)
 para saber quando uma nova mensagem foi recebida ou quando uma fila foi removida, por exemplo. A escuta dos eventos
 é feita via um serviço que gerencia os inscritos (`SubscriberManagerService`),
-tendo um \textit{job} (que seria um bloco de código assíncrono que é executado numa corrotina) por fila
+tendo um _job_ (que seria um bloco de código assíncrono que é executado numa corrotina) por fila
 observando eventos de uma fila que foram gerados.
 
 A cada inscrição, é retornado um `Flow` onde são emitidos eventos de determinada fila, de acordo com seu tipo.
@@ -146,7 +186,7 @@ Dito isso, a relação entre as classes mencionadas acima seria:
 
 ![Arquitetura da solução](./docs/main-classes.png)
 
-\subsection{Clientes}
+### Clientes
 
 Os clientes, tanto em Kotlin quanto em Python, possuem uma estrutura de código semelhante. Ambos também utilizam
 códigos gerados pela biblioteca da gRPC para Kotlin e Python, respectivamente. A diferença entre eles é que os clientes
@@ -160,10 +200,12 @@ em qual fila a operação deve ser executada.
 Quando um cliente se inscreve em alguma das filas, as mensagens são recebidas e exibidas na tela
 até que o usuário cancele a operação pressionando a tecla `Enter`.
 
-\section{Referências}
+## Testes unitários
 
-- [gRPC Kotlin Quick Start](https://grpc.io/docs/languages/kotlin/quickstart/)
-- [gRPC Python Quick Start](https://grpc.io/docs/languages/python/quickstart/)
-- [Grow with the Flow: How Kotlin Flow Became a Game Changer for our Business | Urs Peter](https://www.youtube.com/watch?v=0FaYmTBUiKM)
+O comportamento da aplicação é validado por meio de testes unitários dos componentes de infraestrutura. Isto é, da 
+implementação final das interfaces de domínio utilizadas pelos serviços e casos de uso da aplicação.
 
-\end{document}
+Os testes foram implementados utilizando o framework JUnit 5 e bibliotecas como _mockk_, _tooling_ para testes 
+de corrotinas, entre outros pacotes. Para testes que envolvem o banco de dados, onde é possivel, são utilizados
+_mocks_ das classes originais com o comportamento esperado. Se não é possível utilizar _mocks_, é utilizado 
+um banco de dados em memória persistido apenas durante do ciclo de vida da JVM.

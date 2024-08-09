@@ -30,7 +30,7 @@ class SubscriberManagerServiceImplTests {
     private val eventRepository = mockk<EventRepository>()
     private val testDispatcher = UnconfinedTestDispatcher()
     private val logger = Logger.getLogger("SubscriberManagerImplTests")
-    private val sut: SubscriberManagerImpl = SubscriberManagerImpl(
+    private val sut: SubscriberManagerServiceImpl = SubscriberManagerServiceImpl(
         coroutineContext = testDispatcher,
         logger = logger,
         eventRepository = eventRepository,

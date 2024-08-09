@@ -5,7 +5,7 @@ import io.github.vinicreis.pubsub.server.core.data.database.postgres.repository.
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.repository.TextMessageRepositoryDatabase
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.script.initializePostgres
 import io.github.vinicreis.pubsub.server.core.grpc.service.QueueServiceGrpc
-import io.github.vinicreis.pubsub.server.core.grpc.service.SubscriberManagerImpl
+import io.github.vinicreis.pubsub.server.core.grpc.service.SubscriberManagerServiceImpl
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
 
@@ -26,7 +26,7 @@ fun main(args: Array<String>) {
         coroutineContext = Dispatchers.IO,
         queueRepository = queueRepository,
         textMessageRepository = textMessageRepository,
-        subscriberManagerService = SubscriberManagerImpl(
+        subscriberManagerService = SubscriberManagerServiceImpl(
             coroutineContext = Dispatchers.Default,
             eventRepository = eventsRepository,
         )

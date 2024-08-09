@@ -1,169 +1,62 @@
 \documentclass{article}
 
-% Language setting
-% Replace `english' with e.g. `spanish' to change the document language
-\usepackage[english]{babel}
-
-% Set page size and margins
-% Replace `letterpaper' with `a4paper' for UK/EU standard size
+\usepackage[brazilian]{babel}
 \usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
 
-% Useful packages
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
 
 \title{Publish/Subscribe Service}
-\author{Vinícius de Oliveira Campos dos Reis}
+\author{Vinícius de Oliveira Campos dos Reis
+\and 11041416}
+\date{}
 
 \begin{document}
-\maketitle
+    \maketitle
 
-\section{Introdução}
+    \section{O projeto}\label{sec:introducao}
 
-Este trabalho visa a implementação de um serviço de filas de mensagens utilizando o protocolo gRPC para comunicação
-entre cliente e servidor. Seus elementos principais são um servidor, que gerencia as filas de mensagens e seus 
-inscritos, um cliente desenvolvido em Kotlin e um cliente desenvolvido em Python. O processo de build e gerenciamento de dependências dos módulos em Kotlin são realizados utilizando o Gradle. A publicação do servidor e build dos clientes podem ser realizados utilizando o Docker e através da tarefas declaradas no Makefile na raiz do projeto.
+    O projeto é uma implementação principal em Kotlin (cliente secundário em Python) que utiliza o Gradle como compilador e gerenciador de dependências.
+    A arquitetura de cada componente da aplicação é multi-módulos, seguindo ao máximo uma arquitetura limpa e orientada a domínios.
 
-\subsection{Dependências}
+    \section{Como executar}\label{sec:como-executar}
 
-\begin{itemize}
-    \item JDK 17
-    \item Docker e Docker Compose
-    \item Comando \textit{make}
-    \item Python 3.12
-\end{itemize}
+    Todos módulos neste projeto podem ser executados através do Makefile na raiz do projeto, cada um com seu target.
+    Confira abaixo como cada um deles pode ser executado:
 
-\section{Como executar}
+    \begin{itemize}
+        \item Servidor: \textit{make server}
+        \item Cliente Kotlin: \textit{make client}
+        \item Cliente Python: \textit{make py\_client}
+    \end{itemize}
 
-Todos módulos neste projeto podem ser executados através do Makefile na raiz do projeto, cada um com seu target.
-Confira abaixo como cada um deles pode ser executado:
+    Note que o servidor deve ser executado antes dos clientes para o correto funcionamento dos clientes.
 
-\begin{itemize}
-    \item Servidor: \textit{make server}
-    \item Cliente Kotlin: \textit{make client}
-    \item Cliente Python: \textit{make py\_client}
-\end{itemize}
+    \section{Implementação}\label{sec:implementacao}
 
-Note que o servidor deve ser executado antes dos clientes para o correto funcionamento dos clientes. Para alterar
-a porta em que o servidor será executado, altere a variável \textit{SERVER\_PORT} para o valor desejado no arquivo 
-\textit{.env-sample} na raiz do projeto. Neste arquivo também é possível alterar as credenciais do banco de dados, caso desejado.
+    Da forma mais direta possível, veja a função das principais implementações da aplicação (note que removemos da referência o início comum entre elas, que é o pacote \textit{io.github.vinicreis.pubsub.server}):
 
-\section{Arquitetura do projeto}
+    \subsection{Servidor}\label{subsec:server}
 
-Para chegar o mais próximo de uma aplicação de produção, adotamos uma estrutura de multi-módulos para cada um dos
-módulos principais. Vamos detalhar cada um dos principais e de seus submódulos.
+    \begin{itemize}
+        \item \textit{core.grpc.service.QueueServiceGrpc}: Ponto de entrada do serviço gRPC. Implementação de classes geradas pela biblioteca oficial do gRPC, que delega a essa classe o que é feito em cada operação do servidor.
 
-\subsection{Servidor}
+        \item \textit{core.data.database.postgres.repository.QueueRepositoryDatabase}: repositório de filas ativas armazenadas num banco de dados.
 
-O servidor conta com 2 principais submódulos, \textit{core} e \textit{java-app}, onde o primeiro é responsável pela 
-implementação da lógica de negócio necessária para que qualquer variante da aplicação funcione. Já o módulo \textit{java-app}
-possui apenas o que é necessário para uma aplicação Java nativa possa importar esta implementação e ser executada.
+        \item \textit{core.data.database.postgres.repository.TextMessageRepositoryDatabase}: repositório de mensagens pendentes armazenadas num banco de dados.
 
-Dentro do módulo \textit{core}, o submódulo \textit{domain} possui o modelo das entidades de domínio da aplicação. Isto é,
-modelos que os serviços e casos de uso da aplicação iram utilizar para realizar suas tarefas. O submódulo
-\textit{service} contém apenas interfaces de domínio para serviços que deveram ser implementadas por algum componente
-de infraestrutura (que será detalhado nos próximos submódulos abordados). A proposta deste tipo de prática é facilitar
-a alteração entre implementações, além de simplificar a implementação de testes unitários que dependem de alguma
-implementação com este contrato.
+        \item \textit{core.data.database.postgres.repository.EventRepositoryDatabase}: repositórios de eventos pendentes, como a criação e remoção de filas e mensagens postadas.
+        É válido destacar que, visando manter a máxima consistências, os eventos são salvos na mesma transação da operação que gera o evento em si.
 
-Note que o submódulo \textit{grpc} possui a implementação das interfaces de serviço definidas no submódulo \textit{service},
-utilizando o protocolo gRPC.
+        \item \textit{core.grpc.service.SubscriberManagerServiceImpl}: serviço de gerenciamento de inscrições.
+        Responsável por monitorar os eventos ocorridos no repositório de eventos e gerenciar filas de acordo com seu tipo, selecionando quais inscritos devem ser notificados de dados eventos.
 
-O submódulo \textit{data} é um pouco mais complexo, mas de forma semelhante, o submódulo \textit{repository} define as interfaces
-de domínio que a aplicação pode utilizar para acessar algum modelo de dados. Enquanto o submódulo 
-\textit{database:postgres} possui a implementação desses repositórios baseado num banco de dados PostgreSQL.
+    \end{itemize}
 
-Os submódulos restantes \textit{test} e \textit{util} são complementares e apenas definem ferramentas comuns a todos os submódulos
-para testes e utilidades.
+    \subsection{Clientes}\label{subsec:clientes}
 
-Note que o módulo \textit{java-app} possui apenas um submódulo, \textit{core}, pois nào é necessária nenhuma interação com o
-usuário para termos uma camada de interface de usuário.
-
-\subsection{Clientes}
-
-Os clientes, também com o intuito de termos aplicações parecidas com as de produção, possuem uma estrutura 
-multi-módulos semelhante a do servidor. Elas contam com submódulos \textit{core} e \textit{java-app}, no caso do cliente em Kotlin, e
-apenas um arquivo \textit{main.py} no caso do cliente Python.
-
-O submódulo \textit{core} do cliente Kotlin possui os mesmos submódulos do servidor, \textit{domain}, \textit{service}, \textit{grpc} e \textit{util}
-com os mesmos propósitos. Como o cliente precisa de uma camada de interface de usuário, no módulo \textit{java-app} temos
-um submódulo \textit{ui:cli}, que define as regras de interação entre o usuário, através da linha de comando e a
-aplicação.
-
-O cliente Python possui os mesmos submódulos do client Kotlin (exceto pelo \textit{util}), pois tem uma implementação muito
-parecida. A única diferença é não termos um módulo específico para a aplicação.
-
-\section{Implementação}
-
-\subsection{Servidor}
-
-Todas essas operações do servidor são chamadas por algum processo remoto, acessado utilizando o protocolo gRPC. 
-Para isso o ponto de entrada para estes processos está implementado na classe \textit{QueueServiceGrpc}. Esta classe utiliza
-implementa uma classe abstrata que é uma classe em Kotlin gerada pela
-[biblioteca oficial](https://grpc.io/docs/languages/kotlin/quickstart/) do gRPC, responsável por abstrair
-uma parte da implementação por meio de código gerado baseado nas definições do serviço definido no formato  
-de Protocol Buffers.
-
-Estas operações utilizam os repositórios de filas e mensagens para realizar as operações necessárias de salvamento
-ou de remoção. Já as operações de consulta ou inscrição utilizam um repositório de eventos para notificar os inscritos
-e as mensagens recebidas por eles.
-
-Para atender a proposta de ter um servidor distribuído e resiliente em caso de falha da aplicação,
-adotamos para o funcionamento do mesmo um paradigma de orientação a eventos. Isto é, 
-para gerenciar os inscritos em uma fila, consulta-se num intervalo de tempo o repositório de eventos (\textit{EventsRepository})
-para saber quando uma nova mensagem foi recebida ou quando uma fila foi removida, por exemplo. A escuta dos eventos
-é feita via um serviço que gerencia os inscritos (\textit{SubscriberManagerService}),
-tendo um \textit{job} (que seria um bloco de código assíncrono que é executado numa corrotina) por fila
-observando eventos de uma fila que foram gerados.
-
-A cada inscrição, é retornado um \textit{Flow} onde são emitidos eventos de determinada fila, de acordo com seu tipo.
-Então, o serviço gerenciador de inscritos mantém um escopo de emissão (\textit{ProducerScope}) para cada inscrito e para cada fila,
-sendo possível definir pelo tipo de fila se todos ou apenas um dos inscritos precisam ser notificados de um evento.
-Note que a estratégia para seleção do inscrito no caso de uma fila simples é aleatória, neste momento.
-
-A criação e remoção de filas, assim como a postagem de mensagens, é feita pelos seus devidos repositórios, 
-\textit{QueueRepository} e \textit{TextMessageRepository}. Porém, dado o paradigma adotado para a aplicação,
-estes repositórios recebem uma instância do repositório de eventos. Este repositório foi definido de
-modo que a notificação de eventos precisa ocorrer na mesma transação que a instrução que gera o evento em si.
-
-Vale destacar que, para manter o isolamento de cada domínio, cada domínio da aplicação possui seus próprios modelos
-mapeados através das extensões contidas nos arquivos com sufixo \textit{Mapper}. Por exemplo, existe um mapeamento de
-modelos de domínio quando há o salvamento de uma fila, tanto do formato de fila do domínio do servidor, quanto para
-o formato de fila do domínio do banco de dados. O mesmo ocorre para a troca entre cliente e servidor, onde os modelos
-são únicos para cada um deles.
-
-Por exemplo, ao postar uma mensagem, ela precisa ser salva no banco para manter a resiliência em caso
-de queda da aplicação do servidor. Tanto o salvamento da mensagem quanto o salvamento do evento a ser notificado
-precisa ocorrer na mesma transação do banco de dados, para que, em caso de falha de alguma das operações, não
-tenhamos um evento ou uma notificação inconsistentes entre si.
-
-Da mesma forma, durante o consumo de eventos, tanto a busca dos dados do evento a ser consumido, quanto a remoção dos
-objetos envolvidos (remoção da mensagem a ser enviada, por exemplo), também são realizadas numa única transação do 
-banco de dados.
-
-Dito isso, a relação entre as classes mencionadas acima seria:
-
-![Arquitetura da solução](./docs/main-classes.png)
-
-\subsection{Clientes}
-
-Os clientes, tanto em Kotlin quanto em Python, possuem uma estrutura de código semelhante. Ambos também utilizam 
-códigos gerados pela biblioteca da gRPC para Kotlin e Python, respectivamente. A diferença entre eles é que os clientes
-utilizam classes destinadas à implementação dos clientes gRPC.
-
-O funcionamento dos clientes é interativo via linha de comando. Os clientes executam um laço onde o usuário seleciona 
-uma das operações para ser realizada ou encerra a aplicação. É importante ressaltar que os eventos que necessitam
-de uma fila específica primeiro enviam uma requisição de listagem de filas para que o usuário selecione
-em qual fila a operação deve ser executada.
-
-Quando um cliente se inscreve em alguma das filas, as mensagens são recebidas e exibidas na tela 
-até que o usuário cancele a operação pressionando a tecla \textit{Enter}.
-
-\section{Referências}
-
-- [gRPC Kotlin Quick Start](https://grpc.io/docs/languages/kotlin/quickstart/)
-- [gRPC Python Quick Start](https://grpc.io/docs/languages/python/quickstart/)
-- [Grow with the Flow: How Kotlin Flow Became a Game Changer for our Business | Urs Peter](https://www.youtube.com/watch?v=0FaYmTBUiKM)
+    Os clientes, tanto em Kotlin quanto em Python, são parecidos tanto em implementação quanto em funcionamento.
+    Estes são interativos via linha de comando, executando um laço onde o usuário seleciona uma das operações para ser realizada ou encerra a aplicação.
 
 \end{document}

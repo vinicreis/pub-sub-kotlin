@@ -17,11 +17,6 @@ object StringResource {
                 DomainQueue.Type.SIMPLE -> "Simple queue"
                 DomainQueue.Type.MULTIPLE -> "Multiple queue"
             }
-
-            fun description(type: DomainQueue.Type) = when (type) {
-                DomainQueue.Type.SIMPLE -> "Queue that delivers messages to only one subscriber"
-                DomainQueue.Type.MULTIPLE -> "Queue that delivers messages to all subscribers"
-            }
         }
 
         object Input {

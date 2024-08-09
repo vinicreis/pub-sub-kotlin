@@ -16,49 +16,6 @@ declaradas no Makefile na raiz do projeto.
 - Comando `make`
 - Python 3.12
 
-## Compilação e testes
-
-O processo de compilação da aplicação está concentrado no Makefile na raiz do projeto. Para compilação
-e execução de testes, os comandos abaixo estão disponíveis:
-
-- Servidor:
-  - Execução de testes:
-      - ```shell
-        make server_test
-        ```
-  - Compilação:
-      - ```shell
-        make server_build
-        ```
-  - Limpeza de arquivos:
-      - ```shell
-        make server_clean
-        ```
-  - Deploy:
-      - ```shell
-        make server_deploy
-        ```
-
-- Cliente Kotlin:
-  - Compilação:
-    - ```shell
-      make server_build
-      ```
-  - Limpeza de arquivos:
-    - ```shell
-      make server_clean
-      ```
-
-- Cliente Python:
-  - Geração de arquivos:
-      - ```shell
-        make py_client_build
-        ```
-  - Limpeza de arquivos:
-      - ```shell
-        make py_client_clean
-        ```
-
 ## Como executar
 
 Os componentes neste projeto também podem ser executados através do Makefile na raiz do projeto.
@@ -88,6 +45,49 @@ que utiliza as variáveis de ambiente do arquivo `.env-sample` na raiz do projet
 o arquivo de exemplo foi utilizado para facilitar a execução do projeto.
 
 Neste arquivo `.env-sample` também é possível alterar as credenciais do banco de dados, caso desejado.
+
+## Compilação e testes
+
+O processo de compilação da aplicação está concentrado no Makefile na raiz do projeto. Para compilação
+e execução de testes, os comandos abaixo estão disponíveis:
+
+- Servidor:
+    - Execução de testes:
+        - ```shell
+          make server_test
+          ```
+    - Compilação:
+        - ```shell
+          make server_build
+          ```
+    - Limpeza de arquivos:
+        - ```shell
+          make server_clean
+          ```
+    - Deploy:
+        - ```shell
+          make server_deploy
+          ```
+
+- Cliente Kotlin:
+    - Compilação:
+        - ```shell
+          make server_build
+          ```
+    - Limpeza de arquivos:
+        - ```shell
+          make server_clean
+          ```
+
+- Cliente Python:
+    - Geração de arquivos:
+        - ```shell
+          make py_client_build
+          ```
+    - Limpeza de arquivos:
+        - ```shell
+          make py_client_clean
+          ```
 
 ## Arquitetura do projeto
 
@@ -209,3 +209,7 @@ Os testes foram implementados utilizando o framework JUnit 5 e bibliotecas como 
 de corrotinas, entre outros pacotes. Para testes que envolvem o banco de dados, onde é possivel, são utilizados
 _mocks_ das classes originais com o comportamento esperado. Se não é possível utilizar _mocks_, é utilizado 
 um banco de dados em memória persistido apenas durante do ciclo de vida da JVM.
+
+## Referências
+
+- 

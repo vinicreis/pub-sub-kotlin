@@ -28,7 +28,6 @@ include("protos")
 include("server")
 include("client")
 
-include("server:core")
 include("server:core:domain")
 include("server:core:util")
 include("server:core:service")

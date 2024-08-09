@@ -18,7 +18,6 @@ import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.remove.p
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.subscribe.collectAndPrint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -30,7 +29,6 @@ fun main() {
         coroutineContext = Dispatchers.IO,
     )
     val uiScope = CoroutineScope(Dispatchers.Default)
-    val subscriberJobs = mutableListOf<Job>()
 
     runBlocking {
         while (notFinished) {
@@ -67,10 +65,7 @@ fun main() {
                         }
                     }
 
-                    ClientMenuOptions.EXIT -> {
-                        subscriberJobs.forEach { it.cancel() }
-                        notFinished = false
-                    }
+                    ClientMenuOptions.EXIT -> notFinished = false
                 }
             } catch (t: Throwable) {
                 println("${StringResource.Error.GENERIC}: ${t.message}")

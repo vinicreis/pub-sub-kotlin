@@ -27,7 +27,14 @@ server_clean:
 	@echo "Stopping server..."
 	@docker compose -f $(DOCKER_COMPOSE_FILE) down
 	@echo "Cleaning up server Gradle projects"
-	@./gradlew -q server:java-app:core:clean
+	@./gradlew -q server:core:domain:clean \
+                  server:core:util:clean \
+                  server:core:service:clean \
+                  server:core:grpc:clean \
+                  server:core:data:database:postgres:clean \
+                  server:core:data:repository:clean \
+                  server:core:test:clean \
+                  server:java-app:core:clean
 
 client: client_build
 	bin/pub-sub-client/bin/pub-sub-client
@@ -45,7 +52,12 @@ client_build: client_clean
 client_clean:
 	@rm -rf bin
 	@echo "Cleaning up client Gradle projects"
-	@./gradlew -q client:java-app:core:clean
+	@./gradlew -q client:core:domain:clean \
+				  client:core:service:clean \
+				  client:core:grpc:clean \
+				  client:core:util:clean \
+				  client:java-app:core:clean \
+				  client:java-app:ui:cli:clean
 
 py_client: py_client_build
 	@echo "Running Python client..."

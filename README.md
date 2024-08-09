@@ -159,9 +159,12 @@ Os clientes, tanto em Kotlin quanto em Python, possuem uma estrutura de código 
 códigos gerados pela biblioteca da gRPC para Kotlin e Python, respectivamente. A diferença entre eles é que os clientes
 utilizam classes destinadas à implementação dos clientes gRPC.
 
-O funcionamento dos clientes é interativo e é feito por uma interface de linha de comando. Os clientes executam em
-num loop até que o usuário selecione uma operação para ser realizada, ou encerre a aplicação. É importante ressaltar
-que os eventos que necessitam de uma fila específica primeiro enviam uma requisição de listagem de filas para 
-que o usuário selecione em qual fila a operação deve ser executada.
+O funcionamento dos clientes é interativo via linha de comando. Os clientes executam um laço onde o usuário seleciona 
+uma das operações para ser realizada ou encerra a aplicação. É importante ressaltar que os eventos que necessitam
+de uma fila específica primeiro enviam uma requisição de listagem de filas para que o usuário selecione
+em qual fila a operação deve ser executada.
+
+Quando um cliente se inscreve em alguma das filas, as mensagens são recebidas e exibidas na tela 
+até que o usuário cancele a operação pressionando a tecla `Enter`.
 
 ## Cobertura de testes

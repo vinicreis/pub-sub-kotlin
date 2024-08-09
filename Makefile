@@ -1,4 +1,4 @@
-DOCKER_COMPOSE_FILE := docker-compose.yaml
+ENV_FILE_NAME=sample.env
 PY_CLIENT_ROOT_PATH=py-client
 PY_CLIENT_GENERATED_PATH=$(PY_CLIENT_ROOT_PATH)/proto
 PROTOS_PATH=protos/src/main/proto/proto/io/github/vinicreis/pubsub/server/core
@@ -7,7 +7,7 @@ PROTOS_ROOT_PATH=proto/io/github/vinicreis/pubsub/server/core
 .PHONY: server client py_client
 
 build: server_build client_clean py_client_build
-clean: server_clean client_clean
+clean: server_clean client_clean py_client_clean
 
 server: server_deploy
 
@@ -21,11 +21,11 @@ server_build: server_clean
 
 server_deploy: server_build
 	@echo "Starting server..."
-	@docker compose -f $(DOCKER_COMPOSE_FILE) up -d --build
+	@docker compose --env-file=$(ENV_FILE_NAME) up --quiet-pull -d --build
 
 server_clean:
 	@echo "Stopping server..."
-	@docker compose -f $(DOCKER_COMPOSE_FILE) down
+	@docker compose --env-file=$(ENV_FILE_NAME) down
 	@echo "Cleaning up server Gradle projects"
 	@./gradlew -q server:core:domain:clean \
                   server:core:util:clean \

@@ -1,6 +1,7 @@
 package io.github.vinicreis.pubsub.client.java.app
 
 import io.github.vinicreis.pubsub.client.core.grpc.service.QueueServiceClientGrpc
+import io.github.vinicreis.pubsub.client.java.app.ui.cli.components.stopUntilKeyPressed
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.resource.StringResource
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.config.getServerInfo
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.menu.ClientMenuOptions
@@ -51,9 +52,12 @@ fun main() {
 
                     ClientMenuOptions.SUBSCRIBE_QUEUE -> service.withQueueList { queues ->
                         queues.selectQueue { selectedQueue ->
-                            uiScope.launch {
+                            val subscriberJob = uiScope.launch {
                                 service.subscribe(selectedQueue.id.toString()).collectAndPrint()
-                            }.also { job -> subscriberJobs.add(job) }
+                            }
+
+                            stopUntilKeyPressed(StringResource.Message.Input.PRESS_ENTER_TO_STOP_SUBSCRIPTION)
+                            subscriberJob.cancel()
                         }
                     }
 

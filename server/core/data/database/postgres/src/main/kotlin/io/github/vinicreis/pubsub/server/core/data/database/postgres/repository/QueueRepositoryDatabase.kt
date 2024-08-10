@@ -12,7 +12,6 @@ import io.github.vinicreis.pubsub.server.data.repository.QueueRepository
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.exists
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.TransactionInterface
@@ -26,12 +25,6 @@ class QueueRepositoryDatabase(
     private val eventRepository: EventRepository,
     private val logger: Logger = Logger.getLogger(QueueRepositoryDatabase::class.java.simpleName)
 ) : QueueRepository {
-    init {
-        transaction {
-            check(Queues.exists()) { "Table ${Queues.tableName} does not exist!" }
-        }
-    }
-
     context(T)
     private fun <T : TransactionInterface> selectAllQueues() = Queues.selectAll()
 
@@ -65,27 +58,6 @@ class QueueRepositoryDatabase(
         }
     }
 
-    override suspend fun remove(queue: Queue): QueueRepository.Result.Remove = withContext(coroutineContext) {
-        try {
-            withExposedTransaction {
-                selectAllQueues()
-                    .where { Queues.id eq queue.id }
-                    .map { it.asDomainQueue }
-                    .firstOrNull()
-                    ?.also {
-                        Queues.deleteWhere { id eq queue.id }
-                        eventRepository.notify(QueueRemovedEvent(queueId = queue.id))
-                    }
-            }?.let { QueueRepository.Result.Remove.Success(it) }
-                ?: QueueRepository.Result.Remove.NotFound
-        } catch (e: Exception) {
-            logger.severe("Failed to remove queue ${queue.id}")
-            e.printStackTrace()
-
-            QueueRepository.Result.Remove.Error(e)
-        }
-    }
-
     override suspend fun removeById(id: UUID): QueueRepository.Result.Remove = withContext(coroutineContext) {
         try {
             withExposedTransaction {
@@ -100,27 +72,6 @@ class QueueRepositoryDatabase(
                 ?: QueueRepository.Result.Remove.NotFound
         } catch (e: Exception) {
             logger.severe("Failed to remove queue $id")
-            e.printStackTrace()
-
-            QueueRepository.Result.Remove.Error(e)
-        }
-    }
-
-    override suspend fun removeByCode(code: String): QueueRepository.Result.Remove = withContext(coroutineContext) {
-        try {
-            withExposedTransaction {
-                selectAllQueues()
-                    .where { Queues.code eq code }
-                    .firstOrNull()
-                    ?.asDomainQueue
-                    ?.also { removedQueue ->
-                        eventRepository.notify(QueueRemovedEvent(queueId = removedQueue.id))
-                        Queues.deleteWhere { this.code eq code }.takeIf { it > 0 }
-                    }
-            }?.let { removedQueue -> QueueRepository.Result.Remove.Success(removedQueue) }
-                ?: QueueRepository.Result.Remove.NotFound
-        } catch (e: Exception) {
-            logger.severe("Failed to remove queue with code $code")
             e.printStackTrace()
 
             QueueRepository.Result.Remove.Error(e)

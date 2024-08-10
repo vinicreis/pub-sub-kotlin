@@ -37,7 +37,7 @@ server_clean:
                   server:java-app:core:clean
 
 client: client_build
-	bin/pub-sub-client/bin/pub-sub-client
+	@bin/pub-sub-client/bin/pub-sub-client
 
 client_build: client_clean
 	@echo "Building client..."

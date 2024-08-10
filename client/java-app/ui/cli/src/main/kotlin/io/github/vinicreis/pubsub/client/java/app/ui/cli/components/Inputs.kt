@@ -1,10 +1,10 @@
 package io.github.vinicreis.pubsub.client.java.app.ui.cli.components
 
-internal suspend fun getInputOrNull(): String? {
+internal fun getInputOrNull(): String? {
     return readlnOrNull()?.ifBlank { null }
 }
 
-internal suspend inline fun getInputOrNull(message: String, default: String? = null): String? {
+internal fun getInputOrNull(message: String, default: String? = null): String? {
     print(message)
     default?.also { print(" [\"$it\"]") }
     print(": ")
@@ -12,7 +12,7 @@ internal suspend inline fun getInputOrNull(message: String, default: String? = n
     return getInputOrNull() ?: default
 }
 
-internal suspend inline fun getInput(message: String, default: String): String {
+internal fun getInput(message: String, default: String): String {
     print(message)
     print(" [\"$default\"]")
     print(": ")
@@ -20,7 +20,7 @@ internal suspend inline fun getInput(message: String, default: String): String {
     return getInputOrNull() ?: default
 }
 
-internal suspend fun selectOption(message: String, options: List<String>, defaultIndex: Int? = null): Int? {
+internal fun selectOption(message: String, options: List<String>, defaultIndex: Int? = null): Int? {
     println(message)
 
     options.forEachIndexed { index, option ->
@@ -31,7 +31,7 @@ internal suspend fun selectOption(message: String, options: List<String>, defaul
         println()
     }
 
-    return getInputOrNull()?.toIntOrNull()?.dec() ?: defaultIndex
+    return getInputOrNull("Selected option")?.toIntOrNull()?.dec() ?: defaultIndex
 }
 
 internal fun <T> T?.notNullable(lazyMessage: (() -> String)?): T {

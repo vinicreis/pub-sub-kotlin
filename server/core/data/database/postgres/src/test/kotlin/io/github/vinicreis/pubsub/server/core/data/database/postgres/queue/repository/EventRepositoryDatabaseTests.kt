@@ -80,7 +80,7 @@ class EventRepositoryDatabaseTests {
 
     @Test
     fun `05 - Should save a queue removed event successfully when its removed`() = runTest(testDispatcher) {
-        when (val result = queueRepository.remove(validQueue)) {
+        when (val result = queueRepository.removeById(validQueue.id)) {
             QueueRepository.Result.Remove.NotFound -> fail("Should not fail to find queue on remove")
             is QueueRepository.Result.Remove.Error -> fail("Should not fail to remove queue", result.e)
             is QueueRepository.Result.Remove.Success -> assertEquals(validQueue, result.queue)

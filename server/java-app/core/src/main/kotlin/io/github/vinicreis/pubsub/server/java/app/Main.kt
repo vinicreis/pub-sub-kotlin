@@ -6,32 +6,41 @@ import io.github.vinicreis.pubsub.server.core.data.database.postgres.repository.
 import io.github.vinicreis.pubsub.server.core.data.database.postgres.script.initializePostgres
 import io.github.vinicreis.pubsub.server.core.grpc.service.QueueServiceGrpc
 import io.github.vinicreis.pubsub.server.core.grpc.service.SubscriberManagerServiceImpl
+import io.github.vinicreis.pubsub.server.core.service.QueueService
+import io.github.vinicreis.pubsub.server.core.service.SubscriberManagerService
+import io.github.vinicreis.pubsub.server.data.repository.EventRepository
+import io.github.vinicreis.pubsub.server.data.repository.QueueRepository
+import io.github.vinicreis.pubsub.server.data.repository.TextMessageRepository
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
+import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
-    fun onError(message: String? = null) {
-        message?.also(::println)
-        println(Message.USAGE)
-    }
+    if (args.isEmpty()) onInputError()
 
-    Database.initializePostgres()
-
-    val port = args.firstOrNull()?.toIntOrNull() ?: run { onError(); return }
-    val eventsRepository = EventRepositoryDatabase(Dispatchers.IO)
-    val queueRepository = QueueRepositoryDatabase(Dispatchers.IO, eventsRepository)
-    val textMessageRepository = TextMessageRepositoryDatabase(Dispatchers.IO, eventsRepository)
-    val service = QueueServiceGrpc(
+    val port: Int = args.firstOrNull()?.toIntOrNull() ?: onInputError()
+    val eventsRepository: EventRepository = EventRepositoryDatabase(coroutineContext = Dispatchers.IO)
+    val queueRepository: QueueRepository = QueueRepositoryDatabase(
+        coroutineContext = Dispatchers.IO,
+        eventRepository = eventsRepository
+    )
+    val textMessageRepository: TextMessageRepository = TextMessageRepositoryDatabase(
+        coroutineContext = Dispatchers.IO,
+        eventRepository = eventsRepository
+    )
+    val subscriberManagerService: SubscriberManagerService = SubscriberManagerServiceImpl(
+        coroutineContext = Dispatchers.IO,
+        eventRepository = eventsRepository,
+    )
+    val service: QueueService = QueueServiceGrpc(
         port = port,
         coroutineContext = Dispatchers.IO,
         queueRepository = queueRepository,
         textMessageRepository = textMessageRepository,
-        subscriberManagerService = SubscriberManagerServiceImpl(
-            coroutineContext = Dispatchers.Default,
-            eventRepository = eventsRepository,
-        )
+        subscriberManagerService = subscriberManagerService
     )
 
+    Database.initializePostgres()
     service.start()
     service.blockUntilShutdown()
 }
@@ -39,6 +48,12 @@ fun main(args: Array<String>) {
 private object Message {
     val USAGE: String = """
         Usage: server <port>
-          <port>  The port to start the server
+          <port>  The port number to start the server
     """.trimIndent()
+}
+
+private fun onInputError(message: String? = null): Nothing {
+    message?.also(::println)
+    println(Message.USAGE)
+    exitProcess(-1)
 }

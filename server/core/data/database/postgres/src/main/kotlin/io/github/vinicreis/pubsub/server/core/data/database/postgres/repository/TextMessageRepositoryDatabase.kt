@@ -22,7 +22,6 @@ class TextMessageRepositoryDatabase(
     private val eventRepository: EventRepository,
     private val logger: Logger = Logger.getLogger(TextMessageRepositoryDatabase::class.java.simpleName)
 ) : TextMessageRepository {
-
     private fun TextMessage.validate() {
         require(content.isNotBlank()) { "Message content can not be blank" }
         require(content.length <= TextMessage.MAX_CONTENT_LENGTH) {
@@ -32,20 +31,19 @@ class TextMessageRepositoryDatabase(
 
     private suspend fun <R : TextMessageRepository.Result> runCatchingErrors(
         block: suspend CoroutineScope.() -> R,
-        error: (Exception) -> R
+        errorBuilder: (Exception) -> R
     ): R = try {
         withContext(coroutineContext) { block() }
     } catch (e: IllegalArgumentException) {
         logger.fine(e.message)
-        error(e)
+        errorBuilder(e)
     } catch (e: Exception) {
         logger.fine(e.message)
-        error(RuntimeException(GENERIC_ERROR_MESSAGE, e))
+        errorBuilder(RuntimeException(GENERIC_ERROR_MESSAGE, e))
     }
 
     override suspend fun add(queue: Queue, textMessages: List<TextMessage>): TextMessageRepository.Result.Add {
         return runCatchingErrors(
-            error = { e -> TextMessageRepository.Result.Add.Error(e) },
             block = {
                 textMessages.forEach { it.validate() }
 
@@ -55,18 +53,19 @@ class TextMessageRepositoryDatabase(
                         eventRepository.notify(TextMessageReceivedEvent(textMessage = textMessage))
                     }
                 }.let { TextMessageRepository.Result.Add.Success }
-            }
+            },
+            errorBuilder = { e -> TextMessageRepository.Result.Add.Error(e) }
         )
     }
 
     override suspend fun removeAll(queue: Queue): TextMessageRepository.Result.Remove {
         return runCatchingErrors(
-            error = { e -> TextMessageRepository.Result.Remove.Error(e) },
             block = {
                 transaction { TextMessages.deleteWhere { queueId eq queue.id } }
 
                 TextMessageRepository.Result.Remove.Success
-            }
+            },
+            errorBuilder = { e -> TextMessageRepository.Result.Remove.Error(e) }
         )
     }
 

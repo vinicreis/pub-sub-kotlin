@@ -72,7 +72,7 @@ class SubscriberManagerServiceImpl(
                         withChosenSubscriber {
                             when (event) {
                                 is TextMessageReceivedEvent -> send(event)
-                                is QueueRemovedEvent -> close()
+                                is QueueRemovedEvent -> close(CancellationException("Queue $id was removed"))
                                 is QueueAddedEvent -> send(event)
                                 null -> send(HeartbeatEvent)
                             }

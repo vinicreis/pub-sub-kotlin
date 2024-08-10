@@ -37,19 +37,19 @@ fun main() {
                     ClientMenuOptions.LIST_QUEUES -> service.list().print()
                     ClientMenuOptions.PUBLISH_QUEUE -> service.publish(getQueueData()).print()
                     ClientMenuOptions.POST_MESSAGE -> service.withQueueList { queues ->
-                        queues.selectQueue { selectedQueue ->
+                        queues.selectQueue().also { selectedQueue ->
                             service.post(selectedQueue.id.toString(), getMessage()).print()
                         }
                     }
 
                     ClientMenuOptions.POLL_QUEUE -> service.withQueueList { queues ->
-                        queues.selectQueue { selectedQueue ->
+                        queues.selectQueue().also { selectedQueue ->
                             service.poll(selectedQueue.id.toString()).print()
                         }
                     }
 
                     ClientMenuOptions.SUBSCRIBE_QUEUE -> service.withQueueList { queues ->
-                        queues.selectQueue { selectedQueue ->
+                        queues.selectQueue().also { selectedQueue ->
                             val subscriberJob = uiScope.launch {
                                 service.subscribe(selectedQueue.id.toString()).collectAndPrint()
                             }
@@ -60,7 +60,7 @@ fun main() {
                     }
 
                     ClientMenuOptions.REMOVE_QUEUE -> service.withQueueList { queues ->
-                        queues.selectQueue { selectedQueue ->
+                        queues.selectQueue().also { selectedQueue ->
                             service.remove(selectedQueue.id.toString()).print()
                         }
                     }

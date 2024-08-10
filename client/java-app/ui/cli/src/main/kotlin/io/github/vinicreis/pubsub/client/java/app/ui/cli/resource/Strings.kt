@@ -36,8 +36,8 @@ object StringResource {
         object Message {
             const val PROCESSING_SUBSCRIPTION = "Processing subscription..."
             const val SUBSCRIPTION_ACTIVE = "Subscription on queue %s is active!"
-            const val MESSAGE_RECEIVED = "Message received on queue %s: %s"
-            const val SUBSCRIPTION_FINISHED = "Subscription on queue %s has finished: %s"
+            const val MESSAGE_RECEIVED = "Message received on queue %s: \"%s\""
+            const val SUBSCRIPTION_FINISHED = "Subscription has finished: %s"
             const val QUEUE_REMOVED_SUCCESSFULLY = "Queue removed successfully"
         }
     }

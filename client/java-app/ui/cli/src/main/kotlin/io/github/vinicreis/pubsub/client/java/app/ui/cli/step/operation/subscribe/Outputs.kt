@@ -9,7 +9,10 @@ fun SubscriptionEvent.print() {
         SubscriptionEvent.Processing -> println(StringResource.Queue.Message.PROCESSING_SUBSCRIPTION)
         is SubscriptionEvent.Active -> println(String.format(StringResource.Queue.Message.SUBSCRIPTION_ACTIVE, queue.name))
         is SubscriptionEvent.Update -> println(String.format(StringResource.Queue.Message.MESSAGE_RECEIVED, queue.name, textMessage.content))
-        is SubscriptionEvent.Finished -> println(String.format(StringResource.Queue.Message.SUBSCRIPTION_FINISHED, message))
+        is SubscriptionEvent.Finished -> {
+            println(String.format(StringResource.Queue.Message.SUBSCRIPTION_FINISHED, message))
+            println(StringResource.Message.Input.PRESS_ENTER_TO_STOP_SUBSCRIPTION)
+        }
     }
 }
 

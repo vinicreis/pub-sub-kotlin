@@ -50,7 +50,7 @@ internal val SubscribeResponse.asDomain: SubscriptionEvent
         RemoteSubscriptionEvent.PROCESSING -> SubscriptionEvent.Processing
         RemoteSubscriptionEvent.ACTIVE -> SubscriptionEvent.Active(queue.asDomain)
         RemoteSubscriptionEvent.UPDATE -> SubscriptionEvent.Update(queue.asDomain, content.asDomain)
-        RemoteSubscriptionEvent.FINISHED -> SubscriptionEvent.Finished(message.ifEmpty { null })
+        RemoteSubscriptionEvent.FINISHED -> SubscriptionEvent.Finished(queue.asDomain, message.ifEmpty { null })
     }
 
 internal val PollResponse.asDomain: QueueServiceClient.Response.Poll

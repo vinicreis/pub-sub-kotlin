@@ -159,7 +159,7 @@ class QueueRepositoryDatabaseTests {
             TextMessageRepository.Result.Remove.Success -> Unit
         }
 
-        sut.removeByCode(validQueue.code).also {
+        sut.removeById(validQueue.id).also {
             when (it) {
                 is QueueRepository.Result.Remove.Error -> fail("Remove should not fail with generic error")
                 QueueRepository.Result.Remove.NotFound -> fail("Queue with code \"queue-1\" should exist on database")

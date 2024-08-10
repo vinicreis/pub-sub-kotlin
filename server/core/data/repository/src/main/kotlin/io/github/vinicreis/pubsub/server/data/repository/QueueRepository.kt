@@ -35,8 +35,6 @@ interface QueueRepository {
 
     suspend fun exists(queue: Queue): Boolean
     suspend fun add(queue: Queue): Result.Add
-    suspend fun remove(queue: Queue): Result.Remove
-    suspend fun removeByCode(code: String): Result.Remove
     suspend fun removeById(id: UUID): Result.Remove
     suspend fun getAll(): Result.GetAll
     suspend fun getById(id: UUID): Result.GetById

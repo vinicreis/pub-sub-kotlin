@@ -16,6 +16,9 @@ fun Queue.print() {
 fun QueueServiceClient.Response.ListAll.print() {
     when(this) {
         is QueueServiceClient.Response.ListAll.Fail -> println(StringResource.Operation.List.Error.GENERIC)
-        is QueueServiceClient.Response.ListAll.Success -> queues.print(printElement = Queue::print)
+        is QueueServiceClient.Response.ListAll.Success -> {
+            println("List queues: ")
+            queues.print(printElement = Queue::print)
+        }
     }
 }

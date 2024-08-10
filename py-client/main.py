@@ -1,35 +1,33 @@
 import argparse
 import traceback
+from wave import Error
 
 from core.domain.queue import Queue
 from core.domain.text_message import TextMessage
 from core.grpc.client_grpc import ClientGrpc
-from core.service.client import Client
 from core.service.model.response import Response
-from ui.cli.component.components import select_from_list, read_text, read_int_or_none
+from ui.cli.component.components import select_from_list, read_text, read_int_or_none, select_queue
 from ui.cli.menu.menu import MenuOption
+
+DEFAULT_SERVER_ADDRESS = "localhost"
+DEFAULT_SERVER_PORT = 10090
 
 parser = argparse.ArgumentParser(
     prog="Pub-sub client",
     description="Client to interact with the Pub-sub server",
 )
 
-parser.add_argument("-a", "--address", type=str, default="localhost", help="Server address")
-parser.add_argument("-p", "--port", type=int, default="10090", help="Server port")
-
-
-def select_queue(client: Client) -> Queue | None:
-    list_response = client.list()
-    if list_response.result == Response.Result.FAIL:
-        print(f"Failed to list queues: {list_response.error}")
-        return None
-
-    return select_from_list(list_response.data)
+parser.add_argument("-a", "--address", type=str, required=False, help="Server address")
+parser.add_argument("-p", "--port", type=int, required=False, help="Server port")
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    address = args.address
-    port = args.port
+    address = args.address if args.address is not None else input(f"Enter the server address [{DEFAULT_SERVER_ADDRESS}]: ")
+    address = address if address else DEFAULT_SERVER_ADDRESS
+
+    port = args.port if args.port is not None else input(f"Enter the server port [{DEFAULT_SERVER_PORT}]: ")
+    port = port if port else DEFAULT_SERVER_PORT
+
     print(f"Connecting to server on {address}:{port}...")
 
     client = ClientGrpc(address, port)
@@ -76,7 +74,10 @@ if __name__ == '__main__':
                     for subscription_event in client.subscribe(select_queue(client)):
                         print(subscription_event)
                 except KeyboardInterrupt:
-                    print("Finoshing subscription...")
+                    print("Stopping subscription...")
+                    continue
+                except Error:
+                    print("Subcription stopped!...")
                     continue
             elif selectedOption == MenuOption.REMOVE_QUEUE:
                 queue = select_queue(client)

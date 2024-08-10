@@ -33,10 +33,13 @@ import io.github.vinicreis.pubsub.server.data.repository.QueueRepository
 import io.github.vinicreis.pubsub.server.data.repository.TextMessageRepository
 import io.grpc.Grpc
 import io.grpc.InsecureServerCredentials
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
@@ -235,45 +238,75 @@ class QueueServiceGrpc(
         }
     }
 
-    override fun subscribe(request: SubscribeRequest): Flow<SubscribeResponse> {
-        return channelFlow {
+    context(ProducerScope<SubscribeResponse>)
+    private fun Flow<TextMessageReceivedEvent>.notifyStart(queue: Queue): Flow<TextMessageReceivedEvent> = onStart {
+        subscribeResponse {
+            event = SubscriptionEvent.ACTIVE
+            this.queue = queue.asRemote
+        }.also { send(it) }
+    }
+
+    context(ProducerScope<SubscribeResponse>)
+    private fun Flow<TextMessageReceivedEvent>.notifyFinished(
+        queue: Queue,
+    ): Flow<TextMessageReceivedEvent> = onCompletion { cause ->
+        subscribeResponse {
+            event = SubscriptionEvent.FINISHED
+            this.queue = queue.asRemote
+            message = cause?.message ?: "Subscription on queue ${queue.id} has closed"
+        }.also { send(it) }
+
+        close(cause)
+    }
+
+    context(ProducerScope<SubscribeResponse>)
+    private fun Flow<TextMessageReceivedEvent>.catchAndClose(
+        queue: Queue,
+    ): Flow<TextMessageReceivedEvent> = catch { t ->
+        subscribeResponse {
+            event = SubscriptionEvent.FINISHED
+            this.queue = queue.asRemote
+            message = t.message ?: "Failed while processing subscription"
+        }.also { send(it) }
+
+        close(CancellationException("Failed while processing subscription", t))
+    }
+
+    context(ProducerScope<SubscribeResponse>)
+    private suspend fun Flow<TextMessageReceivedEvent>.collectUpdating(queue: Queue) {
+        collect { event ->
             subscribeResponse {
-                event = SubscriptionEvent.PROCESSING
+                this.event = SubscriptionEvent.UPDATE
+                this.queue = queue.asRemote
+                content = event.textMessage.asRemote
             }.also { send(it) }
+        }
+    }
 
-            queueRepository.getById(request.queueId.asUuid).let { result ->
-                when (result) {
-                    QueueRepository.Result.GetById.NotFound -> subscribeResponse {
-                        event = SubscriptionEvent.FINISHED
-                        message = "Queue ${request.queueId} not found"
-                    }.also { send(it); close() }
+    override fun subscribe(request: SubscribeRequest): Flow<SubscribeResponse> = channelFlow {
+        subscribeResponse {
+            event = SubscriptionEvent.PROCESSING
+        }.also { send(it) }
 
-                    is QueueRepository.Result.GetById.Error -> subscribeResponse {
-                        event = SubscriptionEvent.FINISHED
-                        message = result.e.message ?: "Something went wrong..."
-                    }.also { send(it); close() }
+        queueRepository.getById(request.queueId.asUuid).let { result ->
+            when (result) {
+                QueueRepository.Result.GetById.NotFound -> subscribeResponse {
+                    event = SubscriptionEvent.FINISHED
+                    message = "Queue ${request.queueId} not found"
+                }.also { send(it); close(CancellationException("Queue ${request.queueId} not found")) }
 
-                    is QueueRepository.Result.GetById.Success ->
-                        subscriberManagerService.subscribe(result.queue)
-                            .onStart {
-                                subscribeResponse {
-                                    event = SubscriptionEvent.ACTIVE
-                                    queue = result.queue.asRemote
-                                }.also { send(it) }
-                            }.onCompletion {
-                                subscribeResponse {
-                                    event = SubscriptionEvent.FINISHED
-                                    queue = result.queue.asRemote
-                                }.also { send(it); close() }
-                            }.collect { event ->
-                                if (event is TextMessageReceivedEvent) {
-                                    subscribeResponse {
-                                        this.event = SubscriptionEvent.UPDATE
-                                        queue = result.queue.asRemote
-                                        content = event.textMessage.asRemote
-                                    }.also { send(it) }
-                                }
-                            }
+                is QueueRepository.Result.GetById.Error -> subscribeResponse {
+                    event = SubscriptionEvent.FINISHED
+                    message = result.e.message ?: "Something went wrong..."
+                }.also { send(it); close(CancellationException("Failed to fetch queue ${request.queueId}")) }
+
+                is QueueRepository.Result.GetById.Success -> {
+                    subscriberManagerService.subscribe(result.queue)
+                        .filterIsInstance<TextMessageReceivedEvent>()
+                        .notifyStart(result.queue)
+                        .notifyFinished(result.queue)
+                        .catchAndClose(result.queue)
+                        .collectUpdating(result.queue)
                 }
             }
         }
@@ -299,13 +332,13 @@ class QueueServiceGrpc(
                         try {
                             withTimeout(timeout.seconds) {
                                 subscriberManagerService.subscribe(result.queue)
-                                    .filter { it is TextMessageReceivedEvent }
+                                    .filterIsInstance<TextMessageReceivedEvent>()
                                     .first()
                                     .let { event ->
                                         pollResponse {
                                             this.result = ResultOuterClass.Result.SUCCESS
                                             this.queue = result.queue.asRemote
-                                            this.content = (event as TextMessageReceivedEvent).textMessage.asRemote
+                                            this.content = event.textMessage.asRemote
                                         }
                                     }
                             }

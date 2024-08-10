@@ -45,6 +45,7 @@ object StringResource {
 
     object Message {
         object Input {
+            const val ENTER_MULTIPLE_MESSAGES = "Enter multiple messages and leave it blank to finish"
             const val ENTER_CONTENT = "Enter message content"
             const val PRESS_ENTER_TO_STOP_SUBSCRIPTION = "Press Enter key to stop subscription..."
         }

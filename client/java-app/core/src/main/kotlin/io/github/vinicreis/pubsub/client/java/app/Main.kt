@@ -10,7 +10,7 @@ import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.common.g
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.common.withQueueList
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.list.print
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.poll.print
-import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.getMessage
+import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.getMessages
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.print
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.post.selectQueue
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.publish.getQueueData
@@ -25,7 +25,7 @@ import kotlinx.coroutines.runBlocking
 
 fun main() {
     var notFinished = true
-    val serverInfo = runBlocking { getServerInfo() }
+    val serverInfo = getServerInfo()
     val service = QueueServiceClientGrpc(
         serverInfo = serverInfo,
         coroutineContext = Dispatchers.IO,
@@ -40,7 +40,7 @@ fun main() {
                     ClientMenuOptions.PUBLISH_QUEUE -> service.publish(getQueueData()).print()
                     ClientMenuOptions.POST_MESSAGE -> service.withQueueList { queues ->
                         queues.selectQueue().also { selectedQueue ->
-                            service.post(selectedQueue.id.toString(), getMessage()).print()
+                            service.post(selectedQueue.id.toString(), *getMessages().toTypedArray()).print()
                         }
                     }
 

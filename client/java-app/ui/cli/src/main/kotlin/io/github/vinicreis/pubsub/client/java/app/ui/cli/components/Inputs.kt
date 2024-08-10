@@ -1,7 +1,7 @@
 package io.github.vinicreis.pubsub.client.java.app.ui.cli.components
 
 internal fun getInputOrNull(): String? {
-    return readlnOrNull()?.ifBlank { null }
+    return readlnOrNull()
 }
 
 internal fun getInputOrNull(message: String, default: String? = null): String? {
@@ -9,7 +9,7 @@ internal fun getInputOrNull(message: String, default: String? = null): String? {
     default?.also { print(" [\"$it\"]") }
     print(": ")
 
-    return getInputOrNull() ?: default
+    return getInputOrNull()?.ifBlank { default }
 }
 
 internal fun getInput(message: String, default: String): String {
@@ -17,7 +17,7 @@ internal fun getInput(message: String, default: String): String {
     print(" [\"$default\"]")
     print(": ")
 
-    return getInputOrNull() ?: default
+    return getInputOrNull()?.ifBlank { default } ?: default
 }
 
 internal fun selectOption(message: String, options: List<String>, defaultIndex: Int? = null): Int? {

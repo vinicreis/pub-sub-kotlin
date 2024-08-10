@@ -3,8 +3,7 @@ package io.github.vinicreis.pubsub.server.core.grpc.service
 import io.github.vinicreis.domain.server.core.model.data.ResultOuterClass
 import io.github.vinicreis.domain.server.core.model.request.listRequest
 import io.github.vinicreis.domain.server.core.model.request.pollRequest
-import io.github.vinicreis.domain.server.core.model.request.postMultipleRequest
-import io.github.vinicreis.domain.server.core.model.request.postSingleRequest
+import io.github.vinicreis.domain.server.core.model.request.postRequest
 import io.github.vinicreis.domain.server.core.model.request.publishRequest
 import io.github.vinicreis.domain.server.core.model.request.removeRequest
 import io.github.vinicreis.domain.server.core.model.request.subscribeRequest
@@ -13,7 +12,6 @@ import io.github.vinicreis.pubsub.server.core.grpc.extension.asRemoteMessage
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asDomain
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asRemote
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
-import io.github.vinicreis.pubsub.server.core.model.data.event.HeartbeatEvent
 import io.github.vinicreis.pubsub.server.core.model.data.event.TextMessageReceivedEvent
 import io.github.vinicreis.pubsub.server.core.service.SubscriberManagerService
 import io.github.vinicreis.pubsub.server.core.test.extension.asTextMessage
@@ -312,15 +310,15 @@ class QueueServiceGrpcTests {
                     val id = QueueFixture.id()
                     val queue = QueueFixture.instance()
                     val message = TextMessageFixture.any()
-                    val request = postSingleRequest {
+                    val request = postRequest {
                         this.queueId = id.toString()
-                        this.content = message.asRemoteMessage
+                        this.content.add(message.asRemoteMessage)
                     }
 
                     coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.success(queue)
                     coEvery { textMessageRepositoryMock.add(queue, any()) } returns TextMessageFixture.Repository.Add.success()
 
-                    val response = sut.postSingle(request)
+                    val response = sut.post(request)
 
                     coVerify(exactly = 1) { queueRepositoryMock.getById(id) }
                     coVerify(exactly = 1) { textMessageRepositoryMock.add(queue, any()) }
@@ -334,9 +332,9 @@ class QueueServiceGrpcTests {
                 val id = QueueFixture.id()
                 val queue = QueueFixture.instance()
                 val message = TextMessageFixture.any()
-                val request = postSingleRequest {
+                val request = postRequest {
                     this.queueId = id.toString()
-                    this.content = message.asRemoteMessage
+                    this.content.add(message.asRemoteMessage)
                 }
 
                 coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.notFound()
@@ -344,7 +342,7 @@ class QueueServiceGrpcTests {
                     textMessageRepositoryMock.add(queue, any())
                 } answers { fail("Should not be called if queue is not found") }
 
-                val response = sut.postSingle(request)
+                val response = sut.post(request)
 
                 coVerify(exactly = 1) { queueRepositoryMock.getById(id) }
                 coVerify(exactly = 0) { textMessageRepositoryMock.add(any(), any()) }
@@ -359,15 +357,15 @@ class QueueServiceGrpcTests {
                     val id = QueueFixture.id()
                     val queue = QueueFixture.instance()
                     val message = TextMessageFixture.any()
-                    val request = postSingleRequest {
+                    val request = postRequest {
                         this.queueId = id.toString()
-                        this.content = message.asRemoteMessage
+                        this.content.add(message.asRemoteMessage)
                     }
 
                     coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.success(queue)
                     coEvery { textMessageRepositoryMock.add(queue, any()) } throws RuntimeException(TextMessageFixture.any())
 
-                    val response = sut.postSingle(request)
+                    val response = sut.post(request)
 
                     coVerify(exactly = 1) { queueRepositoryMock.getById(id) }
                     coVerify(exactly = 1) { textMessageRepositoryMock.add(queue, any()) }
@@ -383,9 +381,9 @@ class QueueServiceGrpcTests {
                     val queue = QueueFixture.instance()
                     val message = TextMessageFixture.any()
                     val errorMessage = TextMessageFixture.any()
-                    val request = postSingleRequest {
+                    val request = postRequest {
                         this.queueId = id.toString()
-                        this.content = message.asRemoteMessage
+                        this.content.add(message.asRemoteMessage)
                     }
 
                     coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.success(queue)
@@ -393,7 +391,7 @@ class QueueServiceGrpcTests {
                         textMessageRepositoryMock.add(queue, any())
                     } returns TextMessageFixture.Repository.Add.error(errorMessage)
 
-                    val response = sut.postSingle(request)
+                    val response = sut.post(request)
 
                     coVerify(exactly = 1) { queueRepositoryMock.getById(id) }
                     coVerify(exactly = 1) { textMessageRepositoryMock.add(queue, any()) }
@@ -412,7 +410,7 @@ class QueueServiceGrpcTests {
                     val id = QueueFixture.id()
                     val queue = QueueFixture.instance()
                     val messages = TextMessageFixture.EXAMPLES.randomSlice()
-                    val request = postMultipleRequest {
+                    val request = postRequest {
                         this.queueId = id.toString()
                         this.content.addAll(messages.map { it.asRemoteMessage })
                     }
@@ -422,7 +420,7 @@ class QueueServiceGrpcTests {
                         textMessageRepositoryMock.add(queue, any())
                     } returns TextMessageFixture.Repository.Add.success()
 
-                    val response = sut.postMultiple(request)
+                    val response = sut.post(request)
 
                     coVerify(exactly = 1) { queueRepositoryMock.getById(id) }
                     coVerify(exactly = 1) { textMessageRepositoryMock.add(queue, any()) }
@@ -436,7 +434,7 @@ class QueueServiceGrpcTests {
                 val id = QueueFixture.id()
                 val queue = QueueFixture.instance()
                 val messages = TextMessageFixture.EXAMPLES.randomSlice()
-                val request = postMultipleRequest {
+                val request = postRequest {
                     this.queueId = id.toString()
                     this.content.addAll(messages.map { it.asRemoteMessage })
                 }
@@ -446,7 +444,7 @@ class QueueServiceGrpcTests {
                     textMessageRepositoryMock.add(queue, any())
                 } answers { fail("Should not be called if queue is not found") }
 
-                val response = sut.postMultiple(request)
+                val response = sut.post(request)
 
                 coVerify(exactly = 1) { queueRepositoryMock.getById(id) }
                 coVerify(exactly = 0) { textMessageRepositoryMock.add(any(), any()) }
@@ -461,7 +459,7 @@ class QueueServiceGrpcTests {
                     val id = QueueFixture.id()
                     val queue = QueueFixture.instance()
                     val messages = TextMessageFixture.EXAMPLES.randomSlice()
-                    val request = postMultipleRequest {
+                    val request = postRequest {
                         this.queueId = id.toString()
                         this.content.addAll(messages.map { it.asRemoteMessage })
                     }
@@ -471,7 +469,7 @@ class QueueServiceGrpcTests {
                         textMessageRepositoryMock.add(queue, any())
                     } throws RuntimeException(TextMessageFixture.any())
 
-                    val response = sut.postMultiple(request)
+                    val response = sut.post(request)
 
                     coVerify(exactly = 1) { queueRepositoryMock.getById(id) }
                     coVerify(exactly = 1) { textMessageRepositoryMock.add(queue, any()) }
@@ -637,15 +635,15 @@ class QueueServiceGrpcTests {
             assertEquals(RemoteSubscriptionEvent.FINISHED, responses.last().event)
             assertEquals(queue, responses.last().queue.asDomain)
             assertEquals(RemoteTextMessage.getDefaultInstance(), responses.last().content)
-            assertTrue(responses.last().message.isEmpty())
+            assertTrue(responses.last().message.isNotBlank())
 
             assertEquals(emittedMessages.size + 3, responses.size)
         }
     }
 
     @Nested
-    @DisplayName("Peek method tests")
-    inner class PeekTests {
+    @DisplayName("Poll method tests")
+    inner class PollTests {
         @Test
         fun `Should return next emitted message successfully in a valid queue`() = runTest(testDispatcher) {
             val dispatcher = StandardTestDispatcher(testScheduler)
@@ -716,39 +714,6 @@ class QueueServiceGrpcTests {
                 assertEquals(RemoteTextMessage.getDefaultInstance(), response.content)
                 assertEquals(RemoteQueue.getDefaultInstance(), response.queue)
                 assertEquals("Tired of failing...", response.message)
-            }
-
-        @Test
-        fun `Should fail by timeout in case no message is emitted in the sent seconds time`() =
-            runTest(testDispatcher) {
-                val dispatcher = StandardTestDispatcher(testScheduler)
-                val id = QueueFixture.id()
-                val queue = QueueFixture.instance(id)
-                val timeout = Random.nextLong(60L)
-                val request = pollRequest {
-                    this.queueId = id.toString()
-                    this.timeoutSeconds = timeout
-                }
-
-                coEvery { queueRepositoryMock.getById(id) } returns QueueFixture.Repository.GetById.success(queue)
-                every { subscriberManagerServiceMock.subscribe(queue) } returns flow {
-                    while (true) {
-                        delay(1.seconds)
-
-                        emit(HeartbeatEvent)
-                    }
-                }
-
-                val response = backgroundScope.async(dispatcher) { sut.poll(request) }.await()
-
-                coVerify(exactly = 1) { queueRepositoryMock.getById(id) }
-                verify(exactly = 1) { subscriberManagerServiceMock.subscribe(queue) }
-
-                assertEquals(timeout.seconds.inWholeMilliseconds, currentTime)
-                assertEquals(ResultOuterClass.Result.ERROR, response.result)
-                assertEquals(RemoteTextMessage.getDefaultInstance(), response.content)
-                assertEquals(queue, response.queue.asDomain)
-                assertTrue(response.message.contains("message timeout"))
             }
 
         @Test

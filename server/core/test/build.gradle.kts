@@ -5,6 +5,6 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.server.core.domain)
-    implementation(projects.server.core.data.repository)
+    api(projects.server.core.domain)
+    api(projects.server.core.data.repository)
 }

@@ -49,7 +49,8 @@ if __name__ == '__main__':
             elif selectedOption == MenuOption.PUBLISH_QUEUE:
                 code = input("Enter the queue code: ")
                 name = input("Enter the queue readable name: ")
-                response = client.publish(Queue(code=code, name=name))
+                queue_type = select_from_list(list(Queue.Type), message="Select a queue type")
+                response = client.publish(Queue(code=code, name=name, queue_type=queue_type))
             elif selectedOption == MenuOption.POST_MESSAGE:
                 queue = select_queue(client)
                 text_message = TextMessage(read_text("Enter the message content: "))

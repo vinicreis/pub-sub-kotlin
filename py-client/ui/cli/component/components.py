@@ -1,8 +1,8 @@
-def select_from_list[T](options: list[T], default_index: int = 0) -> T:
+def select_from_list[T](options: list[T], default_index: int = 0, message: str = "Select an option") -> T:
     if len(options) == 0:
         raise ValueError("No options to select from")
 
-    print("Select an option:")
+    print(message)
 
     for i, option in enumerate(options):
         print(f"\t{i + 1} - {option}")

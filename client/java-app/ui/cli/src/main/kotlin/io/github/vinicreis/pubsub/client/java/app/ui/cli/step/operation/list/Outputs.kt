@@ -9,6 +9,7 @@ fun Queue.print() {
     println("Queue: $name")
     println("\tID: $id")
     println("\tCode: $code")
+    println("\tType: $type")
     println("\tHas $pendingMessagesCount pending messages")
 }
 

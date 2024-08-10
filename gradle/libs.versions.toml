@@ -1,12 +1,12 @@
 [versions]
 app = "0.0.1"
 
-kotlin = "2.0.0"
+kotlin = "2.0.10"
 kotlinx-coroutines = "1.9.0-RC"
 kotlinx-datetime = "0.6.0"
 protobuf-plugin = "0.9.4"
-protobuf-compiler = "4.27.2"
-grpc-core = "1.65.1"
+protobuf-compiler = "4.27.3"
+grpc-core = "1.66.0"
 grpc-kotlin = "1.4.1"
 exposed = "0.52.0"
 postgres-driver = "42.7.3"

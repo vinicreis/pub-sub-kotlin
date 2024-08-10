@@ -71,7 +71,8 @@ class ProtobufPlugin : Plugin<Project> {
 
     private fun Project.applyDependencies() {
         dependencies {
-            implementation(libs.findLibrary(Libraries.GOOGLE_PROTOBUF).get())
+            implementation(libs.findLibrary(Libraries.GOOGLE_PROTOBUF_JAVA).get())
+            implementation(libs.findLibrary(Libraries.GOOGLE_PROTOBUF_KOTLIN).get())
         }
     }
 
@@ -85,7 +86,8 @@ class ProtobufPlugin : Plugin<Project> {
         }
 
         private object Libraries {
-            const val GOOGLE_PROTOBUF = "google.protobuf.kotlin"
+            const val GOOGLE_PROTOBUF_KOTLIN = "google.protobuf.kotlin"
+            const val GOOGLE_PROTOBUF_JAVA = "google.protobuf.java"
         }
     }
 }

@@ -1,6 +1,7 @@
 package io.github.vinicreis.pubsub.client.java.app
 
 import io.github.vinicreis.pubsub.client.core.grpc.service.QueueServiceClientGrpc
+import io.github.vinicreis.pubsub.client.core.service.QueueServiceClient
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.components.stopUntilKeyPressed
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.resource.StringResource
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.config.getServerInfo
@@ -18,22 +19,25 @@ import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.remove.p
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.subscribe.collectAndPrint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import java.net.ConnectException
+import java.util.concurrent.atomic.AtomicBoolean
 
 fun main() {
-    var notFinished = true
+    val notFinished = AtomicBoolean(true)
     val serverInfo = runBlocking { getServerInfo() }
     val service = QueueServiceClientGrpc(
         serverInfo = serverInfo,
         coroutineContext = Dispatchers.IO,
     )
-    val uiScope = CoroutineScope(Dispatchers.Default)
+    val ioScope = CoroutineScope(Dispatchers.IO)
 
-    runBlocking {
-        while (notFinished) {
+    val mainJob = ioScope.launch {
+        while (notFinished.get()) {
             try {
-                when(selectMenuOption()) {
+                when (selectMenuOption()) {
                     ClientMenuOptions.LIST_QUEUES -> service.list().print()
                     ClientMenuOptions.PUBLISH_QUEUE -> service.publish(getQueueData()).print()
                     ClientMenuOptions.POST_MESSAGE -> service.withQueueList { queues ->
@@ -50,7 +54,7 @@ fun main() {
 
                     ClientMenuOptions.SUBSCRIBE_QUEUE -> service.withQueueList { queues ->
                         queues.selectQueue { selectedQueue ->
-                            val subscriberJob = uiScope.launch {
+                            val subscriberJob = ioScope.launch {
                                 service.subscribe(selectedQueue.id.toString()).collectAndPrint()
                             }
 
@@ -65,11 +69,33 @@ fun main() {
                         }
                     }
 
-                    ClientMenuOptions.EXIT -> notFinished = false
+                    ClientMenuOptions.EXIT -> notFinished.set(false)
                 }
+            } catch (e: ConnectException) {
+                println("Failed to connect to server $serverInfo: ${e.message}")
+            } catch (e: RuntimeException) {
+                notFinished.set(false)
             } catch (t: Throwable) {
-                println("${StringResource.Error.GENERIC}: ${t.message}")
+//                println("${StringResource.Error.GENERIC}: ${t.message}")
+                t.printStackTrace()
+                notFinished.set(false)
             }
         }
     }
+
+    ioScope.launch {
+        try {
+            service.watch().collect { health ->
+                when (health) {
+                    QueueServiceClient.Response.Health.Healthy -> println("Server is healthy")
+                    QueueServiceClient.Response.Health.NotHealthy -> mainJob.cancel("Server is not healthy")
+                }
+            }
+        } catch (t: Throwable) {
+            println("Failed to connect to server $serverInfo: ${t.message}")
+            mainJob.cancel("Failed to connect to server", t)
+        }
+    }
+
+    runBlocking { mainJob.join() }
 }

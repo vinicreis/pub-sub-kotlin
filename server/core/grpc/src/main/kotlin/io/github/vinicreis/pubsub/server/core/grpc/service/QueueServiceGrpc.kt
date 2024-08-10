@@ -33,6 +33,8 @@ import io.github.vinicreis.pubsub.server.data.repository.QueueRepository
 import io.github.vinicreis.pubsub.server.data.repository.TextMessageRepository
 import io.grpc.Grpc
 import io.grpc.InsecureServerCredentials
+import io.grpc.health.v1.HealthCheckResponse
+import io.grpc.protobuf.services.HealthStatusManager
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -54,13 +56,28 @@ class QueueServiceGrpc(
     private val subscriberManagerService: SubscriberManagerService,
 ) : QueueService, QueueServiceGrpcKt.QueueServiceCoroutineImplBase(coroutineContext) {
     private val credentials = InsecureServerCredentials.create()
+    private val healthStatusManager = HealthStatusManager()
     private val server = Grpc.newServerBuilderForPort(port, credentials)
         .addService(this)
+        .addService(healthStatusManager.healthService)
         .build()
 
     override fun start() {
         logger.info("Starting server...")
         server.start()
+        healthStatusManager.setStatus(
+            QueueServiceGrpcKt.SERVICE_NAME,
+            HealthCheckResponse.ServingStatus.SERVING
+        )
+
+        Runtime.getRuntime().addShutdownHook(
+            Thread {
+                healthStatusManager.setStatus(
+                    QueueServiceGrpcKt.SERVICE_NAME,
+                    HealthCheckResponse.ServingStatus.NOT_SERVING
+                )
+            }
+        )
     }
 
     override fun blockUntilShutdown() {

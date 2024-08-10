@@ -16,7 +16,7 @@ enum class ClientMenuOptions(val message: String) {
     }
 }
 
-suspend fun selectMenuOption(): ClientMenuOptions {
+fun selectMenuOption(): ClientMenuOptions {
     return selectOption(
         message = "Select an action to run on client",
         options = ClientMenuOptions.entries.map { it.message },

@@ -16,7 +16,13 @@ import io.github.vinicreis.pubsub.client.core.model.SubscriptionEvent
 import io.github.vinicreis.pubsub.client.core.model.TextMessage
 import io.github.vinicreis.pubsub.client.core.service.QueueServiceClient
 import io.grpc.ManagedChannelBuilder
+import io.grpc.health.v1.HealthCheckRequest
+import io.grpc.health.v1.HealthCheckResponse
+import io.grpc.health.v1.HealthGrpc
+import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
@@ -25,13 +31,45 @@ class QueueServiceClientGrpc(
     override val serverInfo: ServerInfo,
     private val coroutineContext: CoroutineContext,
 ) : QueueServiceClient {
+    private val channel = ManagedChannelBuilder
+        .forAddress(serverInfo.address, serverInfo.port)
+        .usePlaintext()
+        .build()
+
+    private val healthCheck by lazy {
+        HealthGrpc.newStub(channel)
+    }
+
     private val server by lazy {
-        QueueServiceGrpcKt.QueueServiceCoroutineStub(
-            channel = ManagedChannelBuilder
-                .forAddress(serverInfo.address, serverInfo.port)
-                .usePlaintext()
-                .build()
-        )
+        QueueServiceGrpcKt.QueueServiceCoroutineStub(channel)
+    }
+
+    override fun watch(): Flow<QueueServiceClient.Response.Health> = callbackFlow {
+        val request = HealthCheckRequest.getDefaultInstance()
+        val observer = object : StreamObserver<HealthCheckResponse> {
+            override fun onNext(value: HealthCheckResponse) {
+                when (value.status) {
+                    HealthCheckResponse.ServingStatus.SERVING -> trySend(QueueServiceClient.Response.Health.Healthy)
+                    HealthCheckResponse.ServingStatus.SERVICE_UNKNOWN,
+                    HealthCheckResponse.ServingStatus.UNRECOGNIZED,
+                    HealthCheckResponse.ServingStatus.NOT_SERVING,
+                    HealthCheckResponse.ServingStatus.UNKNOWN,
+                    null -> trySend(QueueServiceClient.Response.Health.NotHealthy)
+                }
+            }
+
+            override fun onError(t: Throwable) {
+                close(t)
+            }
+
+            override fun onCompleted() {
+                close()
+            }
+        }
+
+        healthCheck.watch(request, observer)
+
+        awaitClose {  }
     }
 
     override suspend fun list(): QueueServiceClient.Response.ListAll = withContext(coroutineContext) {

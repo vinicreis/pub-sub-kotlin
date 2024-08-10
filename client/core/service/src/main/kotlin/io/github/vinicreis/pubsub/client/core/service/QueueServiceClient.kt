@@ -10,6 +10,11 @@ interface QueueServiceClient {
     val serverInfo: ServerInfo
 
     sealed interface Response {
+        sealed interface Health : Response {
+            data object NotHealthy : Health
+            data object Healthy : Health
+        }
+
         sealed interface ListAll : Response {
             data class Fail(val message: String?) : ListAll
             data class Success(val queues: List<Queue>) : ListAll
@@ -36,6 +41,7 @@ interface QueueServiceClient {
         }
     }
 
+    fun watch(): Flow<Response.Health>
     suspend fun list(): Response.ListAll
     suspend fun publish(queue: Queue): Response.Publish
     suspend fun post(queueId: String, vararg textMessage: TextMessage): Response.Post

@@ -23,6 +23,7 @@ object StringResource {
             object Message {
                 const val ENTER_CODE = "Enter a code for queue"
                 const val ENTER_NAME = "Enter queue readable name"
+                const val ENTER_TIMEOUT_SECONDS = "Enter the timeout in seconds"
                 const val SELECT_QUEUE_TYPE = "Select queue type"
                 const val SELECT_AVAILABLE_QUEUES = "Select one of the available queues"
             }

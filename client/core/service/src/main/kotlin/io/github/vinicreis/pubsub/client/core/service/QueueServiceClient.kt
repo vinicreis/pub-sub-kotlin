@@ -40,6 +40,6 @@ interface QueueServiceClient {
     suspend fun publish(queue: Queue): Response.Publish
     suspend fun post(queueId: String, vararg textMessage: TextMessage): Response.Post
     suspend fun poll(queueId: String, timeoutSeconds: Long? = null): Response.Poll
-    fun subscribe(queueId: String): Flow<SubscriptionEvent>
+    fun subscribe(queueId: String, timeoutSeconds: Long?): Flow<SubscriptionEvent>
     suspend fun remove(queueId: String): Response.Remove
 }

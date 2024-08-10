@@ -20,8 +20,8 @@ class Queue:
         self.pending_messages_count = pending_messages_count
 
     def __str__(self):
-        return (f"\tQueue {self.code}\n" +
-                f"\t\tid={self.guid}\n" +
-                f"\t\tname={self.name}\n" +
-                f"\t\ttype={self.queue_type}\n" +
+        return (f"\tQueue {self.name}\n" +
+                f"\t\tID: {self.guid}\n" +
+                f"\t\tCode: {self.name}\n" +
+                f"\t\tType: {self.queue_type}\n" +
                 f"\t\tHas {self.pending_messages_count} pending messages\n")

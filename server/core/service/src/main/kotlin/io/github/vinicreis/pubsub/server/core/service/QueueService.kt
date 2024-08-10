@@ -1,8 +1,7 @@
 package io.github.vinicreis.pubsub.server.core.service
 
 import io.github.vinicreis.domain.server.core.model.request.ListRequestOuterClass.ListRequest
-import io.github.vinicreis.domain.server.core.model.request.PostMultipleRequestOuterClass.PostMultipleRequest
-import io.github.vinicreis.domain.server.core.model.request.PostSingleRequestOuterClass.PostSingleRequest
+import io.github.vinicreis.domain.server.core.model.request.PostRequestOuterClass.PostRequest
 import io.github.vinicreis.domain.server.core.model.request.PublishRequestOuterClass.PublishRequest
 import io.github.vinicreis.domain.server.core.model.request.RemoveRequestOuterClass.RemoveRequest
 import io.github.vinicreis.domain.server.core.model.request.SubscribeRequestOuterClass
@@ -19,7 +18,6 @@ interface QueueService {
     suspend fun publish(request: PublishRequest): PublishResponse
     suspend fun list(request: ListRequest): ListResponse
     suspend fun remove(request: RemoveRequest): RemoveResponse
-    suspend fun postSingle(request: PostSingleRequest): PostResponse
-    suspend fun postMultiple(request: PostMultipleRequest): PostResponse
+    suspend fun post(request: PostRequest): PostResponse
     fun subscribe(request: SubscribeRequestOuterClass.SubscribeRequest): Flow<SubscribeResponseOuterClass.SubscribeResponse>
 }

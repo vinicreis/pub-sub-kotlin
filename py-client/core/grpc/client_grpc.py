@@ -9,8 +9,7 @@ from core.service.client import Client
 from core.service.model.response import Response
 from proto.io.github.vinicreis.pubsub.server.core.model.request.list_request_pb2 import ListRequest
 from proto.io.github.vinicreis.pubsub.server.core.model.request.poll_request_pb2 import PollRequest
-from proto.io.github.vinicreis.pubsub.server.core.model.request.post_multiple_request_pb2 import PostMultipleRequest
-from proto.io.github.vinicreis.pubsub.server.core.model.request.post_single_request_pb2 import PostSingleRequest
+from proto.io.github.vinicreis.pubsub.server.core.model.request.post_request_pb2 import PostRequest
 from proto.io.github.vinicreis.pubsub.server.core.model.request.publish_request_pb2 import PublishRequest
 from proto.io.github.vinicreis.pubsub.server.core.model.request.remove_request_pb2 import RemoveRequest
 from proto.io.github.vinicreis.pubsub.server.core.model.request.subscribe_request_pb2 import SubscribeRequest
@@ -32,26 +31,20 @@ class ClientGrpc(Client):
     def post(self, queue: Queue, text_messages: list) -> Response:
         remote_text_messages = list(map(text_message_to_remote, text_messages))
 
-        if len(text_messages) > 1:
+        if len(text_messages) >= 1:
             return post_response_to_domain(
-                self.stub.postMultiple(
-                    PostMultipleRequest(queueId=queue.guid, content=remote_text_messages)
-                )
-            )
-        elif len(text_messages) == 1:
-            return post_response_to_domain(
-                self.stub.postSingle(
-                    PostSingleRequest(queueId=queue.guid, content=remote_text_messages[0])
+                self.stub.post(
+                    PostRequest(queueId=queue.guid, content=remote_text_messages)
                 )
             )
         else:
             raise ValueError("No messages to post")
 
     def poll(self, queue: Queue, timeout_seconds: int | None = None) -> Response:
-        return poll_response_to_domain(self.stub.poll(PollRequest(queueId=queue.guid, timeoutSeconds=timeout_seconds)))
+        return poll_response_to_domain(self.stub.poll(PollRequest(queueId=queue.guid), timeout=timeout_seconds))
 
-    def subscribe(self, queue: Queue):
-        return iter(map(subscribe_response_to_domain, self.stub.subscribe(SubscribeRequest(queueId=queue.guid))))
+    def subscribe(self, queue: Queue, timeout_seconds: int | None = None) -> iter:
+        return iter(map(subscribe_response_to_domain, self.stub.subscribe(SubscribeRequest(queueId=queue.guid), timeout=timeout_seconds)))
 
     def remove(self, queue: Queue) -> Response:
         return remove_response_to_domain(self.stub.remove(RemoveRequest(id=queue.guid)))

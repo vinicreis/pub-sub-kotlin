@@ -4,5 +4,4 @@ option java_package = "io.github.vinicreis.domain.server.core.model.request";
 
 message PollRequest {
   string queueId = 1;
-  optional int64 timeoutSeconds = 2;
 }

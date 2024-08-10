@@ -1,6 +1,8 @@
 import argparse
 import traceback
-from wave import Error
+
+from grpc import RpcError
+from grpc.beta.interfaces import StatusCode
 
 from core.domain.queue import Queue
 from core.domain.text_message import TextMessage
@@ -34,9 +36,9 @@ if __name__ == '__main__':
 
     while True:
         try:
-            selectedOption = select_from_list(list(MenuOption), MenuOption.EXIT.value.numerator)
+            selected_option = select_from_list(list(MenuOption), MenuOption.EXIT.value.numerator)
 
-            if selectedOption == MenuOption.LIST_QUEUES:
+            if selected_option == MenuOption.LIST_QUEUES:
                 response = client.list()
                 if response.result == Response.Result.SUCCESS:
                     print("Queues:")
@@ -44,12 +46,12 @@ if __name__ == '__main__':
                         print(queue)
                 else:
                     print(f"Failed to list queues: {response.error}")
-            elif selectedOption == MenuOption.PUBLISH_QUEUE:
+            elif selected_option == MenuOption.PUBLISH_QUEUE:
                 code = input("Enter the queue code: ")
                 name = input("Enter the queue readable name: ")
                 queue_type = select_from_list(list(Queue.Type), message="Select a queue type")
                 response = client.publish(Queue(code=code, name=name, queue_type=queue_type))
-            elif selectedOption == MenuOption.POST_MESSAGE:
+            elif selected_option == MenuOption.POST_MESSAGE:
                 queue = select_queue(client)
                 text_message = TextMessage(read_text("Enter the message content: "))
                 response = client.post(queue, [text_message])
@@ -58,7 +60,7 @@ if __name__ == '__main__':
                     print(f"Failed to post message: {response.error}")
                 else:
                     print("Message posted!")
-            elif selectedOption == MenuOption.POLL_QUEUE:
+            elif selected_option == MenuOption.POLL_QUEUE:
                 queue = select_queue(client)
                 timeout_seconds = read_int_or_none("Enter a timeout in seconds [None]: ")
                 response = client.poll(queue, timeout_seconds)
@@ -67,19 +69,26 @@ if __name__ == '__main__':
                     print(f"Failed to post message: {response.error}")
                 else:
                     print(f"Polled message: {response.data}")
-            elif selectedOption == MenuOption.SUBSCRIBE_QUEUE:
+            elif selected_option == MenuOption.SUBSCRIBE_QUEUE:
+                selected_queue = select_queue(client)
+                timeout_seconds = read_int_or_none("Enter a timeout in seconds [None]: ")
+
                 try:
                     print("Press Ctrl+C to stop the subscription")
 
-                    for subscription_event in client.subscribe(select_queue(client)):
+                    for subscription_event in client.subscribe(selected_queue, timeout_seconds):
                         print(subscription_event)
                 except KeyboardInterrupt:
-                    print("Stopping subscription...")
+                    print("Subscription cancelled by user")
                     continue
-                except Error:
-                    print("Subcription stopped!...")
+                except RpcError as e:
+                    if e.code() == StatusCode.DEADLINE_EXCEEDED:
+                        print("Subscription timed out")
+                    else:
+                        print(f"Subscription closed by server: {e}")
+
                     continue
-            elif selectedOption == MenuOption.REMOVE_QUEUE:
+            elif selected_option == MenuOption.REMOVE_QUEUE:
                 queue = select_queue(client)
                 response = client.remove(queue)
 
@@ -87,11 +96,11 @@ if __name__ == '__main__':
                     print(f"Failed to post message: {response.error}")
                 else:
                     print(f"Removed queue: {response.data}")
-            elif selectedOption == MenuOption.EXIT:
+            elif selected_option == MenuOption.EXIT:
                 print("Exiting...")
                 exit(0)
             else:
-                print(f"Unknown option read: {selectedOption}")
+                print(f"Unknown option read: {selected_option}")
                 print("Exiting...")
                 exit(-1)
         except KeyboardInterrupt as e:

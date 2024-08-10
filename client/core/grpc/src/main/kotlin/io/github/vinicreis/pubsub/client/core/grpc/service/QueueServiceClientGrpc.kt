@@ -2,8 +2,7 @@ package io.github.vinicreis.pubsub.client.core.grpc.service
 
 import io.github.vinicreis.domain.server.core.model.request.ListRequestOuterClass.ListRequest
 import io.github.vinicreis.domain.server.core.model.request.pollRequest
-import io.github.vinicreis.domain.server.core.model.request.postMultipleRequest
-import io.github.vinicreis.domain.server.core.model.request.postSingleRequest
+import io.github.vinicreis.domain.server.core.model.request.postRequest
 import io.github.vinicreis.domain.server.core.model.request.publishRequest
 import io.github.vinicreis.domain.server.core.model.request.removeRequest
 import io.github.vinicreis.domain.server.core.model.request.subscribeRequest
@@ -19,6 +18,7 @@ import io.grpc.ManagedChannelBuilder
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
 class QueueServiceClientGrpc(
@@ -45,15 +45,9 @@ class QueueServiceClientGrpc(
     override suspend fun post(queueId: String, vararg textMessage: TextMessage) = withContext(coroutineContext) {
         when (textMessage.size) {
             0 -> error("Message list cannot be empty")
-            1 -> server.postSingle(
-                request = postSingleRequest {
-                    this.queueId = queueId
-                    this.content = textMessage.first().asRemote
-                }
-            )
 
-            else -> server.postMultiple(
-                request = postMultipleRequest {
+            else -> server.post(
+                request = postRequest {
                     this.queueId = queueId
                     this.content.addAll(
                         textMessage.map(TextMessage::asRemote)
@@ -63,19 +57,24 @@ class QueueServiceClientGrpc(
         }.asDomain
     }
 
-    override fun subscribe(queueId: String): Flow<SubscriptionEvent> =
-        server.subscribe(subscribeRequest { this.queueId = queueId }).map { it.asDomain }
+    private fun QueueServiceGrpcKt.QueueServiceCoroutineStub.withTimeout(timeoutSeconds: Long?) = let {
+        timeoutSeconds?.let { seconds -> it.withDeadlineAfter(seconds, TimeUnit.SECONDS) } ?: it
+    }
+
+    override fun subscribe(queueId: String, timeoutSeconds: Long?): Flow<SubscriptionEvent> =
+        server
+            .withTimeout(timeoutSeconds)
+            .subscribe(request = subscribeRequest { this.queueId = queueId })
+            .map { it.asDomain }
 
     override suspend fun poll(
         queueId: String,
         timeoutSeconds: Long?
     ): QueueServiceClient.Response.Poll = withContext(coroutineContext) {
-        server.poll(
-            request = pollRequest {
-                this.queueId = queueId
-                timeoutSeconds?.also { this.timeoutSeconds = timeoutSeconds }
-            }
-        ).asDomain
+        server
+            .withTimeout(timeoutSeconds)
+            .poll(request = pollRequest { this.queueId = queueId })
+            .asDomain
     }
 
     override suspend fun remove(queueId: String): QueueServiceClient.Response.Remove =

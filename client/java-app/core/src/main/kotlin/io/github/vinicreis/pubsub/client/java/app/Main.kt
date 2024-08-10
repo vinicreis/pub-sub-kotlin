@@ -6,6 +6,7 @@ import io.github.vinicreis.pubsub.client.java.app.ui.cli.resource.StringResource
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.config.getServerInfo
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.menu.ClientMenuOptions
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.menu.selectMenuOption
+import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.common.getTimeout
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.common.withQueueList
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.list.print
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.poll.print
@@ -16,6 +17,7 @@ import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.publish.
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.publish.print
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.remove.print
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.subscribe.collectAndPrint
+import io.grpc.StatusException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,14 +46,23 @@ fun main() {
 
                     ClientMenuOptions.POLL_QUEUE -> service.withQueueList { queues ->
                         queues.selectQueue().also { selectedQueue ->
-                            service.poll(selectedQueue.id.toString()).print()
+                            try {
+                                service.poll(selectedQueue.id.toString(), getTimeout()).print()
+                            } catch (e: StatusException) {
+                                stopUntilKeyPressed("Polling cancelled by timeout. Press Enter to continue...")
+                            }
                         }
                     }
 
                     ClientMenuOptions.SUBSCRIBE_QUEUE -> service.withQueueList { queues ->
                         queues.selectQueue().also { selectedQueue ->
+                            val timeout = getTimeout() ?: Long.MAX_VALUE
                             val subscriberJob = uiScope.launch {
-                                service.subscribe(selectedQueue.id.toString()).collectAndPrint()
+                                try {
+                                    service.subscribe(selectedQueue.id.toString(), timeout).collectAndPrint()
+                                } catch (e: StatusException) {
+                                    stopUntilKeyPressed("Subscription cancelled by timeout. Press Enter to continue...")
+                                }
                             }
 
                             stopUntilKeyPressed(StringResource.Message.Input.PRESS_ENTER_TO_STOP_SUBSCRIPTION)

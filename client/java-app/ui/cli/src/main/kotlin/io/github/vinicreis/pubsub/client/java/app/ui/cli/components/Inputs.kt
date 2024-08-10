@@ -24,7 +24,7 @@ internal fun selectOption(message: String, options: List<String>, defaultIndex: 
     println(message)
 
     options.forEachIndexed { index, option ->
-        print("${index + 1} - $option")
+        print("\t${index + 1} - $option")
         if(defaultIndex == index) {
             print(" [DEFAULT]")
         }

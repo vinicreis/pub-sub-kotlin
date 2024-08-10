@@ -4,8 +4,7 @@ import io.github.vinicreis.domain.server.core.model.data.ResultOuterClass
 import io.github.vinicreis.domain.server.core.model.data.SubscriptionEventOuterClass.SubscriptionEvent
 import io.github.vinicreis.domain.server.core.model.request.ListRequestOuterClass.ListRequest
 import io.github.vinicreis.domain.server.core.model.request.PollRequestOuterClass.PollRequest
-import io.github.vinicreis.domain.server.core.model.request.PostMultipleRequestOuterClass.PostMultipleRequest
-import io.github.vinicreis.domain.server.core.model.request.PostSingleRequestOuterClass.PostSingleRequest
+import io.github.vinicreis.domain.server.core.model.request.PostRequestOuterClass.PostRequest
 import io.github.vinicreis.domain.server.core.model.request.PublishRequestOuterClass.PublishRequest
 import io.github.vinicreis.domain.server.core.model.request.RemoveRequestOuterClass.RemoveRequest
 import io.github.vinicreis.domain.server.core.model.request.SubscribeRequestOuterClass.SubscribeRequest
@@ -34,7 +33,6 @@ import io.github.vinicreis.pubsub.server.data.repository.TextMessageRepository
 import io.grpc.Grpc
 import io.grpc.InsecureServerCredentials
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -43,10 +41,8 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.withTimeout
 import java.util.logging.Logger
 import kotlin.coroutines.CoroutineContext
-import kotlin.time.Duration.Companion.seconds
 
 class QueueServiceGrpc(
     private val port: Int,
@@ -174,39 +170,7 @@ class QueueServiceGrpc(
         }
     }
 
-    override suspend fun postSingle(request: PostSingleRequest): PostResponse {
-        return try {
-            queueRepository.getById(request.queueId.asUuid).let { result ->
-                when (result) {
-                    QueueRepository.Result.GetById.NotFound -> postResponse {
-                        this.result = ResultOuterClass.Result.ERROR
-                        message = "Queue ${request.queueId} not found"
-                    }
-
-                    is QueueRepository.Result.GetById.Error -> postResponse {
-                        this.result = ResultOuterClass.Result.ERROR
-                        message = result.e.message ?: "Something went wrong..."
-                    }
-
-                    is QueueRepository.Result.GetById.Success ->
-                        textMessageRepository.add(
-                            queue = result.queue,
-                            textMessages = listOf(request.content.asDomain(result.queue))
-                        ).toPostResponse(result.queue)
-                }
-            }
-        } catch (e: Throwable) {
-            logger.severe("Failed to process publish single request: $e")
-            e.printStackTrace()
-
-            postResponse {
-                result = ResultOuterClass.Result.ERROR
-                message = "Something went wrong..."
-            }
-        }
-    }
-
-    override suspend fun postMultiple(request: PostMultipleRequest): PostResponse {
+    override suspend fun post(request: PostRequest): PostResponse {
         return try {
             queueRepository.getById(request.queueId.asUuid).let { result ->
                 when (result) {
@@ -326,36 +290,16 @@ class QueueServiceGrpc(
                         message = result.e.message ?: "Something went wrong..."
                     }
 
-                    is QueueRepository.Result.GetById.Success -> {
-                        val timeout = request.timeoutSeconds.takeIf { it > 0 } ?: Long.MAX_VALUE
-
-                        try {
-                            withTimeout(timeout.seconds) {
-                                subscriberManagerService.subscribe(result.queue)
-                                    .filterIsInstance<TextMessageReceivedEvent>()
-                                    .first()
-                                    .let { event ->
-                                        pollResponse {
-                                            this.result = ResultOuterClass.Result.SUCCESS
-                                            this.queue = result.queue.asRemote
-                                            this.content = event.textMessage.asRemote
-                                        }
-                                    }
-                            }
-                        } catch (e: NoSuchElementException) {
+                    is QueueRepository.Result.GetById.Success -> subscriberManagerService.subscribe(result.queue)
+                        .filterIsInstance<TextMessageReceivedEvent>()
+                        .first()
+                        .let { event ->
                             pollResponse {
-                                this.result = ResultOuterClass.Result.ERROR
+                                this.result = ResultOuterClass.Result.SUCCESS
                                 this.queue = result.queue.asRemote
-                                this.message = "Poll last message timeout"
-                            }
-                        } catch (e: TimeoutCancellationException) {
-                            pollResponse {
-                                this.result = ResultOuterClass.Result.ERROR
-                                this.queue = result.queue.asRemote
-                                this.message = "Poll last message timeout"
+                                this.content = event.textMessage.asRemote
                             }
                         }
-                    }
                 }
             }
         } catch (e: Throwable) {

@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Logger
@@ -41,7 +40,6 @@ class SubscriberManagerServiceImpl(
         subscribers.getOrPut(queue.id) { mutableListOf() }.add(this)
 
         queue.launchCollection()
-        yield()
 
         awaitClose {
             subscribers[queue.id]?.remove(this)

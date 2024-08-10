@@ -4,7 +4,7 @@ import "proto/io/github/vinicreis/pubsub/server/core/model/data/text_message.pro
 
 option java_package = "io.github.vinicreis.domain.server.core.model.request";
 
-message PostMultipleRequest {
+message PostRequest {
   string queueId = 1;
   repeated TextMessage content = 2;
 }

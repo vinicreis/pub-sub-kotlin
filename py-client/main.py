@@ -8,7 +8,7 @@ from core.domain.queue import Queue
 from core.domain.text_message import TextMessage
 from core.grpc.client_grpc import ClientGrpc
 from core.service.model.response import Response
-from ui.cli.component.components import select_from_list, read_text, read_int_or_none, select_queue
+from ui.cli.component.components import select_from_list, read_int_or_none, select_queue, read_multiple_texts
 from ui.cli.menu.menu import MenuOption
 
 DEFAULT_SERVER_ADDRESS = "localhost"
@@ -53,8 +53,8 @@ if __name__ == '__main__':
                 response = client.publish(Queue(code=code, name=name, queue_type=queue_type))
             elif selected_option == MenuOption.POST_MESSAGE:
                 queue = select_queue(client)
-                text_message = TextMessage(read_text("Enter the message content: "))
-                response = client.post(queue, [text_message])
+                text_messages = list(map(TextMessage, read_multiple_texts("Enter the message content: ")))
+                response = client.post(queue, text_messages)
 
                 if response.result == Response.Result.FAIL:
                     print(f"Failed to post message: {response.error}")

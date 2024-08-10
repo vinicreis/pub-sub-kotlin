@@ -29,6 +29,18 @@ def read_text(prompt: str) -> str:
     return input(prompt)
 
 
+def read_multiple_texts(prompt: str) -> list[str]:
+    texts = []
+    while True:
+        text = input(prompt)
+        if not text:
+            break
+
+        texts.append(text)
+
+    return texts
+
+
 def read_int(prompt: str) -> int:
     return int(input(prompt))
 

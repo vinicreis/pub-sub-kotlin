@@ -20,6 +20,10 @@
     O projeto é uma implementação principal em Kotlin (cliente secundário em Python) que utiliza o Gradle como compilador e gerenciador de dependências.
     A arquitetura de cada componente da aplicação é multi-módulos, seguindo ao máximo uma arquitetura limpa e orientada a domínios.
 
+    \section{Vídeo}\label{sec:video}
+
+    O link para o vídeo de apresentação e demonstração pode ser encontrado \href{https://youtu.be/zc2pk0FqJRg}{neste link}.
+
     \section{Como executar}\label{sec:como-executar}
 
     Todos módulos neste projeto podem ser executados através do Makefile na raiz do projeto, cada um com seu target.
@@ -31,8 +35,6 @@
         \item Cliente Python: \textit{make py\_client}
     \end{itemize}
 
-    Note que o servidor deve ser executado antes dos clientes para o correto funcionamento dos clientes.
-
     \section{Implementação}\label{sec:implementacao}
 
     Da forma mais direta possível, veja a função das principais implementações da aplicação (note que removemos da referência o início comum entre elas, que é o pacote \textit{io.github.vinicreis.pubsub.server}):
@@ -40,16 +42,16 @@
     \subsection{Servidor}\label{subsec:server}
 
     \begin{itemize}
-        \item \textit{core.grpc.service.QueueServiceGrpc}: Ponto de entrada do serviço gRPC. Implementação de classes geradas pela biblioteca oficial do gRPC, que delega a essa classe o que é feito em cada operação do servidor.
+        \item \textit{QueueServiceGrpc}: Ponto de entrada do serviço gRPC. Implementação de classes geradas pela biblioteca oficial do gRPC, que delega a essa classe o que é feito em cada operação do servidor.
 
-        \item \textit{core.data.database.postgres.repository.QueueRepositoryDatabase}: repositório de filas ativas armazenadas num banco de dados.
+        \item \textit{QueueRepositoryDatabase}: repositório de filas ativas armazenadas num banco de dados.
 
-        \item \textit{core.data.database.postgres.repository.TextMessageRepositoryDatabase}: repositório de mensagens pendentes armazenadas num banco de dados.
+        \item \textit{TextMessageRepositoryDatabase}: repositório de mensagens pendentes armazenadas num banco de dados.
 
-        \item \textit{core.data.database.postgres.repository.EventRepositoryDatabase}: repositórios de eventos pendentes, como a criação e remoção de filas e mensagens postadas.
+        \item \textit{EventRepositoryDatabase}: repositórios de eventos pendentes, como a criação e remoção de filas e mensagens postadas.
         É válido destacar que, visando manter a máxima consistências, os eventos são salvos na mesma transação da operação que gera o evento em si.
 
-        \item \textit{core.grpc.service.SubscriberManagerServiceImpl}: serviço de gerenciamento de inscrições.
+        \item \textit{SubscriberManagerServiceImpl}: serviço de gerenciamento de inscrições.
         Responsável por monitorar os eventos ocorridos no repositório de eventos e gerenciar filas de acordo com seu tipo, selecionando quais inscritos devem ser notificados de dados eventos.
 
     \end{itemize}

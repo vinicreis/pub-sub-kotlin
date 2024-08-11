@@ -65,7 +65,13 @@ py_client: py_client_build
 	@echo "Running Python client..."
 	@python $(PY_CLIENT_ROOT_PATH)/main.py
 
-py_client_build: py_client_clean
+py_client_setup: py_client_clean
+	@echo "Setting up Python virtual environment..."
+	@python -m venv $(PY_CLIENT_ROOT_PATH)/venv && source $(PY_CLIENT_ROOT_PATH)/venv/bin/activate
+	@echo "Installing dependencies"
+	@pip install -r $(PY_CLIENT_ROOT_PATH)/requirements.txt
+
+py_client_build: py_client_setup
 	@echo "Generating gRPC Python files..."
 	@mkdir -p $(PY_CLIENT_GENERATED_PATH)
 	@python -m grpc_tools.protoc -I$(PROTOS_ROOT_PATH)=$(PROTOS_PATH) \
@@ -78,3 +84,5 @@ py_client_build: py_client_clean
 py_client_clean:
 	@echo "Removing previous generated gRPC Python files..."
 	@rm -rf $(PY_CLIENT_GENERATED_PATH)
+	@echo "Running Python virtual environment..."
+	@rm -rf $(PY_CLIENT_ROOT_PATH)/venv

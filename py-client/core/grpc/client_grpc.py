@@ -31,14 +31,14 @@ class ClientGrpc(Client):
     def post(self, queue: Queue, text_messages: list) -> Response:
         remote_text_messages = list(map(text_message_to_remote, text_messages))
 
-        if len(text_messages) >= 1:
+        if len(text_messages) < 1:
+            raise ValueError("No messages to post")
+        else:
             return post_response_to_domain(
                 self.stub.post(
                     PostRequest(queueId=queue.guid, content=remote_text_messages)
                 )
             )
-        else:
-            raise ValueError("No messages to post")
 
     def poll(self, queue: Queue, timeout_seconds: int | None = None) -> Response:
         return poll_response_to_domain(self.stub.poll(PollRequest(queueId=queue.guid), timeout=timeout_seconds))

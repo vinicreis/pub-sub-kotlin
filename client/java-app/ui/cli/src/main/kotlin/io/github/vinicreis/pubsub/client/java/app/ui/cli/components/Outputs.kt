@@ -2,7 +2,7 @@ package io.github.vinicreis.pubsub.client.java.app.ui.cli.components
 
 import io.github.vinicreis.pubsub.client.java.app.ui.cli.resource.StringResource
 
-fun printDivider() {
+internal fun printDivider() {
     println(StringResource.ViewComponent.DIVIDER)
 }
 
@@ -20,4 +20,8 @@ fun <E> List<E>.print(
         }
     }
     printDivider()
+}
+
+internal fun clear() {
+    print("\u001b[H\u001b[2J")
 }

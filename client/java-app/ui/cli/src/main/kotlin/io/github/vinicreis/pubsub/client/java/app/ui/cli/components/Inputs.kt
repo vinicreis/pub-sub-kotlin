@@ -43,7 +43,8 @@ internal fun <T> T?.notNullable(lazyMessage: (() -> String)?): T {
     return this
 }
 
-fun stopUntilKeyPressed(message: String) {
+fun stopUntilKeyPressed(message: String, clear: Boolean = true) {
+    if(clear) clear()
     println(message)
     readln()
 }

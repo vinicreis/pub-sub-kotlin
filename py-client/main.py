@@ -8,7 +8,8 @@ from core.domain.queue import Queue
 from core.domain.text_message import TextMessage
 from core.grpc.client_grpc import ClientGrpc
 from core.service.model.response import Response
-from ui.cli.component.components import select_from_list, read_int_or_none, select_queue, read_multiple_texts
+from ui.cli.component.components import select_from_list, read_int_or_none, select_queue, read_multiple_texts, clear, \
+    divider
 from ui.cli.menu.menu import MenuOption
 
 DEFAULT_SERVER_ADDRESS = "localhost"
@@ -30,35 +31,60 @@ if __name__ == '__main__':
     port = args.port if args.port is not None else input(f"Enter the server port [{DEFAULT_SERVER_PORT}]: ")
     port = port if port else DEFAULT_SERVER_PORT
 
+    clear()
     print(f"Connecting to server on {address}:{port}...")
 
     client = ClientGrpc(address, port)
 
     while True:
         try:
+            divider()
             selected_option = select_from_list(list(MenuOption), MenuOption.EXIT.value.numerator)
 
             if selected_option == MenuOption.LIST_QUEUES:
                 response = client.list()
-                if response.result == Response.Result.SUCCESS:
-                    print("Queues:")
-                    for queue in response.data:
-                        print(queue)
-                else:
+                if response.result == Response.Result.FAIL:
                     print(f"Failed to list queues: {response.error}")
+                elif response.result == Response.Result.SUCCESS:
+                    clear()
+                    print("Queues:")
+                    divider()
+                    for i, queue in enumerate(response.data):
+                        print(queue)
+                        if i < len(response.data) - 1:
+                            divider()
+                else:
+                    print(f"Unknown response: {response}")
             elif selected_option == MenuOption.PUBLISH_QUEUE:
                 code = input("Enter the queue code: ")
                 name = input("Enter the queue readable name: ")
                 queue_type = select_from_list(list(Queue.Type), message="Select a queue type")
                 response = client.publish(Queue(code=code, name=name, queue_type=queue_type))
+
+                if response.result == Response.Result.FAIL:
+                    print(f"Failed to post message: {response.error}")
+                elif response.result == Response.Result.SUCCESS:
+                    clear()
+                    print("Queue published!")
+                else:
+                    print(f"Unknown response: {response}")
             elif selected_option == MenuOption.POST_MESSAGE:
                 queue = select_queue(client)
-                text_messages = list(map(TextMessage, read_multiple_texts("Enter the message content: ")))
+                text_messages = list(
+                    map(
+                        TextMessage,
+                        read_multiple_texts(
+                            pre_prompt="Enter messages to be sent and leave it blank to finish",
+                            prompt="Enter the message content: "
+                        )
+                    )
+                )
                 response = client.post(queue, text_messages)
 
                 if response.result == Response.Result.FAIL:
                     print(f"Failed to post message: {response.error}")
-                else:
+                elif response.result == Response.Result.SUCCESS:
+                    clear()
                     print("Message posted!")
             elif selected_option == MenuOption.POLL_QUEUE:
                 queue = select_queue(client)
@@ -67,13 +93,17 @@ if __name__ == '__main__':
 
                 if response.result == Response.Result.FAIL:
                     print(f"Failed to post message: {response.error}")
-                else:
+                elif response.result == Response.Result.SUCCESS:
+                    clear()
                     print(f"Polled message: {response.data}")
+                else:
+                    print(f"Unknown response: {response}")
             elif selected_option == MenuOption.SUBSCRIBE_QUEUE:
                 selected_queue = select_queue(client)
                 timeout_seconds = read_int_or_none("Enter a timeout in seconds [None]: ")
 
                 try:
+                    clear()
                     print("Press Ctrl+C to stop the subscription")
 
                     for subscription_event in client.subscribe(selected_queue, timeout_seconds):
@@ -94,8 +124,11 @@ if __name__ == '__main__':
 
                 if response.result == Response.Result.FAIL:
                     print(f"Failed to post message: {response.error}")
-                else:
+                elif response.result == Response.Result.SUCCESS:
+                    clear()
                     print(f"Removed queue: {response.data}")
+                else:
+                    print(f"Unknown response: {response}")
             elif selected_option == MenuOption.EXIT:
                 print("Exiting...")
                 exit(0)

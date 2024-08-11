@@ -20,8 +20,10 @@ import io.github.vinicreis.pubsub.client.java.app.ui.cli.step.operation.subscrib
 import io.grpc.StatusException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlin.time.Duration.Companion.seconds
 
 fun main() {
     var notFinished = true
@@ -49,7 +51,7 @@ fun main() {
                             try {
                                 service.poll(selectedQueue.id.toString(), getTimeout()).print()
                             } catch (e: StatusException) {
-                                stopUntilKeyPressed("Polling cancelled by timeout. Press Enter to continue...")
+                                stopUntilKeyPressed("Polling cancelled by timeout. Press Enter to continue...", false)
                             }
                         }
                     }
@@ -59,9 +61,10 @@ fun main() {
                             val timeout = getTimeout() ?: Long.MAX_VALUE
                             val subscriberJob = uiScope.launch {
                                 try {
+                                    delay(1.seconds)
                                     service.subscribe(selectedQueue.id.toString(), timeout).collectAndPrint()
                                 } catch (e: StatusException) {
-                                    stopUntilKeyPressed("Subscription cancelled by timeout. Press Enter to continue...")
+                                    stopUntilKeyPressed("Subscription cancelled by timeout. Press Enter to continue...", false)
                                 }
                             }
 

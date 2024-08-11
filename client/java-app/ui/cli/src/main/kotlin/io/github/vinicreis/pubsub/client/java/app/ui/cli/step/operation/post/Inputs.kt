@@ -9,7 +9,7 @@ import io.github.vinicreis.pubsub.client.java.app.ui.cli.resource.StringResource
 fun List<Queue>.selectQueue(): Queue {
     return selectOption(
         message = StringResource.Queue.Input.Message.SELECT_AVAILABLE_QUEUES,
-        options = this.map { it.name },
+        options = map { it.name },
     )?.let(::get) ?: error("Queue not selected")
 }
 

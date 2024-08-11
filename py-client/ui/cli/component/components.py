@@ -1,6 +1,17 @@
+from os import get_terminal_size
+
 from core.domain.queue import Queue
 from core.service.client import Client
 from core.service.model.response import Response
+
+
+def clear():
+    print(chr(27) + "[H" + chr(27) + "[2J", end="")
+
+
+def divider():
+    width = get_terminal_size().columns
+    print('-' * width)
 
 
 def select_from_list[T](options: list[T], default_index: int = 0, message: str = "Select an option") -> T:
@@ -20,6 +31,7 @@ def select_from_list[T](options: list[T], default_index: int = 0, message: str =
     if selected_option < 0 or selected_option >= len(options):
         raise ValueError("Invalid option")
 
+    clear()
     print("Selected: ", options[selected_option])
 
     return options[selected_option]
@@ -29,8 +41,10 @@ def read_text(prompt: str) -> str:
     return input(prompt)
 
 
-def read_multiple_texts(prompt: str) -> list[str]:
+def read_multiple_texts(pre_prompt: str, prompt: str) -> list[str]:
     texts = []
+
+    print(pre_prompt)
     while True:
         text = input(prompt)
         if not text:

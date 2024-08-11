@@ -1,4 +1,5 @@
 ENV_FILE_NAME=sample.env
+CLIENT_OUT_PATH=client/out
 PY_CLIENT_ROOT_PATH=py-client
 PY_CLIENT_GENERATED_PATH=$(PY_CLIENT_ROOT_PATH)/proto
 PROTOS_PATH=protos/src/main/proto/proto/io/github/vinicreis/pubsub/server/core
@@ -36,21 +37,22 @@ server_clean:
                   server:core:test:clean \
                   server:java-app:core:clean
 
-client: client_build
-	@bin/pub-sub-client/bin/pub-sub-client
+client:
+	@$(CLIENT_OUT_PATH)/bin/pub-sub-client
 
 client_build: client_clean
 	@echo "Building client..."
 	@./gradlew -q client:java-app:core:assembleDist
 	@echo "Moving ang unpacking client executable..."
-	@mkdir -p bin
-	@cp client/java-app/core/build/distributions/*.tar bin/client.tar
-	@tar -xf bin/client.tar -C bin
-	@rm bin/*.tar
-	@mv bin/pub-sub-client* bin/pub-sub-client
+	@mkdir -p $(CLIENT_OUT_PATH)
+	@cp client/java-app/core/build/distributions/*.tar $(CLIENT_OUT_PATH)/client.tar
+	@tar -xf $(CLIENT_OUT_PATH)/client.tar -C $(CLIENT_OUT_PATH)
+	@rm $(CLIENT_OUT_PATH)/*.tar
+	@mv -f $(CLIENT_OUT_PATH)/pub-sub-client-*/* $(CLIENT_OUT_PATH)
+	@rmdir $(CLIENT_OUT_PATH)/pub-sub-client-*
 
 client_clean:
-	@rm -rf bin
+	@rm -rf $(CLIENT_OUT_PATH)
 	@echo "Cleaning up client Gradle projects"
 	@./gradlew -q client:core:domain:clean \
 				  client:core:service:clean \

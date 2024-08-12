@@ -1,5 +1,9 @@
 # Publish/Subscribe Service
 
+## Instruções de entrega
+
+O vídeo pode ser acessado [aqui](https://youtu.be/zc2pk0FqJRg) e o relatório encontra-se no caminho `docs/report.pdf`.
+
 ## Introdução
 
 Este trabalho visa a implementação de um serviço de filas de mensagens utilizando o protocolo gRPC para comunicação

@@ -76,14 +76,18 @@ e execução de testes, os comandos abaixo estão disponíveis:
 - Cliente Kotlin:
     - Compilação:
         - ```shell
-          make server_build
+          make client_build
           ```
     - Limpeza de arquivos:
         - ```shell
-          make server_clean
+          make client_clean
           ```
 
 - Cliente Python:
+    - Instalação de dependências:
+        - ```shell
+          make py_client_setup
+          ```
     - Geração de arquivos:
         - ```shell
           make py_client_build
@@ -213,7 +217,3 @@ Os testes foram implementados utilizando o framework JUnit 5 e bibliotecas como 
 de corrotinas, entre outros pacotes. Para testes que envolvem o banco de dados, onde é possivel, são utilizados
 _mocks_ das classes originais com o comportamento esperado. Se não é possível utilizar _mocks_, é utilizado 
 um banco de dados em memória persistido apenas durante do ciclo de vida da JVM.
-
-## Referências
-
-- 

@@ -38,7 +38,12 @@ server_clean:
                   server:java-app:core:clean
 
 client:
-	@$(CLIENT_OUT_PATH)/bin/pub-sub-client
+	@if [ -e "$(CLIENT_OUT_PATH)/bin/pub-sub-client" ]; then \
+		$(CLIENT_OUT_PATH)/bin/pub-sub-client; \
+	else \
+		make client_build; \
+		$(CLIENT_OUT_PATH)/bin/pub-sub-client; \
+	fi
 
 client_build: client_clean
 	@echo "Building client..."

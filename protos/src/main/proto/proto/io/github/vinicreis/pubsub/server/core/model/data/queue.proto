@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option java_package = "io.github.vinicreis.domain.server.core.model.data";
+option java_package = "io.github.vinicreis.pubsub.server.model.data";
 
 message Queue {
   optional string id = 1;

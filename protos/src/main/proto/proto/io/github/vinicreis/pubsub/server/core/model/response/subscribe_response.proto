@@ -4,7 +4,7 @@ import "proto/io/github/vinicreis/pubsub/server/core/model/data/queue.proto";
 import "proto/io/github/vinicreis/pubsub/server/core/model/data/subscription_event.proto";
 import "proto/io/github/vinicreis/pubsub/server/core/model/data/text_message.proto";
 
-option java_package = "io.github.vinicreis.domain.server.core.model.response";
+option java_package = "io.github.vinicreis.pubsub.server.model.response";
 
 message SubscribeResponse {
   SubscriptionEvent event = 1;

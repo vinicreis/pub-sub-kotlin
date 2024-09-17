@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option java_package = "io.github.vinicreis.domain.server.core.model.request";
+option java_package = "io.github.vinicreis.pubsub.server.model.request";
 
 message PollRequest {
   string queueId = 1;

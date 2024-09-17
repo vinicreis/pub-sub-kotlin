@@ -1,12 +1,12 @@
 package io.github.vinicreis.pubsub.server.core.grpc.mapper
 
-import io.github.vinicreis.domain.server.core.model.data.textMessage
 import io.github.vinicreis.pubsub.server.core.test.extension.asTextMessage
 import io.github.vinicreis.pubsub.server.core.test.fixture.QueueFixture
 import io.github.vinicreis.pubsub.server.core.test.fixture.TextMessageFixture
+import io.github.vinicreis.pubsub.server.model.data.textMessage
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import io.github.vinicreis.domain.server.core.model.data.TextMessageOuterClass.TextMessage as RemoteTextMessage
+import io.github.vinicreis.pubsub.server.model.data.TextMessageOuterClass.TextMessage as RemoteTextMessage
 
 class TextMessageMapperTests {
     @Test

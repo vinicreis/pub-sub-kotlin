@@ -1,12 +1,5 @@
 package io.github.vinicreis.pubsub.client.core.grpc.service
 
-import io.github.vinicreis.domain.server.core.model.request.ListRequestOuterClass.ListRequest
-import io.github.vinicreis.domain.server.core.model.request.pollRequest
-import io.github.vinicreis.domain.server.core.model.request.postRequest
-import io.github.vinicreis.domain.server.core.model.request.publishRequest
-import io.github.vinicreis.domain.server.core.model.request.removeRequest
-import io.github.vinicreis.domain.server.core.model.request.subscribeRequest
-import io.github.vinicreis.domain.server.core.service.QueueServiceGrpcKt
 import io.github.vinicreis.pubsub.client.core.grpc.mapper.asDomain
 import io.github.vinicreis.pubsub.client.core.grpc.mapper.asRemote
 import io.github.vinicreis.pubsub.client.core.model.Queue
@@ -14,6 +7,13 @@ import io.github.vinicreis.pubsub.client.core.model.ServerInfo
 import io.github.vinicreis.pubsub.client.core.model.SubscriptionEvent
 import io.github.vinicreis.pubsub.client.core.model.TextMessage
 import io.github.vinicreis.pubsub.client.core.service.QueueServiceClient
+import io.github.vinicreis.pubsub.server.model.request.ListRequestOuterClass.ListRequest
+import io.github.vinicreis.pubsub.server.model.request.pollRequest
+import io.github.vinicreis.pubsub.server.model.request.postRequest
+import io.github.vinicreis.pubsub.server.model.request.publishRequest
+import io.github.vinicreis.pubsub.server.model.request.removeRequest
+import io.github.vinicreis.pubsub.server.model.request.subscribeRequest
+import io.github.vinicreis.pubsub.server.service.QueueServiceGrpcKt
 import io.grpc.ManagedChannelBuilder
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

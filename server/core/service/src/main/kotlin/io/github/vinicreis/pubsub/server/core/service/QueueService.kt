@@ -1,15 +1,15 @@
 package io.github.vinicreis.pubsub.server.core.service
 
-import io.github.vinicreis.domain.server.core.model.request.ListRequestOuterClass.ListRequest
-import io.github.vinicreis.domain.server.core.model.request.PostRequestOuterClass.PostRequest
-import io.github.vinicreis.domain.server.core.model.request.PublishRequestOuterClass.PublishRequest
-import io.github.vinicreis.domain.server.core.model.request.RemoveRequestOuterClass.RemoveRequest
-import io.github.vinicreis.domain.server.core.model.request.SubscribeRequestOuterClass
-import io.github.vinicreis.domain.server.core.model.response.ListResponseOuterClass.ListResponse
-import io.github.vinicreis.domain.server.core.model.response.PostResponseOuterClass.PostResponse
-import io.github.vinicreis.domain.server.core.model.response.PublishResponseOuterClass.PublishResponse
-import io.github.vinicreis.domain.server.core.model.response.RemoveResponseOuterClass.RemoveResponse
-import io.github.vinicreis.domain.server.core.model.response.SubscribeResponseOuterClass
+import io.github.vinicreis.pubsub.server.model.request.ListRequestOuterClass.ListRequest
+import io.github.vinicreis.pubsub.server.model.request.PostRequestOuterClass.PostRequest
+import io.github.vinicreis.pubsub.server.model.request.PublishRequestOuterClass.PublishRequest
+import io.github.vinicreis.pubsub.server.model.request.RemoveRequestOuterClass.RemoveRequest
+import io.github.vinicreis.pubsub.server.model.request.SubscribeRequestOuterClass
+import io.github.vinicreis.pubsub.server.model.response.ListResponseOuterClass.ListResponse
+import io.github.vinicreis.pubsub.server.model.response.PostResponseOuterClass.PostResponse
+import io.github.vinicreis.pubsub.server.model.response.PublishResponseOuterClass.PublishResponse
+import io.github.vinicreis.pubsub.server.model.response.RemoveResponseOuterClass.RemoveResponse
+import io.github.vinicreis.pubsub.server.model.response.SubscribeResponseOuterClass
 import kotlinx.coroutines.flow.Flow
 
 interface QueueService {

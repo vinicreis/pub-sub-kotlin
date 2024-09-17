@@ -1,10 +1,10 @@
 package io.github.vinicreis.pubsub.server.core.grpc.mapper
 
-import io.github.vinicreis.domain.server.core.model.data.textMessage
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
 import io.github.vinicreis.pubsub.server.core.model.data.TextMessage
+import io.github.vinicreis.pubsub.server.model.data.textMessage
 import java.util.*
-import io.github.vinicreis.domain.server.core.model.data.TextMessageOuterClass.TextMessage as RemoteTextMessage
+import io.github.vinicreis.pubsub.server.model.data.TextMessageOuterClass.TextMessage as RemoteTextMessage
 
 internal val TextMessage.asRemote: RemoteTextMessage
     get() = textMessage {

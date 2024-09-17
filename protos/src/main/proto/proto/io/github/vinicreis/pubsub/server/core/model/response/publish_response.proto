@@ -3,7 +3,7 @@ syntax = "proto3";
 import "proto/io/github/vinicreis/pubsub/server/core/model/data/result.proto";
 import "proto/io/github/vinicreis/pubsub/server/core/model/data/queue.proto";
 
-option java_package = "io.github.vinicreis.domain.server.core.model.response";
+option java_package = "io.github.vinicreis.pubsub.server.model.response";
 
 message PublishResponse {
   Result result = 1;

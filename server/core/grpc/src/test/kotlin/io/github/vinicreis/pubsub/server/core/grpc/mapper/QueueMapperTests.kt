@@ -1,13 +1,13 @@
 package io.github.vinicreis.pubsub.server.core.grpc.mapper
 
-import io.github.vinicreis.domain.server.core.model.data.queue
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
 import io.github.vinicreis.pubsub.server.core.test.fixture.QueueFixture
+import io.github.vinicreis.pubsub.server.model.data.queue
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.UUID
-import io.github.vinicreis.domain.server.core.model.data.QueueOuterClass.Queue as RemoteQueue
+import io.github.vinicreis.pubsub.server.model.data.QueueOuterClass.Queue as RemoteQueue
 
 class QueueMapperTests {
     @Test

@@ -1,16 +1,16 @@
 package io.github.vinicreis.pubsub.client.core.grpc.mapper
 
-import io.github.vinicreis.domain.server.core.model.data.ResultOuterClass
-import io.github.vinicreis.domain.server.core.model.response.ListResponseOuterClass.ListResponse
-import io.github.vinicreis.domain.server.core.model.response.PollResponseOuterClass.PollResponse
-import io.github.vinicreis.domain.server.core.model.response.PostResponseOuterClass.PostResponse
-import io.github.vinicreis.domain.server.core.model.response.PublishResponseOuterClass.PublishResponse
-import io.github.vinicreis.domain.server.core.model.response.RemoveResponseOuterClass.RemoveResponse
-import io.github.vinicreis.domain.server.core.model.response.SubscribeResponseOuterClass.SubscribeResponse
 import io.github.vinicreis.pubsub.client.core.grpc.model.ServerResult
 import io.github.vinicreis.pubsub.client.core.model.SubscriptionEvent
 import io.github.vinicreis.pubsub.client.core.service.QueueServiceClient
-import io.github.vinicreis.domain.server.core.model.data.SubscriptionEventOuterClass.SubscriptionEvent as RemoteSubscriptionEvent
+import io.github.vinicreis.pubsub.server.model.data.ResultOuterClass
+import io.github.vinicreis.pubsub.server.model.response.ListResponseOuterClass.ListResponse
+import io.github.vinicreis.pubsub.server.model.response.PollResponseOuterClass.PollResponse
+import io.github.vinicreis.pubsub.server.model.response.PostResponseOuterClass.PostResponse
+import io.github.vinicreis.pubsub.server.model.response.PublishResponseOuterClass.PublishResponse
+import io.github.vinicreis.pubsub.server.model.response.RemoveResponseOuterClass.RemoveResponse
+import io.github.vinicreis.pubsub.server.model.response.SubscribeResponseOuterClass.SubscribeResponse
+import io.github.vinicreis.pubsub.server.model.data.SubscriptionEventOuterClass.SubscriptionEvent as RemoteSubscriptionEvent
 
 internal val ResultOuterClass.Result?.asDomain: ServerResult
     get() = when(this) {

@@ -13,7 +13,7 @@ import "proto/io/github/vinicreis/pubsub/server/core/model/response/subscribe_re
 import "proto/io/github/vinicreis/pubsub/server/core/model/request/poll_request.proto";
 import "proto/io/github/vinicreis/pubsub/server/core/model/response/poll_response.proto";
 
-option java_package = "io.github.vinicreis.domain.server.core.service";
+option java_package = "io.github.vinicreis.pubsub.server.service";
 
 service QueueService {
   rpc publish (PublishRequest) returns (PublishResponse) {}

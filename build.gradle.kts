@@ -1,3 +1,8 @@
+plugins {
+    base
+    `jacoco-report-aggregation`
+}
+
 allprojects {
     afterEvaluate {
         group = "io.github.vinicreis.pubsub"
@@ -5,13 +10,19 @@ allprojects {
     }
 }
 
-tasks.register("clean") {
-    group = "build"
-    description = "Deletes all build directory"
+dependencies {
+    jacocoAggregation(projects.server.javaApp.core)
+    jacocoAggregation(projects.client.javaApp.core)
+}
 
-    subprojects.forEach {
-        it.tasks.findByName("clean")?.let { cleanTask ->
-            dependsOn(cleanTask)
+reporting {
+    reports {
+        val testCodeCoverageReport by creating(JacocoCoverageReport::class) {
+            testType = TestSuiteType.UNIT_TEST
         }
     }
+}
+
+tasks.check {
+    dependsOn(tasks.named<JacocoReport>("testCodeCoverageReport"))
 }

@@ -1,13 +1,5 @@
 package io.github.vinicreis.pubsub.server.core.grpc.service
 
-import io.github.vinicreis.domain.server.core.model.data.ResultOuterClass
-import io.github.vinicreis.domain.server.core.model.request.listRequest
-import io.github.vinicreis.domain.server.core.model.request.pollRequest
-import io.github.vinicreis.domain.server.core.model.request.postRequest
-import io.github.vinicreis.domain.server.core.model.request.publishRequest
-import io.github.vinicreis.domain.server.core.model.request.removeRequest
-import io.github.vinicreis.domain.server.core.model.request.subscribeRequest
-import io.github.vinicreis.domain.server.core.model.response.SubscribeResponseOuterClass.SubscribeResponse
 import io.github.vinicreis.pubsub.server.core.grpc.extension.asRemoteMessage
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asDomain
 import io.github.vinicreis.pubsub.server.core.grpc.mapper.asRemote
@@ -21,6 +13,14 @@ import io.github.vinicreis.pubsub.server.core.test.fixture.QueueFixture
 import io.github.vinicreis.pubsub.server.core.test.fixture.TextMessageFixture
 import io.github.vinicreis.pubsub.server.data.repository.QueueRepository
 import io.github.vinicreis.pubsub.server.data.repository.TextMessageRepository
+import io.github.vinicreis.pubsub.server.model.data.ResultOuterClass
+import io.github.vinicreis.pubsub.server.model.request.listRequest
+import io.github.vinicreis.pubsub.server.model.request.pollRequest
+import io.github.vinicreis.pubsub.server.model.request.postRequest
+import io.github.vinicreis.pubsub.server.model.request.publishRequest
+import io.github.vinicreis.pubsub.server.model.request.removeRequest
+import io.github.vinicreis.pubsub.server.model.request.subscribeRequest
+import io.github.vinicreis.pubsub.server.model.response.SubscribeResponseOuterClass.SubscribeResponse
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -48,9 +48,9 @@ import org.junit.jupiter.api.Test
 import java.util.logging.Logger
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
-import io.github.vinicreis.domain.server.core.model.data.QueueOuterClass.Queue as RemoteQueue
-import io.github.vinicreis.domain.server.core.model.data.SubscriptionEventOuterClass.SubscriptionEvent as RemoteSubscriptionEvent
-import io.github.vinicreis.domain.server.core.model.data.TextMessageOuterClass.TextMessage as RemoteTextMessage
+import io.github.vinicreis.pubsub.server.model.data.QueueOuterClass.Queue as RemoteQueue
+import io.github.vinicreis.pubsub.server.model.data.SubscriptionEventOuterClass.SubscriptionEvent as RemoteSubscriptionEvent
+import io.github.vinicreis.pubsub.server.model.data.TextMessageOuterClass.TextMessage as RemoteTextMessage
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class QueueServiceGrpcTests {

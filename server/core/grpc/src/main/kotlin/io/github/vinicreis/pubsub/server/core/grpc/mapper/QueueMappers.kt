@@ -1,10 +1,10 @@
 package io.github.vinicreis.pubsub.server.core.grpc.mapper
 
-import io.github.vinicreis.domain.server.core.model.data.queue
 import io.github.vinicreis.pubsub.server.core.extension.asUuid
 import io.github.vinicreis.pubsub.server.core.model.data.Queue
+import io.github.vinicreis.pubsub.server.model.data.queue
 import java.util.*
-import io.github.vinicreis.domain.server.core.model.data.QueueOuterClass.Queue as RemoteQueue
+import io.github.vinicreis.pubsub.server.model.data.QueueOuterClass.Queue as RemoteQueue
 
 internal val RemoteQueue.Type.asDomain: Queue.Type
     get() = when(this) {

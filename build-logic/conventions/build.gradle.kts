@@ -10,6 +10,7 @@ dependencies {
     implementation(libs.kotlin.jvm)
     implementation(libs.google.protobuf.plugin)
     implementation(libs.test.logger)
+    implementation(libs.jacoco.plugin)
 }
 
 gradlePlugin {

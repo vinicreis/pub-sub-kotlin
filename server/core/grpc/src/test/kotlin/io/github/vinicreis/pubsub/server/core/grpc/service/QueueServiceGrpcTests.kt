@@ -39,6 +39,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.DisplayName
@@ -749,6 +750,26 @@ class QueueServiceGrpcTests {
                 assertEquals(queue, response.queue.asDomain)
                 assertTrue(response.message.isEmpty())
             }
+
+        @Test
+        fun `Should retorn error when exception is thrown during poll`() = runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            val id = QueueFixture.id()
+            val queue = QueueFixture.instance(id)
+            val request = pollRequest { this.queueId = id.toString() }
+
+            coEvery { queueRepositoryMock.getById(id) } throws RuntimeException("Some error message")
+
+            val response = backgroundScope.async(dispatcher) { sut.poll(request) }.await()
+
+            coVerify(exactly = 1) { queueRepositoryMock.getById(id) }
+            verify(exactly = 0) { subscriberManagerServiceMock.subscribe(queue) }
+
+            assertEquals(ResultOuterClass.Result.ERROR, response.result)
+            assertEquals("Something went wrong...", response.message)
+            assertFalse(response.hasQueue())
+            assertFalse(response.hasContent())
+        }
     }
 
     companion object {

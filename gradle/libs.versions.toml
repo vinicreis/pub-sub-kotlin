@@ -10,6 +10,7 @@ grpc-core = "1.66.0"
 grpc-kotlin = "1.4.1"
 exposed = "0.52.0"
 postgres-driver = "42.7.3"
+jacoco = "0.8.12"
 
 junit = "5.10.0"
 mockk = "1.13.12"
@@ -25,11 +26,11 @@ pubsub-kotlin-jvm = { id = "io.github.vinicreis.pubsub.build.convention.kotlin.j
 pubsub-protobuf = { id = "io.github.vinicreis.pubsub.build.convention.protobuf", version = "unspecified" }
 pubsub-grpc = { id = "io.github.vinicreis.pubsub.build.convention.grpc", version = "unspecified" }
 
-
 [libraries]
 kotlin-jvm = { group = "org.jetbrains.kotlin.jvm", name = "org.jetbrains.kotlin.jvm.gradle.plugin", version.ref = "kotlin" }
 google-protobuf-plugin = { group = "com.google.protobuf", name = "protobuf-gradle-plugin", version.ref = "protobuf-plugin" }
 test-logger = { group = "com.adarshr", name = "gradle-test-logger-plugin", version.ref = "test-logger" }
+jacoco-plugin = { group = "org.jacoco", name = "org.jacoco.build", version.ref = "jacoco" }
 
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }

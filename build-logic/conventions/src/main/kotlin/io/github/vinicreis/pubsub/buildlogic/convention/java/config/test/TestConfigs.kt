@@ -21,6 +21,7 @@ internal fun Project.setupTests() {
     applyTestLogger()
     configureTestDependencies()
     configureJUnit()
+    configureJacoco()
 }
 
 private fun Project.applyTestLogger() {
